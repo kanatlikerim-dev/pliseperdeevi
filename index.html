@@ -3,53 +3,124 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Benim Sitem</title>
+<title>Perde Hesaplama</title>
 
 <style>
-body{
-margin:0;
-font-family:Arial;
-background:#111;
-color:white;
-display:flex;
-justify-content:center;
-align-items:center;
-height:100vh;
-text-align:center;
+body {
+    font-family: Arial;
+    background: #f5f5f5;
+    display: flex;
+    justify-content: center;
+    padding: 20px;
 }
 
-.box{
-max-width:700px;
-padding:30px;
+.container {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    width: 100%;
+    max-width: 420px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.1);
 }
 
-h1{
-font-size:48px;
-margin-bottom:10px;
+h2 {
+    text-align: center;
 }
 
-p{
-font-size:20px;
-color:#bbb;
+input {
+    width: 100%;
+    padding: 10px;
+    margin: 8px 0;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    font-size: 16px;
 }
 
-button{
-padding:15px 25px;
-border:none;
-background:#00ff88;
-font-size:18px;
-border-radius:10px;
-cursor:pointer;
-margin-top:20px;
+button {
+    width: 100%;
+    padding: 12px;
+    background: #111;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #333;
+}
+
+.result {
+    margin-top: 15px;
+    background: #f0f0f0;
+    padding: 10px;
+    border-radius: 8px;
+    font-size: 14px;
 }
 </style>
 </head>
 
 <body>
-<div class="box">
-<h1>Hoş Geldin</h1>
-<p>Bu site GitHub Pages ile yayında.</p>
-<button>Tıkla</button>
+
+<div class="container">
+<h2>Perde Hesaplama</h2>
+
+<input id="width" placeholder="En (cm)">
+<input id="height" placeholder="Boy (cm)">
+<input id="qty" placeholder="Adet">
+<input id="price" placeholder="m² Fiyatı (TL)">
+<input id="cargo" placeholder="Kargo Ücreti (TL)">
+
+<button onclick="calculate()">Hesapla</button>
+
+<div class="result" id="result"></div>
 </div>
+
+<script>
+function roundUp10(x){
+    return Math.ceil(x / 10) * 10;
+}
+
+function billableM2(m2){
+    if(m2 <= 1) return 1;
+
+    let val = Math.ceil(m2 * 10) / 10;
+    return val;
+}
+
+function calculate(){
+
+    let w = parseFloat(document.getElementById("width").value);
+    let h = parseFloat(document.getElementById("height").value);
+    let qty = parseFloat(document.getElementById("qty").value);
+    let price = parseFloat(document.getElementById("price").value);
+    let cargo = parseFloat(document.getElementById("cargo").value);
+
+    if(!w || !h || !qty || !price || isNaN(cargo)){
+        document.getElementById("result").innerHTML = "Lütfen tüm alanları doldur.";
+        return;
+    }
+
+    let rw = roundUp10(w);
+    let rh = roundUp10(h);
+
+    let rawM2 = (rw * rh) / 10000;
+    let billM2 = billableM2(rawM2);
+
+    let materialTotal = billM2 * qty * price;
+    let total = materialTotal + cargo;
+
+    document.getElementById("result").innerHTML =
+        "Yuvarlanmış En: " + rw + " cm<br>" +
+        "Yuvarlanmış Boy: " + rh + " cm<br>" +
+        "Gerçek m²: " + rawM2.toFixed(2) + "<br>" +
+        "Satış m²: " + billM2.toFixed(2) + "<br>" +
+        "Malzeme Tutarı: " + materialTotal.toFixed(2) + " ₺<br>" +
+        "Kargo: " + cargo.toFixed(2) + " ₺<br>" +
+        "<b>TOPLAM: " + total.toFixed(2) + " ₺</b>";
+}
+</script>
+
 </body>
 </html>
