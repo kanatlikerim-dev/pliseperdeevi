@@ -3,11 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Perde Hesaplama Sistemi</title>
+
+<title>Prestige Life M2 Hesaplama</title>
 
 <style>
 body {
-    font-family: Arial;
+    font-family: Arial, sans-serif;
     background: #f5f5f5;
     display: flex;
     justify-content: center;
@@ -25,6 +26,13 @@ body {
 
 h2 {
     text-align: center;
+}
+
+.subtitle {
+    text-align: center;
+    margin-bottom: 15px;
+    color: #666;
+    font-size: 14px;
 }
 
 input {
@@ -57,7 +65,7 @@ button:hover {
     padding: 12px;
     border-radius: 8px;
     font-size: 14px;
-    line-height: 1.5;
+    line-height: 1.6;
 }
 </style>
 </head>
@@ -65,17 +73,20 @@ button:hover {
 <body>
 
 <div class="container">
-<h2>Perde Hesaplama</h2>
+
+<h2>Prestige Life</h2>
+<div class="subtitle">M2 Hesaplama Sistemi</div>
 
 <input id="width" placeholder="En (cm)">
 <input id="height" placeholder="Boy (cm)">
 <input id="qty" placeholder="Adet">
-<input id="price" placeholder="m² Fiyatı (TL)">
+<input id="price" placeholder="M2 Fiyatı (TL)">
 <input id="cargo" placeholder="Kargo Ücreti (TL)">
 
 <button onclick="calculate()">Hesapla</button>
 
 <div class="result" id="result"></div>
+
 </div>
 
 <script>
@@ -101,7 +112,7 @@ function calculate(){
         return;
     }
 
-    // 🔒 İÇ HESAP (KULLANICI GÖRMEZ)
+    // İÇ HESAP (GİZLİ)
     let rw = roundUp10(w);
     let rh = roundUp10(h);
 
@@ -111,15 +122,12 @@ function calculate(){
     let materialTotal = billM2 * qty * price;
     let total = materialTotal + cargo;
 
-    // 👁️ KULLANICIYA GÖRÜNEN
+    // SADE KULLANICI ÇIKTISI
     document.getElementById("result").innerHTML =
         "En: " + w + " cm<br>" +
-        "Boy: " + h + " cm<br><br>" +
+        "Boy: " + h + " cm<br>" +
+        "Adet: " + qty + "<br><br>" +
 
-        "Gerçek m²: " + rawM2.toFixed(2) + "<br>" +
-        "Satış m²: " + billM2.toFixed(2) + "<br><br>" +
-
-        "Adet: " + qty + "<br>" +
         "Malzeme Tutarı: " + materialTotal.toFixed(2) + " ₺<br>" +
         "Kargo: " + cargo.toFixed(2) + " ₺<br><br>" +
 
