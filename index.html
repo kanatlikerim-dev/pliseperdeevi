@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Perde Hesaplama</title>
+<title>Perde Hesaplama Sistemi</title>
 
 <style>
 body {
@@ -19,7 +19,7 @@ body {
     padding: 20px;
     border-radius: 12px;
     width: 100%;
-    max-width: 420px;
+    max-width: 450px;
     box-shadow: 0 5px 20px rgba(0,0,0,0.1);
 }
 
@@ -54,9 +54,10 @@ button:hover {
 .result {
     margin-top: 15px;
     background: #f0f0f0;
-    padding: 10px;
+    padding: 12px;
     border-radius: 8px;
     font-size: 14px;
+    line-height: 1.5;
 }
 </style>
 </head>
@@ -84,9 +85,7 @@ function roundUp10(x){
 
 function billableM2(m2){
     if(m2 <= 1) return 1;
-
-    let val = Math.ceil(m2 * 10) / 10;
-    return val;
+    return Math.ceil(m2 * 10) / 10;
 }
 
 function calculate(){
@@ -97,11 +96,12 @@ function calculate(){
     let price = parseFloat(document.getElementById("price").value);
     let cargo = parseFloat(document.getElementById("cargo").value);
 
-    if(!w || !h || !qty || !price || isNaN(cargo)){
+    if(isNaN(w) || isNaN(h) || isNaN(qty) || isNaN(price) || isNaN(cargo)){
         document.getElementById("result").innerHTML = "Lütfen tüm alanları doldur.";
         return;
     }
 
+    // 🔒 İÇ HESAP (KULLANICI GÖRMEZ)
     let rw = roundUp10(w);
     let rh = roundUp10(h);
 
@@ -111,13 +111,18 @@ function calculate(){
     let materialTotal = billM2 * qty * price;
     let total = materialTotal + cargo;
 
+    // 👁️ KULLANICIYA GÖRÜNEN
     document.getElementById("result").innerHTML =
-        "Yuvarlanmış En: " + rw + " cm<br>" +
-        "Yuvarlanmış Boy: " + rh + " cm<br>" +
+        "En: " + w + " cm<br>" +
+        "Boy: " + h + " cm<br><br>" +
+
         "Gerçek m²: " + rawM2.toFixed(2) + "<br>" +
-        "Satış m²: " + billM2.toFixed(2) + "<br>" +
+        "Satış m²: " + billM2.toFixed(2) + "<br><br>" +
+
+        "Adet: " + qty + "<br>" +
         "Malzeme Tutarı: " + materialTotal.toFixed(2) + " ₺<br>" +
-        "Kargo: " + cargo.toFixed(2) + " ₺<br>" +
+        "Kargo: " + cargo.toFixed(2) + " ₺<br><br>" +
+
         "<b>TOPLAM: " + total.toFixed(2) + " ₺</b>";
 }
 </script>
