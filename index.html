@@ -132,21 +132,33 @@ body.dark .container{
 }
 
 .logo-shell{
-    width:170px;
-    height:96px;
-    margin:0 auto 8px;
+    width:180px;
+    min-height:104px;
+    margin:0 auto 10px;
     display:flex;
     align-items:center;
     justify-content:center;
-    border-radius:28px;
-    background:linear-gradient(145deg, var(--card-bg), var(--panel-bg));
-    border:1px solid var(--border);
-    box-shadow:var(--soft-shadow);
+    border-radius:30px;
+    background:#ffffff;
+    border:1px solid rgba(139,106,69,0.18);
+    box-shadow:
+        0 14px 36px rgba(45,35,25,0.10),
+        inset 0 0 0 8px rgba(246,243,238,0.72);
+    padding:14px;
+}
+
+body.dark .logo-shell{
+    background:#ffffff;
+    border-color:rgba(179,138,93,0.35);
+    box-shadow:
+        0 16px 44px rgba(0,0,0,0.34),
+        inset 0 0 0 8px rgba(246,243,238,0.88);
 }
 
 .header img{
     width:140px;
     max-width:100%;
+    display:block;
 }
 
 .header h1{
@@ -406,6 +418,13 @@ body.color-different .global-color-area{
 
 body.color-same .per-card-colors{
     display:none;
+}
+
+.optional-note{
+    margin-top:8px;
+    color:var(--muted);
+    font-size:12.5px;
+    line-height:1.45;
 }
 
 .cam-card{
@@ -947,8 +966,8 @@ body.color-same .per-card-colors{
     }
 
     .logo-shell{
-        width:150px;
-        height:88px;
+        width:158px;
+        min-height:96px;
         border-radius:24px;
     }
 
@@ -1029,7 +1048,7 @@ body.color-same .per-card-colors{
         <div class="color-mode-card">
             <div class="color-mode-title">Kasa ve kumaş seçimi</div>
             <div class="color-mode-desc">
-                Tüm camlarda aynı renk kullanılacaksa sadece bir kere seçim yapmanız yeterlidir.
+                Sadece fiyat almak istiyorsanız renk seçmeden de hesaplama yapabilirsiniz.
             </div>
 
             <div class="color-mode-options">
@@ -1037,7 +1056,7 @@ body.color-same .per-card-colors{
                     <input type="radio" name="colorMode" value="same" checked onchange="updateColorMode()">
                     <span>
                         <strong>Tüm camlarda aynı kasa ve kumaş kullanılacak</strong>
-                        <small>En kolay seçim. Kasa ve kumaşı bir kere seçersiniz.</small>
+                        <small>En kolay seçim. İsterseniz kasa ve kumaşı bir kere seçebilirsiniz.</small>
                     </span>
                 </label>
 
@@ -1056,6 +1075,10 @@ body.color-same .per-card-colors{
 
                 <p class="section-title">Genel Kumaş Seçimi</p>
                 <div class="fabric-grid" id="globalKumasSecim"></div>
+
+                <p class="optional-note">
+                    Renk seçimi zorunlu değildir. Sadece fiyat almak için boş bırakabilirsiniz.
+                </p>
             </div>
         </div>
 
@@ -1143,12 +1166,13 @@ const VIDALI_FIYAT = 400;
 const KARGO = 300;
 const MAX_CAM = 50;
 const ORDER_STORAGE_KEY = "prestijLifeOrderData";
+const NOT_SELECTED = "Belirtilmedi";
 
 const kasaRenkleri = [
-    { name:"Bronz", hex:"#5f5842" },
+    { name:"Bronz", hex:"#76634b" },
     { name:"Beyaz", hex:"#ffffff" },
-    { name:"Krem", hex:"#f2dfbd" },
-    { name:"Kahverengi", hex:"#2b1a16" },
+    { name:"Krem", hex:"#e3d6c0" },
+    { name:"Kahverengi", hex:"#54382b" },
     { name:"Antrasit", hex:"#252a2e" },
     { name:"Gri", hex:"#9b9b9b" }
 ];
@@ -1394,6 +1418,8 @@ function createCamCard(index){
 
                     <p class="section-title">Kumaş Seçimi</p>
                     <div class="fabric-grid kumasSecim"></div>
+
+                    <p class="optional-note">Renk seçimi zorunlu değildir.</p>
                 </div>
             </div>
         </div>
@@ -1736,16 +1762,6 @@ function calculateAll(){
         card.classList.remove("has-error");
     });
 
-    if(colorMode === "same"){
-        if(!globalKasa){
-            errors.push("Kasa ve kumaş seçimi: Genel kasa rengi seçilmelidir.");
-        }
-
-        if(!globalKumas){
-            errors.push("Kasa ve kumaş seçimi: Genel kumaş seçilmelidir.");
-        }
-    }
-
     cards.forEach(function(card, index){
         const camNo = index + 1;
 
@@ -1765,11 +1781,11 @@ function calculateAll(){
         let kumas = "";
 
         if(colorMode === "same"){
-            kasa = globalKasa;
-            kumas = globalKumas;
+            kasa = globalKasa || NOT_SELECTED;
+            kumas = globalKumas || NOT_SELECTED;
         }else{
-            kasa = card.querySelector(".kasaSecim .active")?.dataset.value || "";
-            kumas = card.querySelector(".kumasSecim .active")?.dataset.value || "";
+            kasa = card.querySelector(".kasaSecim .active")?.dataset.value || NOT_SELECTED;
+            kumas = card.querySelector(".kumasSecim .active")?.dataset.value || NOT_SELECTED;
         }
 
         let cardHasError = false;
@@ -1780,6 +1796,14 @@ function calculateAll(){
             if(firstInvalidCam === null){
                 firstInvalidCam = camNo;
             }
+        }
+
+        if(!uygulama){
+            addCardError("Uygulama alanı seçilmelidir.");
+        }
+
+        if(!tip){
+            addCardError("Sistem tipi seçilmelidir.");
         }
 
         if(isNaN(en) || en <= 0){
@@ -1804,16 +1828,6 @@ function calculateAll(){
 
         if(uygulama === "pimapen" && tip !== "vidali"){
             addCardError("Pimapen / PVC için sadece Vidalı sistem seçilebilir.");
-        }
-
-        if(colorMode === "different"){
-            if(!kasa){
-                addCardError("Kasa rengi seçilmelidir.");
-            }
-
-            if(!kumas){
-                addCardError("Kumaş seçilmelidir.");
-            }
         }
 
         if(cardHasError){
