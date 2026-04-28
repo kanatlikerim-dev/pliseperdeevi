@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Prestij Life</title>
 
-<link rel="icon" type="image/png" href="./favicon.png?v=50">
-<link rel="shortcut icon" type="image/png" href="./favicon.png?v=50">
-<link rel="apple-touch-icon" href="./favicon.png?v=50">
+<link rel="icon" type="image/png" href="./favicon.png?v=51">
+<link rel="shortcut icon" type="image/png" href="./favicon.png?v=51">
+<link rel="apple-touch-icon" href="./favicon.png?v=51">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -38,8 +38,6 @@
     --warning-bg:#fff8e8;
     --warning-border:#ead2a4;
     --warning-text:#6b4a18;
-    --success-bg:#ecfff3;
-    --success-text:#176b3a;
     --shadow:0 18px 55px rgba(45,35,25,0.10);
     --soft-shadow:0 10px 28px rgba(45,35,25,0.08);
     --modal-bg:rgba(20,16,12,0.74);
@@ -69,8 +67,6 @@ body.dark{
     --warning-bg:#2b2618;
     --warning-border:#6f5630;
     --warning-text:#f0d6a8;
-    --success-bg:#17331f;
-    --success-text:#94e4ae;
     --shadow:0 18px 55px rgba(0,0,0,0.38);
     --soft-shadow:0 10px 28px rgba(0,0,0,0.26);
     --modal-bg:rgba(0,0,0,0.84);
@@ -1174,17 +1170,17 @@ const productTypes = [
     {
         key:"klasik",
         label:"Klasik Seri Plise",
-        desc:"Askılı 450 TL / m² · Vidalı 400 TL / m²"
+        desc:""
     },
     {
         key:"blackout",
         label:"Blackout Karartmalı",
-        desc:"1250 TL / m²"
+        desc:""
     },
     {
         key:"ciftli",
         label:"Çiftli Sistem",
-        desc:"1000 TL / m²"
+        desc:""
     }
 ];
 
@@ -1230,8 +1226,8 @@ let lastOrderText = "";
 
 async function init(){
     initTheme();
-    updateProductDescriptions();
-    loadCurrentPrices();
+
+    await loadCurrentPrices();
 
     const camSelect = document.getElementById("camCount");
     camSelect.innerHTML = "";
@@ -1275,18 +1271,32 @@ async function loadCurrentPrices(){
     setPriceStatus("loading", "Güncel fiyatlar yükleniyor...");
 
     try{
-        const response = await fetch(PRICE_API_URL + "?t=" + Date.now(), {
+        const response = await fetch(PRICE_API_URL + "?v=" + Date.now(), {
             method:"GET",
             cache:"no-store"
         });
 
         const data = await response.json();
 
-        if(!data.success){
+        if(!data.success || !data.prices){
             throw new Error(data.message || "Fiyat bilgisi alınamadı.");
         }
 
-        currentPrices = Object.assign({}, DEFAULT_PRICES, data.prices || {});
+        const incomingPrices = {
+            klasik_askili: Number(data.prices.klasik_askili),
+            klasik_vidali: Number(data.prices.klasik_vidali),
+            blackout: Number(data.prices.blackout),
+            ciftli: Number(data.prices.ciftli),
+            kargo: Number(data.prices.kargo)
+        };
+
+        Object.keys(incomingPrices).forEach(function(key){
+            if(isNaN(incomingPrices[key]) || incomingPrices[key] < 0){
+                throw new Error("Geçersiz fiyat verisi: " + key);
+            }
+        });
+
+        currentPrices = incomingPrices;
         priceLoadedFromApi = true;
         priceLoadFailed = false;
 
@@ -1295,14 +1305,14 @@ async function loadCurrentPrices(){
 
         setPriceStatus("ok", "Güncel fiyatlar yüklendi.");
     }catch(error){
-        currentPrices = Object.assign({}, DEFAULT_PRICES);
         priceLoadedFromApi = false;
         priceLoadFailed = true;
 
         updateProductDescriptions();
         refreshProductChoiceTexts();
 
-        setPriceStatus("fail", "Fiyat bağlantısı kurulamadı. Yedek fiyatlar kullanılıyor.");
+        setPriceStatus("fail", "Fiyat bağlantısı kurulamadı. Sayfayı yenileyin.");
+        console.error("Fiyatlar yüklenemedi:", error);
     }
 }
 
@@ -2085,7 +2095,7 @@ function calculateAll(){
         warningHTML += `
             <div class="warning-box">
                 <b>Güncel fiyat bağlantısı kurulamadı.</b>
-                Hesaplama yedek fiyatlarla yapılmıştır. Sipariş vermeden önce bizimle iletişime geçmeniz önerilir.
+                Hesaplama mevcut yedek fiyatlarla yapılmıştır. Sipariş vermeden önce bizimle iletişime geçmeniz önerilir.
             </div>
         `;
     }
