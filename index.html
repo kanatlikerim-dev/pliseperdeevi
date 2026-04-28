@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Prestij Life</title>
 
-<link rel="icon" type="image/png" href="./favicon.png?v=51">
-<link rel="shortcut icon" type="image/png" href="./favicon.png?v=51">
-<link rel="apple-touch-icon" href="./favicon.png?v=51">
+<link rel="icon" type="image/png" href="./favicon.png?v=70">
+<link rel="shortcut icon" type="image/png" href="./favicon.png?v=70">
+<link rel="apple-touch-icon" href="./favicon.png?v=70">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -377,6 +377,67 @@ body.dark .btn-reset{
     margin-top:16px;
 }
 
+.color-mode-box{
+    margin-top:16px;
+    background:var(--card-bg);
+    border:1px solid var(--border);
+    border-radius:18px;
+    padding:14px;
+}
+
+.color-mode-title{
+    font-weight:900;
+    margin-bottom:10px;
+}
+
+.color-mode-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
+    gap:10px;
+}
+
+.color-mode-option{
+    border:1px solid var(--input-border);
+    border-radius:16px;
+    background:var(--panel-bg);
+    padding:13px;
+    cursor:pointer;
+    display:flex;
+    gap:10px;
+    align-items:flex-start;
+}
+
+.color-mode-option input{
+    width:auto;
+    margin-top:3px;
+}
+
+.color-mode-option strong{
+    display:block;
+    font-size:14px;
+}
+
+.color-mode-option small{
+    display:block;
+    color:var(--muted);
+    font-size:12.5px;
+    line-height:1.4;
+    margin-top:3px;
+}
+
+.global-colors{
+    display:none;
+    margin-top:16px;
+    background:var(--panel-bg);
+    border:1px solid var(--border);
+    border-radius:20px;
+    padding:16px;
+}
+
+.global-colors.show{
+    display:block;
+}
+
 .cam-card{
     padding:0;
     overflow:hidden;
@@ -527,6 +588,14 @@ body.dark .btn-reset{
 }
 
 .product-color-section{
+    display:none;
+}
+
+.per-card-colors{
+    display:block;
+}
+
+body.same-colors .per-card-colors{
     display:none;
 }
 
@@ -1068,6 +1137,49 @@ body.dark .btn-reset{
             Kaç farklı cam ölçüsü girecekseniz buradan seçiniz. Sistem seçtiğiniz sayı kadar cam alanını otomatik açar.
         </p>
 
+        <div class="color-mode-box">
+            <div class="color-mode-title">Renk Seçim Şekli</div>
+
+            <div class="color-mode-grid">
+                <label class="color-mode-option">
+                    <input type="radio" name="colorMode" value="same" checked onchange="setColorMode('same')">
+                    <span>
+                        <strong>Tüm camlarda aynı renkleri kullan</strong>
+                        <small>Kasa ve ürün renklerini tek sefer seçersiniz.</small>
+                    </span>
+                </label>
+
+                <label class="color-mode-option">
+                    <input type="radio" name="colorMode" value="individual" onchange="setColorMode('individual')">
+                    <span>
+                        <strong>Camlara göre farklı renk seç</strong>
+                        <small>Her cam için ayrı kasa ve renk seçimi yapılır.</small>
+                    </span>
+                </label>
+            </div>
+
+            <div class="global-colors show" id="globalColors">
+                <p class="section-title">Genel Kasa Rengi</p>
+                <div class="color-grid globalKasaSecim"></div>
+
+                <p class="section-title">Klasik Seri Kumaşı</p>
+                <div class="fabric-grid globalKumasSecim"></div>
+
+                <p class="section-title">Blackout Rengi</p>
+                <div class="color-grid globalBlackoutSecim"></div>
+
+                <p class="section-title">Çiftli Sistem Tül Rengi</p>
+                <div class="color-grid globalTulSecim"></div>
+
+                <p class="section-title">Çiftli Sistem Perde Rengi</p>
+                <div class="fabric-grid globalPerdeSecim"></div>
+
+                <p class="optional-note">
+                    Her ürün tipi sadece kendi ilgili rengini kullanır. Örneğin Blackout seçilen camda sadece Blackout rengi dikkate alınır.
+                </p>
+            </div>
+        </div>
+
         <div class="catalog-actions">
             <button type="button" class="btn-light" onclick="openImageModal('Kumaş Kataloğu','katalog.png')">
                 Kumaş Kataloğunu Gör
@@ -1163,25 +1275,13 @@ let priceLoadedFromApi = false;
 let priceLoadFailed = false;
 
 const MAX_CAM = 50;
-const ORDER_STORAGE_KEY = "prestijLifeOrderData_v2";
+const ORDER_STORAGE_KEY = "prestijLifeOrderData_v3";
 const NOT_SELECTED = "Belirtilmedi";
 
 const productTypes = [
-    {
-        key:"klasik",
-        label:"Klasik Seri Plise",
-        desc:""
-    },
-    {
-        key:"blackout",
-        label:"Blackout Karartmalı",
-        desc:""
-    },
-    {
-        key:"ciftli",
-        label:"Çiftli Sistem",
-        desc:""
-    }
+    { key:"klasik", label:"Klasik Seri Plise", desc:"" },
+    { key:"blackout", label:"Blackout Karartmalı", desc:"" },
+    { key:"ciftli", label:"Çiftli Sistem", desc:"" }
 ];
 
 const kasaRenkleri = [
@@ -1194,18 +1294,18 @@ const kasaRenkleri = [
 ];
 
 const kumaslar = [
-    "Sude 001 - Beyaz",
-    "Sude 002 - Bej",
-    "Sude 003 - Gri",
-    "Sude 004 - Siyah",
-    "Elmas 001 - Beyaz",
-    "Elmas 002 - Krem",
-    "Elmas 003 - Bej",
-    "Elmas 004 - Kahverengi",
-    "Elmas 005 - Turkuaz",
-    "Elmas 006 - Sarı",
-    "Elmas 007 - Kırmızı",
-    "Elmas 008 - Lacivert"
+    "Sude 001",
+    "Sude 002",
+    "Sude 003",
+    "Sude 004",
+    "Elmas 001",
+    "Elmas 002",
+    "Elmas 003",
+    "Elmas 004",
+    "Elmas 005",
+    "Elmas 006",
+    "Elmas 007",
+    "Elmas 008"
 ];
 
 const blackoutRenkleri = [
@@ -1223,11 +1323,14 @@ let currentCamCount = 0;
 let isRestoring = false;
 let saveTimer = null;
 let lastOrderText = "";
+let colorMode = "same";
 
 async function init(){
     initTheme();
 
     await loadCurrentPrices();
+
+    fillGlobalColorChoices();
 
     const camSelect = document.getElementById("camCount");
     camSelect.innerHTML = "";
@@ -1245,6 +1348,12 @@ async function init(){
         : 1;
 
     isRestoring = true;
+
+    if(savedData && savedData.colorMode){
+        colorMode = savedData.colorMode === "individual" ? "individual" : "same";
+    }
+
+    applyColorModeUI();
 
     camSelect.value = String(savedCamCount);
     camSelect.addEventListener("change", handleCamCountChange);
@@ -1392,6 +1501,29 @@ function updateThemeButton(){
     button.textContent = document.body.classList.contains("dark") ? "☀️ Açık Mod" : "🌙 Koyu Mod";
 }
 
+function setColorMode(mode){
+    colorMode = mode === "individual" ? "individual" : "same";
+    applyColorModeUI();
+    queueSaveState();
+}
+
+function applyColorModeUI(){
+    document.querySelectorAll('input[name="colorMode"]').forEach(function(input){
+        input.checked = input.value === colorMode;
+    });
+
+    document.getElementById("globalColors").classList.toggle("show", colorMode === "same");
+    document.body.classList.toggle("same-colors", colorMode === "same");
+}
+
+function fillGlobalColorChoices(){
+    fillChoiceBox(document.querySelector(".globalKasaSecim"), kasaRenkleri, "color");
+    fillChoiceBox(document.querySelector(".globalKumasSecim"), kumaslar, "text");
+    fillChoiceBox(document.querySelector(".globalBlackoutSecim"), blackoutRenkleri, "color");
+    fillChoiceBox(document.querySelector(".globalTulSecim"), tulRenkleri, "color");
+    fillChoiceBox(document.querySelector(".globalPerdeSecim"), kumaslar, "text");
+}
+
 function handleCamCountChange(){
     const newCount = parseInt(this.value, 10);
 
@@ -1428,6 +1560,8 @@ function setCamCount(count, preserveData){
         camSelect.selectedIndex = count - 1;
     }
 
+    applyColorModeUI();
+
     const hasOpenCard = document.querySelector(".cam-card.open");
     if(!hasOpenCard && count > 0){
         openCam(1);
@@ -1448,6 +1582,7 @@ function rebuildOnlyOneCam(){
 
     createCamCard(1);
     openCam(1);
+    applyColorModeUI();
 }
 
 function createCamCard(index){
@@ -1500,28 +1635,30 @@ function createCamCard(index){
                     </label>
                 </div>
 
-                <p class="section-title">Kasa Rengi</p>
-                <div class="color-grid kasaSecim"></div>
+                <div class="per-card-colors">
+                    <p class="section-title">Kasa Rengi</p>
+                    <div class="color-grid kasaSecim"></div>
 
-                <div class="product-color-section color-klasik">
-                    <p class="section-title">Kumaş Seçimi</p>
-                    <div class="fabric-grid kumasSecim"></div>
+                    <div class="product-color-section color-klasik">
+                        <p class="section-title">Kumaş Seçimi</p>
+                        <div class="fabric-grid kumasSecim"></div>
+                    </div>
+
+                    <div class="product-color-section color-blackout">
+                        <p class="section-title">Blackout Rengi</p>
+                        <div class="color-grid blackoutSecim"></div>
+                    </div>
+
+                    <div class="product-color-section color-ciftli">
+                        <p class="section-title">Tül Rengi</p>
+                        <div class="color-grid tulSecim"></div>
+
+                        <p class="section-title">Perde Rengi</p>
+                        <div class="fabric-grid perdeSecim"></div>
+                    </div>
+
+                    <p class="optional-note">Renk seçimi zorunlu değildir. Sadece fiyat almak için boş bırakabilirsiniz.</p>
                 </div>
-
-                <div class="product-color-section color-blackout">
-                    <p class="section-title">Blackout Rengi</p>
-                    <div class="color-grid blackoutSecim"></div>
-                </div>
-
-                <div class="product-color-section color-ciftli">
-                    <p class="section-title">Tül Rengi</p>
-                    <div class="color-grid tulSecim"></div>
-
-                    <p class="section-title">Perde Rengi</p>
-                    <div class="fabric-grid perdeSecim"></div>
-                </div>
-
-                <p class="optional-note">Renk seçimi zorunlu değildir. Sadece fiyat almak için boş bırakabilirsiniz.</p>
             </div>
         </div>
     `;
@@ -1531,11 +1668,11 @@ function createCamCard(index){
     const card = document.getElementById("cam" + index);
 
     fillProductChoices(card);
-    fillKasaChoices(card);
-    fillKumasChoices(card);
-    fillBlackoutChoices(card);
-    fillTulChoices(card);
-    fillPerdeChoices(card);
+    fillChoiceBox(card.querySelector(".kasaSecim"), kasaRenkleri, "color");
+    fillChoiceBox(card.querySelector(".kumasSecim"), kumaslar, "text");
+    fillChoiceBox(card.querySelector(".blackoutSecim"), blackoutRenkleri, "color");
+    fillChoiceBox(card.querySelector(".tulSecim"), tulRenkleri, "color");
+    fillChoiceBox(card.querySelector(".perdeSecim"), kumaslar, "text");
 
     setProductType(card, "klasik");
     updateTipOptions(card);
@@ -1570,6 +1707,20 @@ function setProductType(card, productKey){
     card.querySelector(".color-klasik").style.display = productKey === "klasik" ? "block" : "none";
     card.querySelector(".color-blackout").style.display = productKey === "blackout" ? "block" : "none";
     card.querySelector(".color-ciftli").style.display = productKey === "ciftli" ? "block" : "none";
+}
+
+function fillChoiceBox(box, items, type){
+    if(!box) return;
+
+    box.innerHTML = "";
+
+    items.forEach(function(item){
+        if(type === "color"){
+            box.appendChild(createColorChoice(item));
+        }else{
+            box.appendChild(createTextChoice(item));
+        }
+    });
 }
 
 function createColorChoice(item){
@@ -1607,41 +1758,6 @@ function createTextChoice(value){
     return btn;
 }
 
-function fillKasaChoices(card){
-    const box = card.querySelector(".kasaSecim");
-    kasaRenkleri.forEach(function(item){
-        box.appendChild(createColorChoice(item));
-    });
-}
-
-function fillKumasChoices(card){
-    const box = card.querySelector(".kumasSecim");
-    kumaslar.forEach(function(item){
-        box.appendChild(createTextChoice(item));
-    });
-}
-
-function fillBlackoutChoices(card){
-    const box = card.querySelector(".blackoutSecim");
-    blackoutRenkleri.forEach(function(item){
-        box.appendChild(createColorChoice(item));
-    });
-}
-
-function fillTulChoices(card){
-    const box = card.querySelector(".tulSecim");
-    tulRenkleri.forEach(function(item){
-        box.appendChild(createColorChoice(item));
-    });
-}
-
-function fillPerdeChoices(card){
-    const box = card.querySelector(".perdeSecim");
-    kumaslar.forEach(function(item){
-        box.appendChild(createTextChoice(item));
-    });
-}
-
 function updateTipOptions(card){
     const uygulama = card.querySelector(".uygulama").value;
     const tipSelect = card.querySelector(".tip");
@@ -1664,6 +1780,26 @@ function updateTipOptions(card){
     queueSaveState();
 }
 
+function collectGlobalColorData(){
+    return {
+        kasa: getActiveValue(document.querySelector(".globalKasaSecim")),
+        kumas: getActiveValue(document.querySelector(".globalKumasSecim")),
+        blackout: getActiveValue(document.querySelector(".globalBlackoutSecim")),
+        tul: getActiveValue(document.querySelector(".globalTulSecim")),
+        perde: getActiveValue(document.querySelector(".globalPerdeSecim"))
+    };
+}
+
+function applyGlobalColorData(data){
+    if(!data) return;
+
+    setChoiceByValue(document.querySelector(".globalKasaSecim"), data.kasa);
+    setChoiceByValue(document.querySelector(".globalKumasSecim"), data.kumas);
+    setChoiceByValue(document.querySelector(".globalBlackoutSecim"), data.blackout);
+    setChoiceByValue(document.querySelector(".globalTulSecim"), data.tul);
+    setChoiceByValue(document.querySelector(".globalPerdeSecim"), data.perde);
+}
+
 function collectCardData(){
     const data = [];
 
@@ -1679,11 +1815,11 @@ function collectCardData(){
             adet: card.querySelector(".adet").value,
             acilir: card.querySelector(".acilir").value,
             tip: card.querySelector(".tip").value,
-            kasa: card.querySelector(".kasaSecim .active")?.dataset.value || "",
-            kumas: card.querySelector(".kumasSecim .active")?.dataset.value || "",
-            blackout: card.querySelector(".blackoutSecim .active")?.dataset.value || "",
-            tul: card.querySelector(".tulSecim .active")?.dataset.value || "",
-            perde: card.querySelector(".perdeSecim .active")?.dataset.value || "",
+            kasa: getActiveValue(card.querySelector(".kasaSecim")),
+            kumas: getActiveValue(card.querySelector(".kumasSecim")),
+            blackout: getActiveValue(card.querySelector(".blackoutSecim")),
+            tul: getActiveValue(card.querySelector(".tulSecim")),
+            perde: getActiveValue(card.querySelector(".perdeSecim")),
             open: card.classList.contains("open")
         });
     }
@@ -1722,6 +1858,8 @@ function restoreSavedState(data){
     document.getElementById("phone").value = data.phone || "";
     document.getElementById("address").value = data.address || "";
 
+    applyGlobalColorData(data.globalColors);
+
     if(Array.isArray(data.cards)){
         data.cards.forEach(function(cardData, index){
             const card = document.getElementById("cam" + (index + 1));
@@ -1735,6 +1873,8 @@ function restoreSavedState(data){
     if(!hasOpenCard && currentCamCount > 0){
         openCam(1);
     }
+
+    applyColorModeUI();
 }
 
 function loadSavedState(){
@@ -1759,6 +1899,8 @@ function saveState(){
 
     const state = {
         camCount: currentCamCount,
+        colorMode: colorMode,
+        globalColors: collectGlobalColorData(),
         name: document.getElementById("name").value,
         phone: document.getElementById("phone").value,
         address: document.getElementById("address").value,
@@ -1787,6 +1929,13 @@ function resetOrderForm(){
     document.getElementById("address").value = "";
     document.getElementById("result").innerHTML = "";
 
+    document.querySelectorAll(".choice").forEach(function(choice){
+        choice.classList.remove("active");
+    });
+
+    colorMode = "same";
+    applyColorModeUI();
+
     rebuildOnlyOneCam();
 
     isRestoring = false;
@@ -1794,6 +1943,11 @@ function resetOrderForm(){
     localStorage.removeItem(ORDER_STORAGE_KEY);
 
     window.scrollTo({ top:0, behavior:"smooth" });
+}
+
+function getActiveValue(container){
+    if(!container) return "";
+    return container.querySelector(".active")?.dataset.value || "";
 }
 
 function setChoiceByValue(container, value){
@@ -1897,6 +2051,28 @@ function getUnitPrice(productKey, tip){
     return tip === "askili" ? Number(currentPrices.klasik_askili) : Number(currentPrices.klasik_vidali);
 }
 
+function getItemColors(card, productKey){
+    if(colorMode === "same"){
+        const global = collectGlobalColorData();
+
+        return {
+            kasa: global.kasa || NOT_SELECTED,
+            kumas: global.kumas || NOT_SELECTED,
+            blackout: global.blackout || NOT_SELECTED,
+            tul: global.tul || NOT_SELECTED,
+            perde: global.perde || NOT_SELECTED
+        };
+    }
+
+    return {
+        kasa: getActiveValue(card.querySelector(".kasaSecim")) || NOT_SELECTED,
+        kumas: getActiveValue(card.querySelector(".kumasSecim")) || NOT_SELECTED,
+        blackout: getActiveValue(card.querySelector(".blackoutSecim")) || NOT_SELECTED,
+        tul: getActiveValue(card.querySelector(".tulSecim")) || NOT_SELECTED,
+        perde: getActiveValue(card.querySelector(".perdeSecim")) || NOT_SELECTED
+    };
+}
+
 function escapeHTML(value){
     return String(value)
         .replaceAll("&", "&amp;")
@@ -1945,12 +2121,7 @@ function calculateAll(){
             tip = "vidali";
         }
 
-        const kasa = card.querySelector(".kasaSecim .active")?.dataset.value || NOT_SELECTED;
-
-        const kumas = card.querySelector(".kumasSecim .active")?.dataset.value || NOT_SELECTED;
-        const blackout = card.querySelector(".blackoutSecim .active")?.dataset.value || NOT_SELECTED;
-        const tul = card.querySelector(".tulSecim .active")?.dataset.value || NOT_SELECTED;
-        const perde = card.querySelector(".perdeSecim .active")?.dataset.value || NOT_SELECTED;
+        const colors = getItemColors(card, productKey);
 
         let cardHasError = false;
 
@@ -2025,11 +2196,11 @@ function calculateAll(){
             adet,
             acilir,
             tipText:getTipText(tip),
-            kasa,
-            kumas,
-            blackout,
-            tul,
-            perde,
+            kasa: colors.kasa,
+            kumas: colors.kumas,
+            blackout: colors.blackout,
+            tul: colors.tul,
+            perde: colors.perde,
             dimension: formatNumber(en) + " × " + formatNumber(boy) + " cm",
             whatsappDimension: formatNumber(en) + "x" + formatNumber(boy) + " cm"
         });
