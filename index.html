@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Prestij Life</title>
 
-<link rel="icon" type="image/png" href="./favicon.png?v=100">
-<link rel="shortcut icon" type="image/png" href="./favicon.png?v=100">
-<link rel="apple-touch-icon" href="./favicon.png?v=100">
+<link rel="icon" type="image/png" href="./favicon.png?v=101">
+<link rel="shortcut icon" type="image/png" href="./favicon.png?v=101">
+<link rel="apple-touch-icon" href="./favicon.png?v=101">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1176,21 +1176,21 @@ body.same-product .product-and-color-area{
                     </div>
 
                     <div class="global-color-section global-color-blackout">
-                        <p class="section-title">Blackout Rengi</p>
-                        <div class="color-grid globalBlackoutSecim"></div>
+                        <p class="section-title">Blackout Kumaşı</p>
+                        <div class="fabric-grid globalBlackoutSecim"></div>
                     </div>
 
                     <div class="global-color-section global-color-ciftli">
-                        <p class="section-title">Çiftli Sistem Tül Rengi</p>
-                        <div class="color-grid globalTulSecim"></div>
+                        <p class="section-title">Çiftli Sistem Tül Kumaşı</p>
+                        <div class="fabric-grid globalTulSecim"></div>
 
-                        <p class="section-title">Çiftli Sistem Perde Rengi</p>
+                        <p class="section-title">Çiftli Sistem Perde Kumaşı</p>
                         <div class="fabric-grid globalPerdeSecim"></div>
                     </div>
 
                     <div class="global-color-section global-color-tul_perde">
-                        <p class="section-title">Tül Rengi</p>
-                        <div class="color-grid globalTulPerdeSecim"></div>
+                        <p class="section-title">Tül Perde Kumaşı</p>
+                        <div class="fabric-grid globalTulPerdeSecim"></div>
                     </div>
 
                     <p class="optional-note">
@@ -1201,7 +1201,7 @@ body.same-product .product-and-color-area{
         </div>
 
         <div class="catalog-actions">
-            <button type="button" class="btn-light" onclick="openImageModal('Kumaş Kataloğu','katalog.png')">
+            <button type="button" class="btn-light" onclick="openFabricCatalogMenu()">
                 Kumaş Kataloğunu Gör
             </button>
             <button type="button" class="btn-light" onclick="openImageModal('Kasa Renkleri','kasa.png')">
@@ -1229,7 +1229,6 @@ body.same-product .product-and-color-area{
     <div class="result" id="result"></div>
 
     <div class="social">
-
         <div class="social-item">
             <a href="https://wa.me/905053559532" target="_blank">
                 <img src="wplogo.png" alt="WhatsApp">
@@ -1255,7 +1254,6 @@ body.same-product .product-and-color-area{
             Daha fazla bilgi veya soru sormak için bizimle iletişime geçebilirsiniz.<br>
             <a class="call-link" href="tel:+905053559532">📞 +90 505 355 95 32</a>
         </div>
-
     </div>
 
     <div class="admin-entry">
@@ -1315,7 +1313,7 @@ const kasaRenkleri = [
     { name:"Gri", hex:"#9b9b9b" }
 ];
 
-const kumaslar = [
+const klasikKumaslar = [
     "Sude 001",
     "Sude 002",
     "Sude 003",
@@ -1330,15 +1328,17 @@ const kumaslar = [
     "Elmas 008"
 ];
 
-const blackoutRenkleri = [
-    { name:"Koyu Gri", hex:"#44464a" },
-    { name:"Açık Gri", hex:"#b7b8ba" }
+const lilyumKumaslar = [
+    "001 Lilyum",
+    "002 Lilyum",
+    "003 Lilyum",
+    "004 Lilyum"
 ];
 
-const tulRenkleri = [
-    { name:"Beyaz", hex:"#ffffff" },
-    { name:"Gri", hex:"#b6b6b6" },
-    { name:"Krem", hex:"#e3d6c0" }
+const beyzaKumaslar = [
+    "001 Beyza",
+    "002 Beyza",
+    "003 Beyza"
 ];
 
 let currentCamCount = 0;
@@ -1350,7 +1350,6 @@ let globalProductType = "";
 
 async function init(){
     initTheme();
-
     await loadCurrentPrices();
 
     fillGlobalProductChoices();
@@ -1520,18 +1519,14 @@ function initTheme(){
 
 function toggleTheme(){
     document.body.classList.toggle("dark");
-
     const theme = document.body.classList.contains("dark") ? "dark" : "light";
     localStorage.setItem("prestijLifeTheme", theme);
-
     updateThemeButton();
 }
 
 function updateThemeButton(){
     const button = document.getElementById("themeToggle");
-
     if(!button) return;
-
     button.textContent = document.body.classList.contains("dark") ? "☀️ Açık Mod" : "🌙 Koyu Mod";
 }
 
@@ -1585,11 +1580,11 @@ function setGlobalProductType(productKey){
 
 function fillGlobalColorChoices(){
     fillChoiceBox(document.querySelector(".globalKasaSecim"), kasaRenkleri, "color");
-    fillChoiceBox(document.querySelector(".globalKumasSecim"), kumaslar, "text");
-    fillChoiceBox(document.querySelector(".globalBlackoutSecim"), blackoutRenkleri, "color");
-    fillChoiceBox(document.querySelector(".globalTulSecim"), tulRenkleri, "color");
-    fillChoiceBox(document.querySelector(".globalPerdeSecim"), kumaslar, "text");
-    fillChoiceBox(document.querySelector(".globalTulPerdeSecim"), tulRenkleri, "color");
+    fillChoiceBox(document.querySelector(".globalKumasSecim"), klasikKumaslar, "text");
+    fillChoiceBox(document.querySelector(".globalBlackoutSecim"), lilyumKumaslar, "text");
+    fillChoiceBox(document.querySelector(".globalTulSecim"), beyzaKumaslar, "text");
+    fillChoiceBox(document.querySelector(".globalPerdeSecim"), klasikKumaslar, "text");
+    fillChoiceBox(document.querySelector(".globalTulPerdeSecim"), beyzaKumaslar, "text");
 }
 
 function handleCamCountChange(){
@@ -1715,21 +1710,21 @@ function createCamCard(index){
                     </div>
 
                     <div class="product-color-section color-blackout">
-                        <p class="section-title">Blackout Rengi</p>
-                        <div class="color-grid blackoutSecim"></div>
+                        <p class="section-title">Blackout Kumaşı</p>
+                        <div class="fabric-grid blackoutSecim"></div>
                     </div>
 
                     <div class="product-color-section color-ciftli">
-                        <p class="section-title">Tül Rengi</p>
-                        <div class="color-grid tulSecim"></div>
+                        <p class="section-title">Tül Kumaşı</p>
+                        <div class="fabric-grid tulSecim"></div>
 
-                        <p class="section-title">Perde Rengi</p>
+                        <p class="section-title">Perde Kumaşı</p>
                         <div class="fabric-grid perdeSecim"></div>
                     </div>
 
                     <div class="product-color-section color-tul_perde">
-                        <p class="section-title">Tül Rengi</p>
-                        <div class="color-grid tulPerdeSecim"></div>
+                        <p class="section-title">Tül Perde Kumaşı</p>
+                        <div class="fabric-grid tulPerdeSecim"></div>
                     </div>
 
                     <p class="optional-note">Renk seçimi zorunlu değildir. Sadece fiyat almak için boş bırakabilirsiniz.</p>
@@ -1744,11 +1739,11 @@ function createCamCard(index){
 
     fillProductChoices(card);
     fillChoiceBox(card.querySelector(".kasaSecim"), kasaRenkleri, "color");
-    fillChoiceBox(card.querySelector(".kumasSecim"), kumaslar, "text");
-    fillChoiceBox(card.querySelector(".blackoutSecim"), blackoutRenkleri, "color");
-    fillChoiceBox(card.querySelector(".tulSecim"), tulRenkleri, "color");
-    fillChoiceBox(card.querySelector(".perdeSecim"), kumaslar, "text");
-    fillChoiceBox(card.querySelector(".tulPerdeSecim"), tulRenkleri, "color");
+    fillChoiceBox(card.querySelector(".kumasSecim"), klasikKumaslar, "text");
+    fillChoiceBox(card.querySelector(".blackoutSecim"), lilyumKumaslar, "text");
+    fillChoiceBox(card.querySelector(".tulSecim"), beyzaKumaslar, "text");
+    fillChoiceBox(card.querySelector(".perdeSecim"), klasikKumaslar, "text");
+    fillChoiceBox(card.querySelector(".tulPerdeSecim"), beyzaKumaslar, "text");
 
     setProductType(card, "klasik");
     updateTipOptions(card);
@@ -1850,7 +1845,6 @@ function updateTipOptions(card){
             <option value="askili">Askılı</option>
             <option value="vidali">Vidalı</option>
         `;
-
         tipSelect.value = currentTip === "vidali" ? "vidali" : "askili";
     }
 
@@ -1975,7 +1969,6 @@ function loadSavedState(){
 
 function queueSaveState(){
     if(isRestoring) return;
-
     clearTimeout(saveTimer);
     saveTimer = setTimeout(saveState, 150);
 }
@@ -2144,14 +2137,12 @@ function getItemProduct(card){
     if(selectionMode === "same"){
         return globalProductType || "klasik";
     }
-
     return card.dataset.product || "klasik";
 }
 
 function getItemColors(card, productKey){
     if(selectionMode === "same"){
         const global = collectGlobalData();
-
         return {
             kasa: global.kasa || NOT_SELECTED,
             kumas: global.kumas || NOT_SELECTED,
@@ -2274,13 +2265,10 @@ function calculateAll(){
         }
 
         const unitPrice = getUnitPrice(productKey, tip);
-
         const roundedEn = roundUp10(en);
         const roundedBoy = roundUp10(boy);
-
         const hamM2 = (roundedEn * roundedBoy) / 10000;
         const satisM2 = saleM2(hamM2);
-
         const tutar = satisM2 * unitPrice * adet;
 
         toplam += tutar;
@@ -2527,7 +2515,7 @@ function getColorRowsHTML(item){
     if(item.productKey === "blackout"){
         return `
             <div class="order-meta">
-                <span>Blackout Rengi</span>
+                <span>Blackout Kumaşı</span>
                 <strong>${escapeHTML(item.blackout)}</strong>
             </div>
         `;
@@ -2536,11 +2524,11 @@ function getColorRowsHTML(item){
     if(item.productKey === "ciftli"){
         return `
             <div class="order-meta">
-                <span>Tül Rengi</span>
+                <span>Tül Kumaşı</span>
                 <strong>${escapeHTML(item.tul)}</strong>
             </div>
             <div class="order-meta">
-                <span>Perde Rengi</span>
+                <span>Perde Kumaşı</span>
                 <strong>${escapeHTML(item.perde)}</strong>
             </div>
         `;
@@ -2549,7 +2537,7 @@ function getColorRowsHTML(item){
     if(item.productKey === "tul_perde"){
         return `
             <div class="order-meta">
-                <span>Tül Rengi</span>
+                <span>Tül Perde Kumaşı</span>
                 <strong>${escapeHTML(item.tul_perde)}</strong>
             </div>
         `;
@@ -2565,18 +2553,18 @@ function getColorRowsHTML(item){
 
 function getColorLinesText(item){
     if(item.productKey === "blackout"){
-        return ["Blackout Rengi: " + item.blackout];
+        return ["Blackout Kumaşı: " + item.blackout];
     }
 
     if(item.productKey === "ciftli"){
         return [
-            "Tül Rengi: " + item.tul,
-            "Perde Rengi: " + item.perde
+            "Tül Kumaşı: " + item.tul,
+            "Perde Kumaşı: " + item.perde
         ];
     }
 
     if(item.productKey === "tul_perde"){
-        return ["Tül Rengi: " + item.tul_perde];
+        return ["Tül Perde Kumaşı: " + item.tul_perde];
     }
 
     return ["Kumaş: " + item.kumas];
@@ -2650,6 +2638,34 @@ function openMeasureMenu(){
         <button type="button" class="measure-option-btn" onclick="openImageModal('Pimapen / PVC Ölçüsü Nasıl Alınır?','pvc.png')">
             <span class="measure-option-title">Pimapen / PVC</span>
             <span class="measure-option-small">Pimapen ölçü görselini aç</span>
+        </button>
+    `;
+
+    document.getElementById("imageModal").classList.add("show");
+}
+
+function openFabricCatalogMenu(){
+    document.getElementById("modalTitle").textContent = "Kumaş Kataloğu";
+    document.getElementById("modalImage").src = "";
+    document.getElementById("modalImage").alt = "";
+    document.getElementById("modalImageWrap").style.display = "none";
+
+    const options = document.getElementById("modalOptions");
+    options.classList.add("show");
+    options.innerHTML = `
+        <button type="button" class="measure-option-btn" onclick="openImageModal('Klasik Seri Kumaş Kataloğu','katalog.png')">
+            <span class="measure-option-title">Klasik Seri</span>
+            <span class="measure-option-small">Sude ve Elmas katalog görselini aç</span>
+        </button>
+
+        <button type="button" class="measure-option-btn" onclick="openImageModal('Blackout Karartmalı Kumaş Kataloğu','lilyum.png')">
+            <span class="measure-option-title">Blackout Karartmalı</span>
+            <span class="measure-option-small">Lilyum katalog görselini aç</span>
+        </button>
+
+        <button type="button" class="measure-option-btn" onclick="openImageModal('Tül Perde Kumaş Kataloğu','tul.png')">
+            <span class="measure-option-title">Tül Perde</span>
+            <span class="measure-option-small">Beyza katalog görselini aç</span>
         </button>
     `;
 
