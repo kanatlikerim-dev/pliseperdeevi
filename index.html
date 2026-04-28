@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Prestij Life</title>
 
-<link rel="icon" type="image/png" href="./favicon.png?v=101">
-<link rel="shortcut icon" type="image/png" href="./favicon.png?v=101">
-<link rel="apple-touch-icon" href="./favicon.png?v=101">
+<link rel="icon" type="image/png" href="./favicon.png?v=102">
+<link rel="shortcut icon" type="image/png" href="./favicon.png?v=102">
+<link rel="apple-touch-icon" href="./favicon.png?v=102">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -2390,8 +2390,12 @@ function calculateAll(){
         `;
     }
 
+    const sharedProductColorHTML = selectionMode === "same" && items.length > 0
+        ? getSharedProductColorHTML(items[0])
+        : "";
+
     const detailsHTML = items.map(function(item){
-        const colorRows = getColorRowsHTML(item);
+        const colorRows = selectionMode === "same" ? "" : getColorRowsHTML(item);
 
         return `
             <div class="order-item">
@@ -2408,12 +2412,13 @@ function calculateAll(){
                     <strong>${escapeHTML(item.tipText)}</strong>
                 </div>
 
-                <div class="order-meta">
-                    <span>Kasa</span>
-                    <strong>${escapeHTML(item.kasa)}</strong>
-                </div>
-
-                ${colorRows}
+                ${selectionMode === "individual" ? `
+                    <div class="order-meta">
+                        <span>Kasa</span>
+                        <strong>${escapeHTML(item.kasa)}</strong>
+                    </div>
+                    ${colorRows}
+                ` : ""}
 
                 <div class="order-meta">
                     <span>Açılır</span>
@@ -2423,18 +2428,30 @@ function calculateAll(){
         `;
     }).join("");
 
-    const whatsappDetails = items.map(function(item){
-        const colorLines = getColorLinesText(item);
+    let sharedWhatsappColorText = "";
 
-        return [
+    if(selectionMode === "same" && items.length > 0){
+        sharedWhatsappColorText = getSharedProductColorText(items[0]) + "\n\n";
+    }
+
+    const whatsappDetails = sharedWhatsappColorText + items.map(function(item){
+        const colorLines = selectionMode === "same" ? [] : getColorLinesText(item);
+
+        const lines = [
             "Cam " + item.camNo,
             item.whatsappDimension,
             item.adet + " adet " + item.productLabel,
-            "Sistem: " + item.tipText,
-            "Kasa: " + item.kasa,
-            ...colorLines,
-            "Açılır: " + item.acilir + " adet"
-        ].join("\n");
+            "Sistem: " + item.tipText
+        ];
+
+        if(selectionMode === "individual"){
+            lines.push("Kasa: " + item.kasa);
+            lines.push(...colorLines);
+        }
+
+        lines.push("Açılır: " + item.acilir + " adet");
+
+        return lines.join("\n");
     }).join("\n\n");
 
     lastOrderText = [
@@ -2470,6 +2487,8 @@ function calculateAll(){
                 ${tel ? escapeHTML(tel) + "<br>" : ""}
                 ${adr ? escapeHTML(adr).replaceAll("\n","<br>") : "Adres belirtilmedi"}
             </div>
+
+            ${sharedProductColorHTML}
 
             <div class="summary-section-title">Ürün Detayları</div>
 
@@ -2509,6 +2528,87 @@ function calculateAll(){
     document.getElementById("result").scrollIntoView({ behavior:"smooth", block:"start" });
 
     saveState();
+}
+
+function getSharedProductColorHTML(item){
+    if(!item) return "";
+
+    let colorRows = "";
+
+    if(item.productKey === "blackout"){
+        colorRows = `
+            <div class="order-meta">
+                <span>Blackout Kumaşı</span>
+                <strong>${escapeHTML(item.blackout)}</strong>
+            </div>
+        `;
+    }else if(item.productKey === "ciftli"){
+        colorRows = `
+            <div class="order-meta">
+                <span>Tül Kumaşı</span>
+                <strong>${escapeHTML(item.tul)}</strong>
+            </div>
+            <div class="order-meta">
+                <span>Perde Kumaşı</span>
+                <strong>${escapeHTML(item.perde)}</strong>
+            </div>
+        `;
+    }else if(item.productKey === "tul_perde"){
+        colorRows = `
+            <div class="order-meta">
+                <span>Tül Perde Kumaşı</span>
+                <strong>${escapeHTML(item.tul_perde)}</strong>
+            </div>
+        `;
+    }else{
+        colorRows = `
+            <div class="order-meta">
+                <span>Kumaş</span>
+                <strong>${escapeHTML(item.kumas)}</strong>
+            </div>
+        `;
+    }
+
+    return `
+        <div class="summary-section-title">Ortak Ürün ve Renk Bilgisi</div>
+
+        <div class="order-item">
+            <div class="order-meta" style="border-top:0;">
+                <span>Ürün</span>
+                <strong>${escapeHTML(item.productLabel)}</strong>
+            </div>
+
+            <div class="order-meta">
+                <span>Kasa</span>
+                <strong>${escapeHTML(item.kasa)}</strong>
+            </div>
+
+            ${colorRows}
+        </div>
+    `;
+}
+
+function getSharedProductColorText(item){
+    if(!item) return "";
+
+    const lines = [
+        "Ortak Ürün ve Renk Bilgisi",
+        "Ürün: " + item.productLabel,
+        "Kasa: " + item.kasa
+    ];
+
+    if(item.productKey === "blackout"){
+        lines.push("Blackout Kumaşı: " + item.blackout);
+    }else if(item.productKey === "ciftli"){
+        lines.push("Tül Kumaşı: " + item.tul);
+        lines.push("Perde Kumaşı: " + item.perde);
+    }else if(item.productKey === "tul_perde"){
+        lines.push("Tül Perde Kumaşı: " + item.tul_perde);
+    }else{
+        lines.push("Kumaş: " + item.kumas);
+    }
+
+    return lines.join("\n");
 }
 
 function getColorRowsHTML(item){
