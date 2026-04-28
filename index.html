@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Prestij Life</title>
 
-<link rel="icon" type="image/png" href="./favicon.png?v=12">
-<link rel="shortcut icon" type="image/png" href="./favicon.png?v=12">
-<link rel="apple-touch-icon" href="./favicon.png?v=12">
+<link rel="icon" type="image/png" href="./favicon.png?v=13">
+<link rel="shortcut icon" type="image/png" href="./favicon.png?v=13">
+<link rel="apple-touch-icon" href="./favicon.png?v=13">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -808,6 +808,28 @@ body.dark .btn-reset{
     text-decoration:underline;
 }
 
+.admin-entry{
+    margin-top:18px;
+    text-align:center;
+}
+
+.admin-link{
+    display:inline-block;
+    font-size:11px;
+    color:var(--muted);
+    text-decoration:none;
+    opacity:0.55;
+    padding:6px 10px;
+    border-radius:999px;
+    transition:0.2s ease;
+}
+
+.admin-link:hover{
+    opacity:1;
+    color:var(--accent);
+    background:var(--accent-soft);
+}
+
 .modal{
     display:none;
     position:fixed;
@@ -1073,6 +1095,10 @@ body.dark .btn-reset{
 
     </div>
 
+    <div class="admin-entry">
+        <a href="./admin.html" class="admin-link">Admin Paneli Girişi</a>
+    </div>
+
 </main>
 
 <div class="modal" id="imageModal" onclick="modalOutsideClose(event)">
@@ -1104,17 +1130,17 @@ const productTypes = [
     {
         key:"klasik",
         label:"Klasik Seri Plise",
-        desc:"Klasik Askılı 450 TL /m² · Klasik Vidalı 400 TL /m²"
+        desc:"Askılı 450 TL / m² · Vidalı 400 TL / m²"
     },
     {
         key:"blackout",
         label:"Blackout Karartmalı",
-        desc:"Karartma etkili özel seri. 1250 TL /m²."
+        desc:"1250 TL / m²"
     },
     {
         key:"ciftli",
         label:"Çiftli Sistem",
-        desc:"Tül ve perde birlikte. 1000 TL /m²."
+        desc:"1000 TL / m²"
     }
 ];
 
@@ -1630,13 +1656,6 @@ function resetOrderForm(){
     window.scrollTo({ top:0, behavior:"smooth" });
 }
 
-function clearChoices(container){
-    if(!container) return;
-    container.querySelectorAll(".choice").forEach(function(choice){
-        choice.classList.remove("active");
-    });
-}
-
 function setChoiceByValue(container, value){
     if(!container || !value) return;
 
@@ -1851,7 +1870,7 @@ function calculateAll(){
         toplam += tutar;
         toplamAdet += adet;
 
-        const item = {
+        items.push({
             camNo,
             productKey,
             productLabel,
@@ -1867,9 +1886,7 @@ function calculateAll(){
             perde,
             dimension: formatNumber(en) + " × " + formatNumber(boy) + " cm",
             whatsappDimension: formatNumber(en) + "x" + formatNumber(boy) + " cm"
-        };
-
-        items.push(item);
+        });
     });
 
     const ad = document.getElementById("name").value.trim();
