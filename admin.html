@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Prestij Life Admin Paneli</title>
 
-<link rel="icon" type="image/png" href="./favicon.png?v=31">
-<link rel="shortcut icon" type="image/png" href="./favicon.png?v=31">
-<link rel="apple-touch-icon" href="./favicon.png?v=31">
+<link rel="icon" type="image/png" href="./favicon.png?v=40">
+<link rel="shortcut icon" type="image/png" href="./favicon.png?v=40">
+<link rel="apple-touch-icon" href="./favicon.png?v=40">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -30,6 +30,8 @@
     --danger-bg:#fff0f0;
     --success:#176b3a;
     --success-bg:#ecfff3;
+    --warning:#7a5318;
+    --warning-bg:#fff8e8;
     --shadow:0 18px 55px rgba(45,35,25,0.10);
 }
 
@@ -49,6 +51,8 @@ body.dark{
     --danger-bg:#321d1d;
     --success:#94e4ae;
     --success-bg:#17331f;
+    --warning:#f0d6a8;
+    --warning-bg:#2b2618;
     --shadow:0 18px 55px rgba(0,0,0,0.38);
 }
 
@@ -189,6 +193,11 @@ button{
     font-family:"Inter", Arial, sans-serif;
 }
 
+button:disabled{
+    opacity:0.65;
+    cursor:not-allowed;
+}
+
 .btn-main{
     margin-top:12px;
     background:linear-gradient(135deg, #221d18, var(--accent-dark));
@@ -201,7 +210,7 @@ body.dark .btn-main{
     background:linear-gradient(135deg, var(--accent), var(--accent-dark));
 }
 
-.btn-main:hover{
+.btn-main:hover:not(:disabled){
     transform:translateY(-2px);
 }
 
@@ -211,7 +220,7 @@ body.dark .btn-main{
     border:1px solid var(--input-border);
 }
 
-.btn-light:hover{
+.btn-light:hover:not(:disabled){
     background:var(--accent-soft);
     border-color:var(--accent);
 }
@@ -236,6 +245,12 @@ body.dark .btn-main{
     background:var(--success-bg);
     color:var(--success);
     border:1px solid rgba(23,107,58,0.25);
+}
+
+.message.warning{
+    background:var(--warning-bg);
+    color:var(--warning);
+    border:1px solid rgba(122,83,24,0.25);
 }
 
 .admin-header{
@@ -362,11 +377,42 @@ body.dark .btn-main{
     margin-bottom:14px;
 }
 
+.price-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+    gap:12px;
+}
+
 .small-note{
     color:var(--muted);
     font-size:12.5px;
     line-height:1.5;
     margin-top:10px;
+}
+
+.api-status{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    font-size:13px;
+    font-weight:800;
+    color:var(--muted);
+    margin-bottom:10px;
+}
+
+.status-dot{
+    width:9px;
+    height:9px;
+    border-radius:50%;
+    background:#c5b8a6;
+}
+
+.status-dot.ok{
+    background:#26a65b;
+}
+
+.status-dot.fail{
+    background:#d9534f;
 }
 
 @media(max-width:600px){
@@ -450,7 +496,7 @@ body.dark .btn-main{
 
             <div class="module-card" onclick="openSection('ayarlar', this)">
                 <strong>Ayarlar</strong>
-                <p>Şifre değiştirme, görünüm ve ileride fiyat/ürün ayarları için kullanılacak alan.</p>
+                <p>Şifre, görünüm ve güncel fiyat ayarları.</p>
             </div>
         </div>
 
@@ -482,10 +528,62 @@ body.dark .btn-main{
         <div class="panel-section" id="section-ayarlar">
             <h2>Ayarlar</h2>
             <p class="subtitle">
-                Yönetici paneli şifresini ve görünüm ayarlarını buradan değiştirebilirsiniz.
+                Yönetici paneli şifresini, görünüm ayarlarını ve müşteriye yansıyan güncel fiyatları buradan değiştirebilirsiniz.
             </p>
 
             <div class="settings-grid">
+
+                <div class="settings-card">
+                    <h3>Güncel Fiyatlar</h3>
+                    <p>
+                        Buradan kaydedilen fiyatlar Google Sheets’e yazılır. Müşteri sitesi güncel fiyatları buradan okuyacaktır.
+                    </p>
+
+                    <div class="api-status">
+                        <span class="status-dot" id="priceStatusDot"></span>
+                        <span id="priceStatusText">Fiyatlar bekleniyor...</span>
+                    </div>
+
+                    <div class="price-grid">
+                        <label class="field">
+                            <span>Klasik Seri Askılı m²</span>
+                            <input type="number" id="priceKlasikAskili" min="0" step="1" placeholder="450">
+                        </label>
+
+                        <label class="field">
+                            <span>Klasik Seri Vidalı m²</span>
+                            <input type="number" id="priceKlasikVidali" min="0" step="1" placeholder="400">
+                        </label>
+
+                        <label class="field">
+                            <span>Blackout Karartmalı m²</span>
+                            <input type="number" id="priceBlackout" min="0" step="1" placeholder="1250">
+                        </label>
+
+                        <label class="field">
+                            <span>Çiftli Sistem m²</span>
+                            <input type="number" id="priceCiftli" min="0" step="1" placeholder="1000">
+                        </label>
+
+                        <label class="field">
+                            <span>Kargo</span>
+                            <input type="number" id="priceKargo" min="0" step="1" placeholder="300">
+                        </label>
+                    </div>
+
+                    <div class="actions">
+                        <button class="btn-main" id="savePricesBtn" onclick="savePrices()">Fiyatları Kaydet</button>
+                        <button class="btn-light" onclick="loadPrices()">Fiyatları Yenile</button>
+                    </div>
+
+                    <div class="message error" id="priceError"></div>
+                    <div class="message success" id="priceSuccess"></div>
+                    <div class="message warning" id="priceWarning"></div>
+
+                    <div class="small-note">
+                        Fiyatlara sadece sayı yazın. Örneğin 450 TL yerine 450 yazın.
+                    </div>
+                </div>
 
                 <div class="settings-card">
                     <h3>Şifre Değiştir</h3>
@@ -530,7 +628,7 @@ body.dark .btn-main{
                 <div class="settings-card">
                     <h3>Gelecek Ayarlar</h3>
                     <p>
-                        İleride ürün fiyatları, ürün çeşitleri, katalog görselleri ve imalat formülü gibi ayarlar bu bölümden yönetilebilir hale getirilecek.
+                        İleride ürün çeşitleri, katalog görselleri ve imalat formülü gibi ayarlar bu bölümden yönetilebilir hale getirilecek.
                     </p>
 
                     <div class="placeholder">
@@ -549,6 +647,17 @@ const DEFAULT_ADMIN_PASSWORD = "1234";
 const ADMIN_PASSWORD_KEY = "prestijLifeAdminPassword";
 const ADMIN_SESSION_KEY = "prestijLifeAdminSession";
 const ADMIN_THEME_KEY = "prestijLifeAdminTheme";
+
+const PRICE_API_URL = "https://script.google.com/macros/s/AKfycbxGiKBYi41mWHZMMqBTR65jAnZNM3qxTS2gfSOtFqov3GzUwCmizk4QrUezpWhFu5UE/exec";
+const ADMIN_API_KEY = "prestijlife2026";
+
+const DEFAULT_PRICES = {
+    klasik_askili: 450,
+    klasik_vidali: 400,
+    blackout: 1250,
+    ciftli: 1000,
+    kargo: 300
+};
 
 function initAdmin(){
     initTheme();
@@ -591,6 +700,7 @@ function logout(){
 function showAdminPanel(){
     document.getElementById("loginScreen").style.display = "none";
     document.getElementById("adminPanel").style.display = "block";
+    loadPrices();
 }
 
 function openSection(sectionName, cardEl){
@@ -605,6 +715,159 @@ function openSection(sectionName, cardEl){
     });
 
     document.getElementById("section-" + sectionName).classList.add("active");
+
+    if(sectionName === "ayarlar"){
+        loadPrices();
+    }
+}
+
+async function loadPrices(){
+    hidePriceMessages();
+    setPriceStatus("loading", "Fiyatlar yükleniyor...");
+
+    try{
+        const response = await fetch(PRICE_API_URL + "?t=" + Date.now(), {
+            method:"GET",
+            cache:"no-store"
+        });
+
+        const data = await response.json();
+
+        if(!data.success){
+            throw new Error(data.message || "Fiyatlar alınamadı.");
+        }
+
+        const prices = Object.assign({}, DEFAULT_PRICES, data.prices || {});
+        fillPriceInputs(prices);
+
+        setPriceStatus("ok", "Fiyatlar Google Sheets’ten yüklendi.");
+    }catch(error){
+        fillPriceInputs(DEFAULT_PRICES);
+        setPriceStatus("fail", "Fiyatlar yüklenemedi.");
+        showPriceWarning("Google Sheets bağlantısı kurulamadı. Varsayılan fiyatlar gösteriliyor. Hata: " + error.message);
+    }
+}
+
+function fillPriceInputs(prices){
+    document.getElementById("priceKlasikAskili").value = Number(prices.klasik_askili || DEFAULT_PRICES.klasik_askili);
+    document.getElementById("priceKlasikVidali").value = Number(prices.klasik_vidali || DEFAULT_PRICES.klasik_vidali);
+    document.getElementById("priceBlackout").value = Number(prices.blackout || DEFAULT_PRICES.blackout);
+    document.getElementById("priceCiftli").value = Number(prices.ciftli || DEFAULT_PRICES.ciftli);
+    document.getElementById("priceKargo").value = Number(prices.kargo || DEFAULT_PRICES.kargo);
+}
+
+function getPriceInputs(){
+    return {
+        klasik_askili: parsePriceValue("priceKlasikAskili", "Klasik Seri Askılı m²"),
+        klasik_vidali: parsePriceValue("priceKlasikVidali", "Klasik Seri Vidalı m²"),
+        blackout: parsePriceValue("priceBlackout", "Blackout Karartmalı m²"),
+        ciftli: parsePriceValue("priceCiftli", "Çiftli Sistem m²"),
+        kargo: parsePriceValue("priceKargo", "Kargo")
+    };
+}
+
+function parsePriceValue(id, label){
+    const value = Number(document.getElementById(id).value);
+
+    if(isNaN(value) || value < 0){
+        throw new Error(label + " geçerli bir sayı olmalıdır.");
+    }
+
+    return value;
+}
+
+async function savePrices(){
+    hidePriceMessages();
+
+    let prices;
+
+    try{
+        prices = getPriceInputs();
+    }catch(error){
+        showPriceError(error.message);
+        return;
+    }
+
+    const button = document.getElementById("savePricesBtn");
+    button.disabled = true;
+    button.textContent = "Kaydediliyor...";
+    setPriceStatus("loading", "Fiyatlar kaydediliyor...");
+
+    try{
+        const response = await fetch(PRICE_API_URL, {
+            method:"POST",
+            headers:{
+                "Content-Type":"text/plain;charset=utf-8"
+            },
+            body: JSON.stringify({
+                apiKey: ADMIN_API_KEY,
+                prices: prices
+            })
+        });
+
+        const data = await response.json();
+
+        if(!data.success){
+            throw new Error(data.message || "Fiyatlar kaydedilemedi.");
+        }
+
+        const savedPrices = Object.assign({}, DEFAULT_PRICES, data.prices || prices);
+        fillPriceInputs(savedPrices);
+
+        showPriceSuccess("Fiyatlar başarıyla kaydedildi. Müşteri sitesi artık güncel fiyatları kullanacak.");
+        setPriceStatus("ok", "Fiyatlar güncel.");
+    }catch(error){
+        showPriceError("Fiyatlar kaydedilemedi. Hata: " + error.message);
+        setPriceStatus("fail", "Kaydetme başarısız.");
+    }finally{
+        button.disabled = false;
+        button.textContent = "Fiyatları Kaydet";
+    }
+}
+
+function setPriceStatus(type, message){
+    const dot = document.getElementById("priceStatusDot");
+    const text = document.getElementById("priceStatusText");
+
+    dot.classList.remove("ok", "fail");
+
+    if(type === "ok"){
+        dot.classList.add("ok");
+    }
+
+    if(type === "fail"){
+        dot.classList.add("fail");
+    }
+
+    text.textContent = message;
+}
+
+function hidePriceMessages(){
+    ["priceError", "priceSuccess", "priceWarning"].forEach(function(id){
+        const el = document.getElementById(id);
+        if(el){
+            el.style.display = "none";
+            el.textContent = "";
+        }
+    });
+}
+
+function showPriceError(message){
+    const el = document.getElementById("priceError");
+    el.textContent = message;
+    el.style.display = "block";
+}
+
+function showPriceSuccess(message){
+    const el = document.getElementById("priceSuccess");
+    el.textContent = message;
+    el.style.display = "block";
+}
+
+function showPriceWarning(message){
+    const el = document.getElementById("priceWarning");
+    el.textContent = message;
+    el.style.display = "block";
 }
 
 function changePassword(){
