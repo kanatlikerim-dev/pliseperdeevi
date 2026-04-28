@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Prestij Life</title>
 
-<link rel="icon" type="image/png" href="./favicon.png?v=70">
-<link rel="shortcut icon" type="image/png" href="./favicon.png?v=70">
-<link rel="apple-touch-icon" href="./favicon.png?v=70">
+<link rel="icon" type="image/png" href="./favicon.png?v=80">
+<link rel="shortcut icon" type="image/png" href="./favicon.png?v=80">
+<link rel="apple-touch-icon" href="./favicon.png?v=80">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -377,7 +377,7 @@ body.dark .btn-reset{
     margin-top:16px;
 }
 
-.color-mode-box{
+.selection-box{
     margin-top:16px;
     background:var(--card-bg);
     border:1px solid var(--border);
@@ -385,18 +385,18 @@ body.dark .btn-reset{
     padding:14px;
 }
 
-.color-mode-title{
+.selection-title{
     font-weight:900;
     margin-bottom:10px;
 }
 
-.color-mode-grid{
+.selection-grid{
     display:grid;
     grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
     gap:10px;
 }
 
-.color-mode-option{
+.selection-option{
     border:1px solid var(--input-border);
     border-radius:16px;
     background:var(--panel-bg);
@@ -407,17 +407,17 @@ body.dark .btn-reset{
     align-items:flex-start;
 }
 
-.color-mode-option input{
+.selection-option input{
     width:auto;
     margin-top:3px;
 }
 
-.color-mode-option strong{
+.selection-option strong{
     display:block;
     font-size:14px;
 }
 
-.color-mode-option small{
+.selection-option small{
     display:block;
     color:var(--muted);
     font-size:12.5px;
@@ -425,7 +425,7 @@ body.dark .btn-reset{
     margin-top:3px;
 }
 
-.global-colors{
+.global-selection{
     display:none;
     margin-top:16px;
     background:var(--panel-bg);
@@ -434,7 +434,7 @@ body.dark .btn-reset{
     padding:16px;
 }
 
-.global-colors.show{
+.global-selection.show{
     display:block;
 }
 
@@ -591,11 +591,15 @@ body.dark .btn-reset{
     display:none;
 }
 
-.per-card-colors{
+.global-color-section{
+    display:none;
+}
+
+.product-and-color-area{
     display:block;
 }
 
-body.same-colors .per-card-colors{
+body.same-product .product-and-color-area{
     display:none;
 }
 
@@ -1137,46 +1141,57 @@ body.same-colors .per-card-colors{
             Kaç farklı cam ölçüsü girecekseniz buradan seçiniz. Sistem seçtiğiniz sayı kadar cam alanını otomatik açar.
         </p>
 
-        <div class="color-mode-box">
-            <div class="color-mode-title">Renk Seçim Şekli</div>
+        <div class="selection-box">
+            <div class="selection-title">Ürün ve Renk Seçim Şekli</div>
 
-            <div class="color-mode-grid">
-                <label class="color-mode-option">
-                    <input type="radio" name="colorMode" value="same" checked onchange="setColorMode('same')">
+            <div class="selection-grid">
+                <label class="selection-option">
+                    <input type="radio" name="selectionMode" value="same" checked onchange="setSelectionMode('same')">
                     <span>
-                        <strong>Tüm camlarda aynı renkleri kullan</strong>
-                        <small>Kasa ve ürün renklerini tek sefer seçersiniz.</small>
+                        <strong>Tüm camlarda aynı ürün ve renkleri kullan</strong>
+                        <small>Ürün tipi, kasa ve renkleri tek sefer seçilir.</small>
                     </span>
                 </label>
 
-                <label class="color-mode-option">
-                    <input type="radio" name="colorMode" value="individual" onchange="setColorMode('individual')">
+                <label class="selection-option">
+                    <input type="radio" name="selectionMode" value="individual" onchange="setSelectionMode('individual')">
                     <span>
-                        <strong>Camlara göre farklı renk seç</strong>
-                        <small>Her cam için ayrı kasa ve renk seçimi yapılır.</small>
+                        <strong>Camlara göre farklı ürün veya renk seç</strong>
+                        <small>Her cam için ayrı ürün tipi ve renk seçimi yapılır.</small>
                     </span>
                 </label>
             </div>
 
-            <div class="global-colors show" id="globalColors">
-                <p class="section-title">Genel Kasa Rengi</p>
-                <div class="color-grid globalKasaSecim"></div>
+            <div class="global-selection show" id="globalSelection">
+                <p class="section-title">Genel Ürün Tipi</p>
+                <div class="product-grid globalProductSecim"></div>
 
-                <p class="section-title">Klasik Seri Kumaşı</p>
-                <div class="fabric-grid globalKumasSecim"></div>
+                <div id="globalColorArea" style="display:none;">
+                    <p class="section-title">Genel Kasa Rengi</p>
+                    <div class="color-grid globalKasaSecim"></div>
 
-                <p class="section-title">Blackout Rengi</p>
-                <div class="color-grid globalBlackoutSecim"></div>
+                    <div class="global-color-section global-color-klasik">
+                        <p class="section-title">Klasik Seri Kumaşı</p>
+                        <div class="fabric-grid globalKumasSecim"></div>
+                    </div>
 
-                <p class="section-title">Çiftli Sistem Tül Rengi</p>
-                <div class="color-grid globalTulSecim"></div>
+                    <div class="global-color-section global-color-blackout">
+                        <p class="section-title">Blackout Rengi</p>
+                        <div class="color-grid globalBlackoutSecim"></div>
+                    </div>
 
-                <p class="section-title">Çiftli Sistem Perde Rengi</p>
-                <div class="fabric-grid globalPerdeSecim"></div>
+                    <div class="global-color-section global-color-ciftli">
+                        <p class="section-title">Çiftli Sistem Tül Rengi</p>
+                        <div class="color-grid globalTulSecim"></div>
 
-                <p class="optional-note">
-                    Her ürün tipi sadece kendi ilgili rengini kullanır. Örneğin Blackout seçilen camda sadece Blackout rengi dikkate alınır.
-                </p>
+                        <p class="section-title">Çiftli Sistem Perde Rengi</p>
+                        <div class="fabric-grid globalPerdeSecim"></div>
+                    </div>
+
+                    <p class="optional-note">
+                        Renk seçimi zorunlu değildir. Sadece fiyat almak için boş bırakabilirsiniz.
+                    </p>
+                </div>
             </div>
         </div>
 
@@ -1275,7 +1290,7 @@ let priceLoadedFromApi = false;
 let priceLoadFailed = false;
 
 const MAX_CAM = 50;
-const ORDER_STORAGE_KEY = "prestijLifeOrderData_v3";
+const ORDER_STORAGE_KEY = "prestijLifeOrderData_v4";
 const NOT_SELECTED = "Belirtilmedi";
 
 const productTypes = [
@@ -1323,13 +1338,15 @@ let currentCamCount = 0;
 let isRestoring = false;
 let saveTimer = null;
 let lastOrderText = "";
-let colorMode = "same";
+let selectionMode = "same";
+let globalProductType = "";
 
 async function init(){
     initTheme();
 
     await loadCurrentPrices();
 
+    fillGlobalProductChoices();
     fillGlobalColorChoices();
 
     const camSelect = document.getElementById("camCount");
@@ -1349,11 +1366,10 @@ async function init(){
 
     isRestoring = true;
 
-    if(savedData && savedData.colorMode){
-        colorMode = savedData.colorMode === "individual" ? "individual" : "same";
+    if(savedData){
+        selectionMode = savedData.selectionMode === "individual" ? "individual" : "same";
+        globalProductType = savedData.globalProductType || "";
     }
-
-    applyColorModeUI();
 
     camSelect.value = String(savedCamCount);
     camSelect.addEventListener("change", handleCamCountChange);
@@ -1363,6 +1379,14 @@ async function init(){
     if(savedData){
         restoreSavedState(savedData);
     }
+
+    if(!globalProductType){
+        setGlobalProductType("klasik");
+    }else{
+        setGlobalProductType(globalProductType);
+    }
+
+    applySelectionModeUI();
 
     isRestoring = false;
 
@@ -1461,16 +1485,14 @@ function updateProductDescriptions(){
 }
 
 function refreshProductChoiceTexts(){
-    document.querySelectorAll(".cam-card").forEach(function(card){
-        card.querySelectorAll(".product-choice").forEach(function(btn){
-            const product = productTypes.find(function(item){
-                return item.key === btn.dataset.value;
-            });
-
-            if(product){
-                btn.innerHTML = `<strong>${product.label}</strong><small>${product.desc}</small>`;
-            }
+    document.querySelectorAll(".product-choice").forEach(function(btn){
+        const product = productTypes.find(function(item){
+            return item.key === btn.dataset.value;
         });
+
+        if(product){
+            btn.innerHTML = `<strong>${product.label}</strong><small>${product.desc}</small>`;
+        }
     });
 }
 
@@ -1501,19 +1523,51 @@ function updateThemeButton(){
     button.textContent = document.body.classList.contains("dark") ? "☀️ Açık Mod" : "🌙 Koyu Mod";
 }
 
-function setColorMode(mode){
-    colorMode = mode === "individual" ? "individual" : "same";
-    applyColorModeUI();
+function setSelectionMode(mode){
+    selectionMode = mode === "individual" ? "individual" : "same";
+    applySelectionModeUI();
     queueSaveState();
 }
 
-function applyColorModeUI(){
-    document.querySelectorAll('input[name="colorMode"]').forEach(function(input){
-        input.checked = input.value === colorMode;
+function applySelectionModeUI(){
+    document.querySelectorAll('input[name="selectionMode"]').forEach(function(input){
+        input.checked = input.value === selectionMode;
     });
 
-    document.getElementById("globalColors").classList.toggle("show", colorMode === "same");
-    document.body.classList.toggle("same-colors", colorMode === "same");
+    document.getElementById("globalSelection").classList.toggle("show", selectionMode === "same");
+    document.body.classList.toggle("same-product", selectionMode === "same");
+}
+
+function fillGlobalProductChoices(){
+    const box = document.querySelector(".globalProductSecim");
+    box.innerHTML = "";
+
+    productTypes.forEach(function(product){
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "product-choice";
+        btn.dataset.value = product.key;
+        btn.innerHTML = `<strong>${product.label}</strong><small>${product.desc}</small>`;
+        btn.onclick = function(){
+            setGlobalProductType(product.key);
+            queueSaveState();
+        };
+        box.appendChild(btn);
+    });
+}
+
+function setGlobalProductType(productKey){
+    globalProductType = productKey || "klasik";
+
+    document.querySelectorAll(".globalProductSecim .product-choice").forEach(function(btn){
+        btn.classList.toggle("active", btn.dataset.value === globalProductType);
+    });
+
+    document.getElementById("globalColorArea").style.display = "block";
+
+    document.querySelector(".global-color-klasik").style.display = globalProductType === "klasik" ? "block" : "none";
+    document.querySelector(".global-color-blackout").style.display = globalProductType === "blackout" ? "block" : "none";
+    document.querySelector(".global-color-ciftli").style.display = globalProductType === "ciftli" ? "block" : "none";
 }
 
 function fillGlobalColorChoices(){
@@ -1560,7 +1614,7 @@ function setCamCount(count, preserveData){
         camSelect.selectedIndex = count - 1;
     }
 
-    applyColorModeUI();
+    applySelectionModeUI();
 
     const hasOpenCard = document.querySelector(".cam-card.open");
     if(!hasOpenCard && count > 0){
@@ -1582,7 +1636,7 @@ function rebuildOnlyOneCam(){
 
     createCamCard(1);
     openCam(1);
-    applyColorModeUI();
+    applySelectionModeUI();
 }
 
 function createCamCard(index){
@@ -1594,8 +1648,10 @@ function createCamCard(index){
             </button>
 
             <div class="cam-body">
-                <p class="section-title">Ürün Tipi</p>
-                <div class="product-grid productSecim"></div>
+                <div class="product-and-color-area">
+                    <p class="section-title">Ürün Tipi</p>
+                    <div class="product-grid productSecim"></div>
+                </div>
 
                 <div class="grid" style="margin-top:14px;">
                     <label class="field">
@@ -1635,7 +1691,7 @@ function createCamCard(index){
                     </label>
                 </div>
 
-                <div class="per-card-colors">
+                <div class="product-and-color-area">
                     <p class="section-title">Kasa Rengi</p>
                     <div class="color-grid kasaSecim"></div>
 
@@ -1780,8 +1836,9 @@ function updateTipOptions(card){
     queueSaveState();
 }
 
-function collectGlobalColorData(){
+function collectGlobalData(){
     return {
+        product: globalProductType,
         kasa: getActiveValue(document.querySelector(".globalKasaSecim")),
         kumas: getActiveValue(document.querySelector(".globalKumasSecim")),
         blackout: getActiveValue(document.querySelector(".globalBlackoutSecim")),
@@ -1790,8 +1847,12 @@ function collectGlobalColorData(){
     };
 }
 
-function applyGlobalColorData(data){
+function applyGlobalData(data){
     if(!data) return;
+
+    if(data.product){
+        setGlobalProductType(data.product);
+    }
 
     setChoiceByValue(document.querySelector(".globalKasaSecim"), data.kasa);
     setChoiceByValue(document.querySelector(".globalKumasSecim"), data.kumas);
@@ -1858,7 +1919,7 @@ function restoreSavedState(data){
     document.getElementById("phone").value = data.phone || "";
     document.getElementById("address").value = data.address || "";
 
-    applyGlobalColorData(data.globalColors);
+    applyGlobalData(data.globalSelection);
 
     if(Array.isArray(data.cards)){
         data.cards.forEach(function(cardData, index){
@@ -1874,7 +1935,7 @@ function restoreSavedState(data){
         openCam(1);
     }
 
-    applyColorModeUI();
+    applySelectionModeUI();
 }
 
 function loadSavedState(){
@@ -1899,8 +1960,9 @@ function saveState(){
 
     const state = {
         camCount: currentCamCount,
-        colorMode: colorMode,
-        globalColors: collectGlobalColorData(),
+        selectionMode: selectionMode,
+        globalProductType: globalProductType,
+        globalSelection: collectGlobalData(),
         name: document.getElementById("name").value,
         phone: document.getElementById("phone").value,
         address: document.getElementById("address").value,
@@ -1929,12 +1991,13 @@ function resetOrderForm(){
     document.getElementById("address").value = "";
     document.getElementById("result").innerHTML = "";
 
-    document.querySelectorAll(".choice").forEach(function(choice){
+    document.querySelectorAll(".choice, .product-choice").forEach(function(choice){
         choice.classList.remove("active");
     });
 
-    colorMode = "same";
-    applyColorModeUI();
+    selectionMode = "same";
+    setGlobalProductType("klasik");
+    applySelectionModeUI();
 
     rebuildOnlyOneCam();
 
@@ -2051,9 +2114,17 @@ function getUnitPrice(productKey, tip){
     return tip === "askili" ? Number(currentPrices.klasik_askili) : Number(currentPrices.klasik_vidali);
 }
 
+function getItemProduct(card){
+    if(selectionMode === "same"){
+        return globalProductType || "klasik";
+    }
+
+    return card.dataset.product || "klasik";
+}
+
 function getItemColors(card, productKey){
-    if(colorMode === "same"){
-        const global = collectGlobalColorData();
+    if(selectionMode === "same"){
+        const global = collectGlobalData();
 
         return {
             kasa: global.kasa || NOT_SELECTED,
@@ -2099,7 +2170,7 @@ function calculateAll(){
     cards.forEach(function(card, index){
         const camNo = index + 1;
 
-        const productKey = card.dataset.product || "klasik";
+        const productKey = getItemProduct(card);
         const productLabel = getProductLabel(productKey);
 
         const uygulama = card.querySelector(".uygulama").value;
