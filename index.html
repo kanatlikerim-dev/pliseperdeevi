@@ -334,6 +334,80 @@ body.dark .btn-reset{
     margin-top:16px;
 }
 
+.color-mode-card{
+    margin-top:18px;
+    padding:16px;
+    border-radius:18px;
+    background:var(--card-bg);
+    border:1px solid var(--border);
+}
+
+.color-mode-title{
+    font-size:15px;
+    font-weight:900;
+    margin-bottom:6px;
+}
+
+.color-mode-desc{
+    color:var(--muted);
+    font-size:13px;
+    line-height:1.5;
+    margin-bottom:12px;
+}
+
+.color-mode-options{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    gap:10px;
+}
+
+.color-mode-option{
+    display:flex;
+    align-items:flex-start;
+    gap:10px;
+    padding:13px;
+    border:1px solid var(--input-border);
+    border-radius:16px;
+    background:var(--panel-bg);
+    cursor:pointer;
+}
+
+.color-mode-option:hover{
+    border-color:var(--accent);
+}
+
+.color-mode-option input{
+    width:auto;
+    margin-top:2px;
+}
+
+.color-mode-option strong{
+    display:block;
+    font-size:14px;
+    margin-bottom:3px;
+}
+
+.color-mode-option small{
+    display:block;
+    color:var(--muted);
+    font-size:12px;
+    line-height:1.35;
+}
+
+.global-color-area{
+    margin-top:16px;
+    padding-top:14px;
+    border-top:1px dashed var(--border);
+}
+
+body.color-different .global-color-area{
+    display:none;
+}
+
+body.color-same .per-card-colors{
+    display:none;
+}
+
 .cam-card{
     padding:0;
     overflow:hidden;
@@ -912,7 +986,7 @@ body.dark .btn-reset{
 </style>
 </head>
 
-<body>
+<body class="color-same">
 
 <main class="container">
 
@@ -952,6 +1026,39 @@ body.dark .btn-reset{
             Kaç farklı cam ölçüsü girecekseniz buradan seçiniz. Sistem seçtiğiniz sayı kadar cam alanını otomatik açar.
         </p>
 
+        <div class="color-mode-card">
+            <div class="color-mode-title">Kasa ve kumaş seçimi</div>
+            <div class="color-mode-desc">
+                Tüm camlarda aynı renk kullanılacaksa sadece bir kere seçim yapmanız yeterlidir.
+            </div>
+
+            <div class="color-mode-options">
+                <label class="color-mode-option">
+                    <input type="radio" name="colorMode" value="same" checked onchange="updateColorMode()">
+                    <span>
+                        <strong>Tüm camlarda aynı kasa ve kumaş kullanılacak</strong>
+                        <small>En kolay seçim. Kasa ve kumaşı bir kere seçersiniz.</small>
+                    </span>
+                </label>
+
+                <label class="color-mode-option">
+                    <input type="radio" name="colorMode" value="different" onchange="updateColorMode()">
+                    <span>
+                        <strong>Bazı camlarda farklı kasa veya kumaş olacak</strong>
+                        <small>Her cam için ayrı kasa ve kumaş seçimi açılır.</small>
+                    </span>
+                </label>
+            </div>
+
+            <div class="global-color-area">
+                <p class="section-title">Genel Kasa Rengi</p>
+                <div class="color-grid" id="globalKasaSecim"></div>
+
+                <p class="section-title">Genel Kumaş Seçimi</p>
+                <div class="fabric-grid" id="globalKumasSecim"></div>
+            </div>
+        </div>
+
         <div class="catalog-actions">
             <button type="button" class="btn-light" onclick="openImageModal('Kumaş Kataloğu','katalog.png')">
                 Kumaş Kataloğunu Gör
@@ -960,7 +1067,7 @@ body.dark .btn-reset{
                 Kasa Renklerini Gör
             </button>
             <button type="button" class="btn-light btn-reset" onclick="resetOrderForm()">
-                Formu Sıfırla
+                Bütün Ölçüleri Sıfırla
             </button>
         </div>
     </div>
@@ -1041,8 +1148,8 @@ const kasaRenkleri = [
     { name:"Bronz", hex:"#5f5842" },
     { name:"Beyaz", hex:"#ffffff" },
     { name:"Krem", hex:"#f2dfbd" },
-    { name:"Kahverengi", hex:"#7a4a2a" },
-    { name:"Antrasit", hex:"#34383b" },
+    { name:"Kahverengi", hex:"#2b1a16" },
+    { name:"Antrasit", hex:"#252a2e" },
     { name:"Gri", hex:"#9b9b9b" }
 ];
 
@@ -1068,6 +1175,7 @@ let lastOrderText = "";
 
 function init(){
     initTheme();
+    fillGlobalColorChoices();
 
     const camSelect = document.getElementById("camCount");
 
@@ -1094,6 +1202,8 @@ function init(){
 
     if(savedData){
         restoreSavedState(savedData);
+    }else{
+        setColorMode("same");
     }
 
     isRestoring = false;
@@ -1137,6 +1247,40 @@ function updateThemeButton(){
     }else{
         button.textContent = "🌙 Koyu Mod";
     }
+}
+
+function getColorMode(){
+    return document.querySelector('input[name="colorMode"]:checked')?.value || "same";
+}
+
+function setColorMode(mode){
+    document.querySelectorAll('input[name="colorMode"]').forEach(function(input){
+        input.checked = input.value === mode;
+    });
+
+    document.body.classList.toggle("color-same", mode === "same");
+    document.body.classList.toggle("color-different", mode === "different");
+}
+
+function updateColorMode(){
+    setColorMode(getColorMode());
+    queueSaveState();
+}
+
+function fillGlobalColorChoices(){
+    const globalKasa = document.getElementById("globalKasaSecim");
+    const globalKumas = document.getElementById("globalKumasSecim");
+
+    globalKasa.innerHTML = "";
+    globalKumas.innerHTML = "";
+
+    kasaRenkleri.forEach(function(renk){
+        globalKasa.appendChild(createKasaChoice(renk));
+    });
+
+    kumaslar.forEach(function(kumas){
+        globalKumas.appendChild(createKumasChoice(kumas));
+    });
 }
 
 function handleCamCountChange(){
@@ -1244,11 +1388,13 @@ function createCamCard(index){
                     </label>
                 </div>
 
-                <p class="section-title">Kasa Rengi</p>
-                <div class="color-grid kasaSecim"></div>
+                <div class="per-card-colors">
+                    <p class="section-title">Kasa Rengi</p>
+                    <div class="color-grid kasaSecim"></div>
 
-                <p class="section-title">Kumaş Seçimi</p>
-                <div class="fabric-grid kumasSecim"></div>
+                    <p class="section-title">Kumaş Seçimi</p>
+                    <div class="fabric-grid kumasSecim"></div>
+                </div>
             </div>
         </div>
     `;
@@ -1261,6 +1407,41 @@ function createCamCard(index){
     updateTipOptions(card);
 
     return card;
+}
+
+function createKasaChoice(renk){
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "choice color-choice";
+    btn.dataset.value = renk.name;
+    btn.onclick = function(){
+        selectChoice(this);
+    };
+
+    const dot = document.createElement("span");
+    dot.className = "color-dot";
+    dot.style.background = renk.hex;
+
+    const text = document.createElement("span");
+    text.textContent = renk.name;
+
+    btn.appendChild(dot);
+    btn.appendChild(text);
+
+    return btn;
+}
+
+function createKumasChoice(kumas){
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "choice";
+    btn.dataset.value = kumas;
+    btn.textContent = kumas;
+    btn.onclick = function(){
+        selectChoice(this);
+    };
+
+    return btn;
 }
 
 function updateTipOptions(card){
@@ -1293,25 +1474,7 @@ function fillKasaChoices(card){
     const kasaBox = card.querySelector(".kasaSecim");
 
     kasaRenkleri.forEach(function(renk){
-        const btn = document.createElement("button");
-        btn.type = "button";
-        btn.className = "choice color-choice";
-        btn.dataset.value = renk.name;
-        btn.onclick = function(){
-            selectChoice(this);
-        };
-
-        const dot = document.createElement("span");
-        dot.className = "color-dot";
-        dot.style.background = renk.hex;
-
-        const text = document.createElement("span");
-        text.textContent = renk.name;
-
-        btn.appendChild(dot);
-        btn.appendChild(text);
-
-        kasaBox.appendChild(btn);
+        kasaBox.appendChild(createKasaChoice(renk));
     });
 }
 
@@ -1319,16 +1482,7 @@ function fillKumasChoices(card){
     const kumasBox = card.querySelector(".kumasSecim");
 
     kumaslar.forEach(function(kumas){
-        const btn = document.createElement("button");
-        btn.type = "button";
-        btn.className = "choice";
-        btn.dataset.value = kumas;
-        btn.textContent = kumas;
-        btn.onclick = function(){
-            selectChoice(this);
-        };
-
-        kumasBox.appendChild(btn);
+        kumasBox.appendChild(createKumasChoice(kumas));
     });
 }
 
@@ -1378,9 +1532,14 @@ function applyCardData(card, data){
 }
 
 function restoreSavedState(data){
+    setColorMode(data.colorMode || "same");
+
     document.getElementById("name").value = data.name || "";
     document.getElementById("phone").value = data.phone || "";
     document.getElementById("address").value = data.address || "";
+
+    setChoiceByValue(document.getElementById("globalKasaSecim"), data.globalKasa || "");
+    setChoiceByValue(document.getElementById("globalKumasSecim"), data.globalKumas || "");
 
     if(Array.isArray(data.cards)){
         data.cards.forEach(function(cardData, index){
@@ -1419,6 +1578,9 @@ function saveState(){
 
     const state = {
         camCount: currentCamCount,
+        colorMode: getColorMode(),
+        globalKasa: document.querySelector("#globalKasaSecim .active")?.dataset.value || "",
+        globalKumas: document.querySelector("#globalKumasSecim .active")?.dataset.value || "",
         name: document.getElementById("name").value,
         phone: document.getElementById("phone").value,
         address: document.getElementById("address").value,
@@ -1447,6 +1609,10 @@ function resetOrderForm(){
     document.getElementById("address").value = "";
     document.getElementById("result").innerHTML = "";
 
+    setColorMode("same");
+    clearChoices(document.getElementById("globalKasaSecim"));
+    clearChoices(document.getElementById("globalKumasSecim"));
+
     rebuildOnlyOneCam();
 
     isRestoring = false;
@@ -1456,13 +1622,18 @@ function resetOrderForm(){
     window.scrollTo({ top:0, behavior:"smooth" });
 }
 
+function clearChoices(container){
+    if(!container) return;
+    container.querySelectorAll(".choice").forEach(function(choice){
+        choice.classList.remove("active");
+    });
+}
+
 function setChoiceByValue(container, value){
-    if(!value) return;
+    if(!container || !value) return;
 
     container.querySelectorAll(".choice").forEach(function(choice){
-        if(choice.dataset.value === value){
-            choice.classList.add("active");
-        }
+        choice.classList.toggle("active", choice.dataset.value === value);
     });
 }
 
@@ -1552,6 +1723,10 @@ function calculateAll(){
     const cards = document.querySelectorAll(".cam-card");
     const errors = [];
     const items = [];
+    const colorMode = getColorMode();
+
+    const globalKasa = document.querySelector("#globalKasaSecim .active")?.dataset.value || "";
+    const globalKumas = document.querySelector("#globalKumasSecim .active")?.dataset.value || "";
 
     let toplam = 0;
     let toplamAdet = 0;
@@ -1560,6 +1735,16 @@ function calculateAll(){
     document.querySelectorAll(".cam-card").forEach(function(card){
         card.classList.remove("has-error");
     });
+
+    if(colorMode === "same"){
+        if(!globalKasa){
+            errors.push("Kasa ve kumaş seçimi: Genel kasa rengi seçilmelidir.");
+        }
+
+        if(!globalKumas){
+            errors.push("Kasa ve kumaş seçimi: Genel kumaş seçilmelidir.");
+        }
+    }
 
     cards.forEach(function(card, index){
         const camNo = index + 1;
@@ -1576,8 +1761,16 @@ function calculateAll(){
             tip = "vidali";
         }
 
-        const kasa = card.querySelector(".kasaSecim .active")?.dataset.value || "";
-        const kumas = card.querySelector(".kumasSecim .active")?.dataset.value || "";
+        let kasa = "";
+        let kumas = "";
+
+        if(colorMode === "same"){
+            kasa = globalKasa;
+            kumas = globalKumas;
+        }else{
+            kasa = card.querySelector(".kasaSecim .active")?.dataset.value || "";
+            kumas = card.querySelector(".kumasSecim .active")?.dataset.value || "";
+        }
 
         let cardHasError = false;
 
@@ -1613,12 +1806,14 @@ function calculateAll(){
             addCardError("Pimapen / PVC için sadece Vidalı sistem seçilebilir.");
         }
 
-        if(!kasa){
-            addCardError("Kasa rengi seçilmelidir.");
-        }
+        if(colorMode === "different"){
+            if(!kasa){
+                addCardError("Kasa rengi seçilmelidir.");
+            }
 
-        if(!kumas){
-            addCardError("Kumaş seçilmelidir.");
+            if(!kumas){
+                addCardError("Kumaş seçilmelidir.");
+            }
         }
 
         if(cardHasError){
