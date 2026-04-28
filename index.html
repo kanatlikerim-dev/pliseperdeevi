@@ -3,104 +3,203 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>Prestage Life M2 Hesaplama</title>
+<title>Prestij Life</title>
 
 <style>
-body {
-    font-family: Arial, sans-serif;
-    background: #f5f5f5;
-    display: flex;
-    justify-content: center;
-    padding: 20px;
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
 }
 
-.container {
-    background: white;
-    padding: 20px;
-    border-radius: 12px;
-    width: 100%;
-    max-width: 450px;
-    box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+body{
+    font-family:Arial, Helvetica, sans-serif;
+    background:#f4f4f4;
+    color:#222;
+    padding:20px;
 }
 
-.header {
-    text-align: center;
-    margin-bottom: 10px;
+.container{
+    max-width:900px;
+    margin:auto;
+    background:#fff;
+    border-radius:18px;
+    padding:25px;
+    box-shadow:0 10px 35px rgba(0,0,0,0.08);
 }
 
-.header img {
-    max-width: 140px;
-    margin-bottom: 10px;
+.header{
+    text-align:center;
+    margin-bottom:25px;
 }
 
-h2 {
-    margin: 0;
+.header img{
+    width:150px;
+    max-width:100%;
+    margin-bottom:10px;
 }
 
-.subtitle {
-    color: #666;
-    font-size: 14px;
-    margin-bottom: 15px;
+.header h1{
+    font-size:34px;
+    margin-bottom:8px;
 }
 
-input {
-    width: 100%;
-    padding: 10px;
-    margin: 8px 0;
-    border-radius: 8px;
-    border: 1px solid #ddd;
-    font-size: 16px;
+.header p{
+    color:#777;
 }
 
-button {
-    width: 100%;
-    padding: 12px;
-    background: #111;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-size: 16px;
-    cursor: pointer;
+h2{
+    margin:20px 0 12px;
+    font-size:22px;
 }
 
-button:hover {
-    background: #333;
+.card{
+    background:#fafafa;
+    border:1px solid #eee;
+    border-radius:14px;
+    padding:18px;
+    margin-bottom:18px;
 }
 
-.result {
-    margin-top: 15px;
-    background: #f0f0f0;
-    padding: 12px;
-    border-radius: 8px;
-    font-size: 14px;
-    line-height: 1.6;
+.grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+    gap:12px;
 }
 
-/* 🔗 SOSYAL ALAN */
-.social {
-    margin-top: 25px;
-    padding-top: 15px;
-    border-top: 1px solid #ddd;
-    font-size: 14px;
+input, select, textarea{
+    width:100%;
+    padding:12px;
+    border:1px solid #ddd;
+    border-radius:10px;
+    font-size:15px;
 }
 
-.social-item {
-    display: flex;
-    align-items: center;
-    margin-bottom: 10px;
+textarea{
+    resize:vertical;
+    min-height:90px;
 }
 
-.social-item img {
-    width: 28px;
-    height: 28px;
-    margin-right: 10px;
-    cursor: pointer;
+button{
+    border:none;
+    border-radius:12px;
+    padding:14px 18px;
+    font-size:16px;
+    cursor:pointer;
+    transition:0.25s;
 }
 
-.social-item a {
-    text-decoration: none;
-    color: #111;
+.btn-main{
+    background:#111;
+    color:#fff;
+    width:100%;
+    margin-top:10px;
+}
+
+.btn-main:hover{
+    background:#333;
+    transform:translateY(-2px);
+}
+
+.btn-add{
+    background:#0d6efd;
+    color:#fff;
+    width:100%;
+    margin-bottom:15px;
+}
+
+.btn-add:hover{
+    background:#0b5ed7;
+}
+
+.btn-delete{
+    background:#dc3545;
+    color:#fff;
+    margin-top:12px;
+}
+
+.btn-delete:hover{
+    background:#bb2d3b;
+}
+
+.fabric-grid,
+.color-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(130px,1fr));
+    gap:8px;
+    margin-top:8px;
+}
+
+.choice{
+    border:1px solid #ddd;
+    padding:10px;
+    border-radius:10px;
+    text-align:center;
+    cursor:pointer;
+    background:#fff;
+    transition:0.25s;
+    font-size:14px;
+}
+
+.choice:hover{
+    transform:translateY(-2px);
+    box-shadow:0 6px 16px rgba(0,0,0,0.08);
+}
+
+.choice.active{
+    border:2px solid #111;
+    background:#f0f0f0;
+}
+
+.result{
+    margin-top:20px;
+    background:#f8f8f8;
+    border-radius:14px;
+    padding:18px;
+    line-height:1.7;
+}
+
+.social{
+    margin-top:25px;
+    border-top:1px solid #eee;
+    padding-top:20px;
+}
+
+.social-item{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:12px;
+}
+
+.social-item img{
+    width:26px;
+    height:26px;
+    transition:0.25s;
+}
+
+.social-item img:hover{
+    transform:scale(1.15);
+}
+
+.social-item a{
+    text-decoration:none;
+    color:#111;
+}
+
+.note{
+    margin-top:18px;
+    padding:15px;
+    background:#fff8e8;
+    border-radius:12px;
+    font-size:14px;
+    line-height:1.6;
+}
+
+@media(max-width:600px){
+    .header h1{
+        font-size:28px;
+    }
 }
 </style>
 </head>
@@ -111,97 +210,215 @@ button:hover {
 
 <div class="header">
     <img src="logo.png" alt="Logo">
-    <h2>Prestage Life</h2>
-    <div class="subtitle">M2 Hesaplama Sistemi</div>
+    <h1>Prestij Life</h1>
+    <p>Plise Perde Sipariş & Hesaplama Sistemi</p>
 </div>
 
-<input id="width" placeholder="En (cm)">
-<input id="height" placeholder="Boy (cm)">
-<input id="qty" placeholder="Adet">
-<input id="price" placeholder="M2 Fiyatı (TL)">
-<input id="cargo" placeholder="Kargo Ücreti (TL)">
+<button class="btn-add" onclick="addCam()">+ Yeni Cam Ekle</button>
 
-<button onclick="calculate()">Hesapla</button>
+<div id="camArea"></div>
+
+<div class="card">
+    <h2>Müşteri Bilgileri</h2>
+    <div class="grid">
+        <input id="name" placeholder="Ad Soyad">
+        <input id="phone" placeholder="Telefon No">
+    </div>
+    <textarea id="address" placeholder="Adres"></textarea>
+</div>
+
+<button class="btn-main" onclick="calculateAll()">Siparişi Hesapla</button>
 
 <div class="result" id="result"></div>
 
-<!-- 🔗 SOSYAL MEDYA -->
 <div class="social">
 
-    <!-- WHATSAPP -->
-    <div class="social-item">
-        <a href="https://wa.me/905053559532" target="_blank">
-            <img src="wplogo.png">
-        </a>
-        <span>+90 505 355 95 32</span>
-    </div>
+<div class="social-item">
+<a href="https://wa.me/905053559532" target="_blank">
+<img src="wplogo.png">
+</a>
+<span>+90 505 355 95 32</span>
+</div>
 
-    <!-- INSTAGRAM 1 -->
-    <div class="social-item">
-        <a href="https://www.instagram.com/pliseperdeevi/" target="_blank">
-            <img src="instalogo.png">
-        </a>
-        <a href="https://www.instagram.com/pliseperdeevi/" target="_blank">
-            @pliseperdeevi
-        </a>
-    </div>
+<div class="social-item">
+<a href="https://www.instagram.com/pliseperdeevi/" target="_blank">
+<img src="instalogo.png">
+</a>
+<a href="https://www.instagram.com/pliseperdeevi/" target="_blank">@pliseperdeevi</a>
+</div>
 
-    <!-- INSTAGRAM 2 -->
-    <div class="social-item">
-        <a href="https://www.instagram.com/pliseperde_ayferdemiryurek" target="_blank">
-            <img src="instalogo.png">
-        </a>
-        <a href="https://www.instagram.com/pliseperde_ayferdemiryurek" target="_blank">
-            @pliseperde_ayferdemiryurek
-        </a>
-    </div>
+<div class="social-item">
+<a href="https://www.instagram.com/pliseperde_ayferdemiryurek" target="_blank">
+<img src="instalogo.png">
+</a>
+<a href="https://www.instagram.com/pliseperde_ayferdemiryurek" target="_blank">@pliseperde_ayferdemiryurek</a>
+</div>
+
+<div class="note">
+Daha fazla bilgi veya soru sormak için bizimle iletişime geçebilirsiniz.<br>
+📞 +90 505 355 95 32
+</div>
 
 </div>
 
 </div>
 
 <script>
+const ASKILI_FIYAT = 450;
+const VIDALI_FIYAT = 400;
+const KARGO = 300;
+
+const kasaRenkleri = [
+"Antrasit","Beyaz","Krem","Kahverengi","Siyah","Gri"
+];
+
+const kumaslar = [
+"Sude 001 - Beyaz",
+"Sude 002 - Krem",
+"Sude 003 - Gri",
+"Sude 004 - Siyah",
+"Elmas 001 - Kırık Beyaz",
+"Elmas 002 - Krem",
+"Elmas 003 - Bej",
+"Elmas 004 - Vizon",
+"Elmas 005 - Turkuaz",
+"Elmas 006 - Sarı",
+"Elmas 007 - Kırmızı",
+"Elmas 008 - Lacivert"
+];
+
+let camNo = 0;
+
 function roundUp10(x){
-    return Math.ceil(x / 10) * 10;
+    return Math.ceil(x/10)*10;
 }
 
-function billableM2(m2){
-    if(m2 <= 1) return 1;
-    return Math.ceil(m2 * 10) / 10;
+function saleM2(m2){
+    if(m2<=1) return 1;
+    return Math.ceil(m2*10)/10;
 }
 
-function calculate(){
+function addCam(){
+    camNo++;
 
-    let w = parseFloat(document.getElementById("width").value);
-    let h = parseFloat(document.getElementById("height").value);
-    let qty = parseFloat(document.getElementById("qty").value);
-    let price = parseFloat(document.getElementById("price").value);
-    let cargo = parseFloat(document.getElementById("cargo").value);
+    let html = `
+    <div class="card cam-card" id="cam${camNo}">
+        <h2>Cam ${camNo}</h2>
 
-    if(isNaN(w) || isNaN(h) || isNaN(qty) || isNaN(price) || isNaN(cargo)){
-        document.getElementById("result").innerHTML = "Lütfen tüm alanları doldur.";
-        return;
-    }
+        <div class="grid">
+            <input placeholder="En (cm)" class="en">
+            <input placeholder="Boy (cm)" class="boy">
+            <input placeholder="Adet" class="adet">
+            <input placeholder="Açılır Adet" class="acilir">
+            <select class="tip">
+                <option value="askili">Askılı</option>
+                <option value="vidali">Vidalı</option>
+            </select>
+        </div>
 
-    let rw = roundUp10(w);
-    let rh = roundUp10(h);
+        <p style="margin-top:12px;"><b>Kasa Rengi</b></p>
+        <div class="color-grid kasaSecim"></div>
 
-    let rawM2 = (rw * rh) / 10000;
-    let billM2 = billableM2(rawM2);
+        <p style="margin-top:12px;"><b>Kumaş Seçimi</b></p>
+        <div class="fabric-grid kumasSecim"></div>
 
-    let materialTotal = billM2 * qty * price;
-    let total = materialTotal + cargo;
+        <button class="btn-delete" onclick="removeCam(${camNo})">Sil</button>
+    </div>
+    `;
 
-    document.getElementById("result").innerHTML =
-        "En: " + w + " cm<br>" +
-        "Boy: " + h + " cm<br>" +
-        "Adet: " + qty + "<br><br>" +
+    document.getElementById("camArea").insertAdjacentHTML("beforeend", html);
 
-        "Malzeme Tutarı: " + materialTotal.toFixed(2) + " ₺<br>" +
-        "Kargo: " + cargo.toFixed(2) + " ₺<br><br>" +
+    let card = document.getElementById("cam"+camNo);
 
-        "<b>TOPLAM: " + total.toFixed(2) + " ₺</b>";
+    let kasaBox = card.querySelector(".kasaSecim");
+    kasaRenkleri.forEach(r=>{
+        kasaBox.innerHTML += `<div class="choice" onclick="selectChoice(this,'kasa')">${r}</div>`;
+    });
+
+    let kumasBox = card.querySelector(".kumasSecim");
+    kumaslar.forEach(k=>{
+        kumasBox.innerHTML += `<div class="choice" onclick="selectChoice(this,'kumas')">${k}</div>`;
+    });
 }
+
+function selectChoice(el,type){
+    let parent = el.parentElement;
+    parent.querySelectorAll(".choice").forEach(x=>x.classList.remove("active"));
+    el.classList.add("active");
+}
+
+function removeCam(id){
+    document.getElementById("cam"+id).remove();
+}
+
+function calculateAll(){
+
+    let cards = document.querySelectorAll(".cam-card");
+
+    let toplam = 0;
+    let toplamAdet = 0;
+    let detay = "";
+
+    cards.forEach((card,index)=>{
+
+        let en = parseFloat(card.querySelector(".en").value);
+        let boy = parseFloat(card.querySelector(".boy").value);
+        let adet = parseFloat(card.querySelector(".adet").value);
+        let acilir = parseFloat(card.querySelector(".acilir").value)||0;
+        let tip = card.querySelector(".tip").value;
+
+        if(isNaN(en)||isNaN(boy)||isNaN(adet)) return;
+
+        let kasa = card.querySelector(".kasaSecim .active")?.innerText || "-";
+        let kumas = card.querySelector(".kumasSecim .active")?.innerText || "-";
+
+        let fiyat = tip=="askili" ? ASKILI_FIYAT : VIDALI_FIYAT;
+
+        let re = roundUp10(en);
+        let rb = roundUp10(boy);
+
+        let ham = (re*rb)/10000;
+        let satis = saleM2(ham);
+
+        let tutar = satis * fiyat * adet;
+
+        toplam += tutar;
+        toplamAdet += adet;
+
+        detay += `
+${en}x${boy} ${adet} adet ${tip}
+Kasa: ${kasa}
+Kumaş: ${kumas}
+${acilir>0 ? "(" + acilir + " adet açılır)" : ""}
+<br><br>`;
+    });
+
+    toplam += KARGO;
+
+    let ad = document.getElementById("name").value;
+    let tel = document.getElementById("phone").value;
+    let adr = document.getElementById("address").value;
+
+    let sonuc = `
+<b>${ad}</b><br>
+${tel}<br>
+${adr}<br><br>
+
+${detay}
+
+<b>Toplam ${toplamAdet} adet</b><br>
+Ürün + Kargo Dahil<br>
+<b>${toplam.toFixed(2)} TL</b><br><br>
+
+<a href="https://wa.me/905053559532?text=${encodeURIComponent(ad + '\n' + tel + '\n' + adr + '\n\n' + detay.replace(/<br>/g,'\n') + '\nToplam: ' + toplam.toFixed(2) + ' TL')}" target="_blank">
+<button class="btn-main">WhatsApp Sipariş Gönder</button>
+</a>
+`;
+
+    document.getElementById("result").innerHTML = sonuc;
+}
+
+addCam();
 </script>
 
 </body>
