@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Prestij Life Admin Paneli</title>
 
-<link rel="icon" type="image/png" href="./favicon.png?v=60">
-<link rel="shortcut icon" type="image/png" href="./favicon.png?v=60">
-<link rel="apple-touch-icon" href="./favicon.png?v=60">
+<link rel="icon" type="image/png" href="./favicon.png?v=90">
+<link rel="shortcut icon" type="image/png" href="./favicon.png?v=90">
+<link rel="apple-touch-icon" href="./favicon.png?v=90">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -577,6 +577,11 @@ body.dark .btn-main{
                         </label>
 
                         <label class="field">
+                            <span>Tül Perde m²</span>
+                            <input type="number" id="priceTulPerde" min="0" step="1" placeholder="1000">
+                        </label>
+
+                        <label class="field">
                             <span>Kargo</span>
                             <input type="number" id="priceKargo" min="0" step="1" placeholder="300">
                         </label>
@@ -592,7 +597,7 @@ body.dark .btn-main{
                     <div class="message warning" id="priceWarning"></div>
 
                     <div class="small-note">
-                        Fiyatlara sadece sayı yazın. Örneğin 450 TL yerine 450 yazın.
+                        Fiyatlara sadece sayı yazın. Örneğin 1000 TL yerine 1000 yazın.
                     </div>
                 </div>
 
@@ -665,6 +670,7 @@ const DEFAULT_PRICES = {
     klasik_vidali: 400,
     blackout: 1250,
     ciftli: 1000,
+    tul_perde: 1000,
     kargo: 300
 };
 
@@ -791,6 +797,7 @@ function fillPriceInputs(prices){
     document.getElementById("priceKlasikVidali").value = Number(prices.klasik_vidali || DEFAULT_PRICES.klasik_vidali);
     document.getElementById("priceBlackout").value = Number(prices.blackout || DEFAULT_PRICES.blackout);
     document.getElementById("priceCiftli").value = Number(prices.ciftli || DEFAULT_PRICES.ciftli);
+    document.getElementById("priceTulPerde").value = Number(prices.tul_perde || DEFAULT_PRICES.tul_perde);
     document.getElementById("priceKargo").value = Number(prices.kargo || DEFAULT_PRICES.kargo);
 }
 
@@ -800,6 +807,7 @@ function getPriceInputs(){
         klasik_vidali: parsePriceValue("priceKlasikVidali", "Klasik Seri Vidalı m²"),
         blackout: parsePriceValue("priceBlackout", "Blackout Karartmalı m²"),
         ciftli: parsePriceValue("priceCiftli", "Çiftli Sistem m²"),
+        tul_perde: parsePriceValue("priceTulPerde", "Tül Perde m²"),
         kargo: parsePriceValue("priceKargo", "Kargo")
     };
 }
