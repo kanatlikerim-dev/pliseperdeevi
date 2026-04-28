@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Prestij Life Admin Paneli</title>
 
-<link rel="icon" type="image/png" href="./favicon.png?v=40">
-<link rel="shortcut icon" type="image/png" href="./favicon.png?v=40">
-<link rel="apple-touch-icon" href="./favicon.png?v=40">
+<link rel="icon" type="image/png" href="./favicon.png?v=60">
+<link rel="shortcut icon" type="image/png" href="./favicon.png?v=60">
+<link rel="apple-touch-icon" href="./favicon.png?v=60">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -181,7 +181,8 @@ textarea:focus{
     box-shadow:0 0 0 4px rgba(139,106,69,0.13);
 }
 
-button{
+button,
+.btn-light-link{
     width:100%;
     border:none;
     border-radius:14px;
@@ -214,15 +215,24 @@ body.dark .btn-main{
     transform:translateY(-2px);
 }
 
-.btn-light{
+.btn-light,
+.btn-light-link{
     background:var(--card);
     color:var(--text);
     border:1px solid var(--input-border);
 }
 
-.btn-light:hover:not(:disabled){
+.btn-light:hover:not(:disabled),
+.btn-light-link:hover{
     background:var(--accent-soft);
     border-color:var(--accent);
+}
+
+.btn-light-link{
+    text-decoration:none;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
 }
 
 .message{
@@ -281,7 +291,8 @@ body.dark .btn-main{
     align-items:center;
 }
 
-.header-actions button{
+.header-actions button,
+.header-actions a{
     width:auto;
     padding:11px 15px;
     white-space:nowrap;
@@ -436,7 +447,8 @@ body.dark .btn-main{
         flex-direction:column;
     }
 
-    .header-actions button{
+    .header-actions button,
+    .header-actions a{
         width:100%;
     }
 
@@ -462,12 +474,10 @@ body.dark .btn-main{
         </p>
 
         <input type="password" id="passwordInput" placeholder="Şifre">
-        <button class="btn-main" onclick="login()">Giriş Yap</button>
+        <button class="btn-main" id="loginBtn" onclick="login()">Giriş Yap</button>
         <button class="btn-light" style="margin-top:10px;" onclick="toggleTheme()" id="loginThemeBtn">🌙 Koyu Mod</button>
 
-        <div class="message error" id="loginError">
-            Şifre hatalı. Lütfen tekrar deneyin.
-        </div>
+        <div class="message error" id="loginError"></div>
     </section>
 
     <section class="admin-card" id="adminPanel" style="display:none;">
@@ -478,6 +488,7 @@ body.dark .btn-main{
             </div>
 
             <div class="header-actions">
+                <a class="btn-light-link" href="./index.html">Müşteri Paneli</a>
                 <button class="btn-light" onclick="toggleTheme()" id="adminThemeBtn">🌙 Koyu Mod</button>
                 <button class="btn-light" onclick="logout()">Çıkış Yap</button>
             </div>
@@ -588,7 +599,7 @@ body.dark .btn-main{
                 <div class="settings-card">
                     <h3>Şifre Değiştir</h3>
                     <p>
-                        Şifreyi değiştirmek için önce mevcut şifreyi doğru girmeniz gerekir.
+                        Şifreyi değiştirmek için önce mevcut şifreyi doğru girmeniz gerekir. Yeni şifre Google Sheets’e kaydedilir ve her cihazda geçerli olur.
                     </p>
 
                     <label class="field">
@@ -606,7 +617,7 @@ body.dark .btn-main{
                         <input type="password" id="newPasswordAgain" placeholder="Yeni şifre tekrar">
                     </label>
 
-                    <button class="btn-main" onclick="changePassword()">Şifreyi Değiştir</button>
+                    <button class="btn-main" id="changePasswordBtn" onclick="changePassword()">Şifreyi Değiştir</button>
 
                     <div class="message error" id="passwordError"></div>
                     <div class="message success" id="passwordSuccess"></div>
@@ -643,8 +654,6 @@ body.dark .btn-main{
 </div>
 
 <script>
-const DEFAULT_ADMIN_PASSWORD = "1234";
-const ADMIN_PASSWORD_KEY = "prestijLifeAdminPassword";
 const ADMIN_SESSION_KEY = "prestijLifeAdminSession";
 const ADMIN_THEME_KEY = "prestijLifeAdminTheme";
 
@@ -669,24 +678,53 @@ function initAdmin(){
     }
 }
 
-function getAdminPassword(){
-    return localStorage.getItem(ADMIN_PASSWORD_KEY) || DEFAULT_ADMIN_PASSWORD;
+async function apiPost(payload){
+    const response = await fetch(PRICE_API_URL, {
+        method:"POST",
+        headers:{
+            "Content-Type":"text/plain;charset=utf-8"
+        },
+        body: JSON.stringify(payload)
+    });
+
+    return await response.json();
 }
 
-function setAdminPassword(newPassword){
-    localStorage.setItem(ADMIN_PASSWORD_KEY, newPassword);
-}
-
-function login(){
+async function login(){
     const password = document.getElementById("passwordInput").value;
     const error = document.getElementById("loginError");
+    const button = document.getElementById("loginBtn");
 
-    if(password === getAdminPassword()){
-        sessionStorage.setItem(ADMIN_SESSION_KEY, "true");
-        error.style.display = "none";
-        showAdminPanel();
-    }else{
+    error.style.display = "none";
+    error.textContent = "";
+
+    if(!password){
+        error.textContent = "Lütfen şifre girin.";
         error.style.display = "block";
+        return;
+    }
+
+    button.disabled = true;
+    button.textContent = "Kontrol ediliyor...";
+
+    try{
+        const data = await apiPost({
+            action:"login",
+            password:password
+        });
+
+        if(!data.success){
+            throw new Error(data.message || "Şifre hatalı.");
+        }
+
+        sessionStorage.setItem(ADMIN_SESSION_KEY, "true");
+        showAdminPanel();
+    }catch(err){
+        error.textContent = err.message || "Giriş yapılamadı.";
+        error.style.display = "block";
+    }finally{
+        button.disabled = false;
+        button.textContent = "Giriş Yap";
     }
 }
 
@@ -794,18 +832,11 @@ async function savePrices(){
     setPriceStatus("loading", "Fiyatlar kaydediliyor...");
 
     try{
-        const response = await fetch(PRICE_API_URL, {
-            method:"POST",
-            headers:{
-                "Content-Type":"text/plain;charset=utf-8"
-            },
-            body: JSON.stringify({
-                apiKey: ADMIN_API_KEY,
-                prices: prices
-            })
+        const data = await apiPost({
+            action:"updatePrices",
+            apiKey: ADMIN_API_KEY,
+            prices: prices
         });
-
-        const data = await response.json();
 
         if(!data.success){
             throw new Error(data.message || "Fiyatlar kaydedilemedi.");
@@ -870,17 +901,16 @@ function showPriceWarning(message){
     el.style.display = "block";
 }
 
-function changePassword(){
+async function changePassword(){
     const currentPassword = document.getElementById("currentPassword").value;
     const newPassword = document.getElementById("newPassword").value;
     const newPasswordAgain = document.getElementById("newPasswordAgain").value;
-
-    const successBox = document.getElementById("passwordSuccess");
+    const button = document.getElementById("changePasswordBtn");
 
     hidePasswordMessages();
 
-    if(currentPassword !== getAdminPassword()){
-        showPasswordError("Mevcut şifre doğru değil. Lütfen tekrar kontrol edin.");
+    if(!currentPassword){
+        showPasswordError("Mevcut şifreyi girin.");
         return;
     }
 
@@ -899,14 +929,31 @@ function changePassword(){
         return;
     }
 
-    setAdminPassword(newPassword);
+    button.disabled = true;
+    button.textContent = "Kaydediliyor...";
 
-    document.getElementById("currentPassword").value = "";
-    document.getElementById("newPassword").value = "";
-    document.getElementById("newPasswordAgain").value = "";
+    try{
+        const data = await apiPost({
+            action:"changePassword",
+            currentPassword: currentPassword,
+            newPassword: newPassword
+        });
 
-    successBox.textContent = "Şifre başarıyla değiştirildi. Bir sonraki girişte yeni şifreyi kullanabilirsiniz.";
-    successBox.style.display = "block";
+        if(!data.success){
+            throw new Error(data.message || "Şifre değiştirilemedi.");
+        }
+
+        document.getElementById("currentPassword").value = "";
+        document.getElementById("newPassword").value = "";
+        document.getElementById("newPasswordAgain").value = "";
+
+        showPasswordSuccess("Şifre başarıyla değiştirildi. Yeni şifre artık her cihazda geçerli olacak.");
+    }catch(error){
+        showPasswordError(error.message || "Şifre değiştirilemedi.");
+    }finally{
+        button.disabled = false;
+        button.textContent = "Şifreyi Değiştir";
+    }
 }
 
 function hidePasswordMessages(){
@@ -923,6 +970,12 @@ function showPasswordError(message){
     const errorBox = document.getElementById("passwordError");
     errorBox.textContent = message;
     errorBox.style.display = "block";
+}
+
+function showPasswordSuccess(message){
+    const successBox = document.getElementById("passwordSuccess");
+    successBox.textContent = message;
+    successBox.style.display = "block";
 }
 
 function initTheme(){
