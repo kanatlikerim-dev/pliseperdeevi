@@ -35,6 +35,9 @@
     --danger-bg:#fff0f0;
     --danger-border:#ffd0d0;
     --danger-text:#7a1010;
+    --warning-bg:#fff8e8;
+    --warning-border:#ead2a4;
+    --warning-text:#6b4a18;
     --shadow:0 18px 55px rgba(45,35,25,0.10);
     --soft-shadow:0 10px 28px rgba(45,35,25,0.08);
     --modal-bg:rgba(20,16,12,0.74);
@@ -61,6 +64,9 @@ body.dark{
     --danger-bg:#321d1d;
     --danger-border:#693232;
     --danger-text:#ffb7b7;
+    --warning-bg:#2b2618;
+    --warning-border:#6f5630;
+    --warning-text:#f0d6a8;
     --shadow:0 18px 55px rgba(0,0,0,0.38);
     --soft-shadow:0 10px 28px rgba(0,0,0,0.26);
     --modal-bg:rgba(0,0,0,0.84);
@@ -563,6 +569,26 @@ body.color-same .per-card-colors{
     line-height:1.7;
     min-height:55px;
     border:1px solid var(--border);
+}
+
+.warning-box{
+    background:var(--warning-bg);
+    border:1px solid var(--warning-border);
+    color:var(--warning-text);
+    border-radius:18px;
+    padding:14px;
+    margin-bottom:14px;
+    font-size:14px;
+    line-height:1.55;
+}
+
+.warning-box b{
+    display:block;
+    margin-bottom:4px;
+}
+
+.warning-box + .warning-box{
+    margin-top:10px;
 }
 
 .summary-card{
@@ -1094,7 +1120,7 @@ body.color-same .per-card-colors{
                 Kasa Renklerini Gör
             </button>
             <button type="button" class="btn-light btn-reset" onclick="resetOrderForm()">
-                Bütün Ölçüleri Sıfırla
+                Bilgileri Temizle
             </button>
         </div>
     </div>
@@ -1182,13 +1208,13 @@ const kasaRenkleri = [
 ];
 
 const kumaslar = [
-    "Sude 001 - Gri Serisi",
-    "Sude 002 - Gri Serisi",
-    "Sude 003 - Gri Serisi",
-    "Sude 004 - Gri Serisi",
+    "Sude 001 - Beyaz",
+    "Sude 002 - Bej",
+    "Sude 003 - Gri",
+    "Sude 004 - Siyah",
     "Elmas 001 - Beyaz",
     "Elmas 002 - Krem",
-    "Elmas 003 - Koyu Krem",
+    "Elmas 003 - Bej",
     "Elmas 004 - Kahverengi",
     "Elmas 005 - Turkuaz",
     "Elmas 006 - Sarı",
@@ -1871,18 +1897,8 @@ function calculateAll(){
     const adr = document.getElementById("address").value.trim();
     const phoneData = normalizePhone(phoneRaw);
 
-    if(!ad){
-        errors.push("Müşteri bilgileri: Ad Soyad alanı zorunludur.");
-    }
-
-    if(!phoneRaw){
-        errors.push("Müşteri bilgileri: Telefon alanı zorunludur.");
-    }else if(!phoneData.valid){
+    if(phoneRaw && !phoneData.valid){
         errors.push("Müşteri bilgileri: Telefon numarası geçerli olmalıdır. Örnek: 05053559532 veya 5053559532");
-    }
-
-    if(!adr){
-        errors.push("Müşteri bilgileri: Adres alanı zorunludur.");
     }
 
     if(items.length === 0 && errors.length === 0){
@@ -1903,10 +1919,38 @@ function calculateAll(){
         return;
     }
 
-    const tel = phoneData.value;
-    document.getElementById("phone").value = tel;
+    const tel = phoneRaw ? phoneData.value : "";
+    if(tel){
+        document.getElementById("phone").value = tel;
+    }
 
     toplam += KARGO;
+
+    const hasMissingColor = items.some(function(item){
+        return item.kasa === NOT_SELECTED || item.kumas === NOT_SELECTED;
+    });
+
+    const hasMissingCustomerInfo = !ad || !tel || !adr;
+
+    let warningHTML = "";
+
+    if(hasMissingColor){
+        warningHTML += `
+            <div class="warning-box">
+                <b>Renk seçimi yapılmadı.</b>
+                Sadece fiyat almak için bu şekilde devam edebilirsiniz. Sipariş vermek isterseniz kasa rengi ve kumaş seçimini tamamlamanız önerilir.
+            </div>
+        `;
+    }
+
+    if(hasMissingCustomerInfo){
+        warningHTML += `
+            <div class="warning-box">
+                <b>Müşteri bilgileri eksik.</b>
+                Fiyat hesaplaması için müşteri bilgileri zorunlu değildir. Ancak sipariş vermek isterseniz ad soyad, telefon ve adres bilgilerinizi doldurmanız gerekir.
+            </div>
+        `;
+    }
 
     const detailsHTML = items.map(function(item){
         return `
@@ -1949,10 +1993,10 @@ function calculateAll(){
     }).join("\n\n");
 
     lastOrderText = [
-        ad,
-        tel,
+        ad || "Müşteri adı belirtilmedi",
+        tel || "Telefon belirtilmedi",
         "",
-        adr,
+        adr || "Adres belirtilmedi",
         "",
         whatsappDetails,
         "",
@@ -1964,6 +2008,8 @@ function calculateAll(){
 
     const resultHTML = `
         <div class="summary-card">
+            ${warningHTML}
+
             <div class="summary-head">
                 <div>
                     <span class="eyebrow">Sipariş Özeti</span>
@@ -1975,9 +2021,9 @@ function calculateAll(){
 
             <div class="customer-box">
                 <span class="summary-label">Müşteri</span>
-                <b>${escapeHTML(ad)}</b><br>
-                ${escapeHTML(tel)}<br>
-                ${escapeHTML(adr).replaceAll("\n","<br>")}
+                <b>${ad ? escapeHTML(ad) : "Belirtilmedi"}</b><br>
+                ${tel ? escapeHTML(tel) + "<br>" : ""}
+                ${adr ? escapeHTML(adr).replaceAll("\n","<br>") : "Adres belirtilmedi"}
             </div>
 
             <div class="summary-section-title">Ürün Detayları</div>
