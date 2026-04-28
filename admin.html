@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Prestij Life Admin Paneli</title>
 
-<link rel="icon" type="image/png" href="./favicon.png?v=30">
-<link rel="shortcut icon" type="image/png" href="./favicon.png?v=30">
-<link rel="apple-touch-icon" href="./favicon.png?v=30">
+<link rel="icon" type="image/png" href="./favicon.png?v=31">
+<link rel="shortcut icon" type="image/png" href="./favicon.png?v=31">
+<link rel="apple-touch-icon" href="./favicon.png?v=31">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -30,9 +30,6 @@
     --danger-bg:#fff0f0;
     --success:#176b3a;
     --success-bg:#ecfff3;
-    --warning-bg:#fff8e8;
-    --warning-border:#ead2a4;
-    --warning-text:#6b4a18;
     --shadow:0 18px 55px rgba(45,35,25,0.10);
 }
 
@@ -52,9 +49,6 @@ body.dark{
     --danger-bg:#321d1d;
     --success:#94e4ae;
     --success-bg:#17331f;
-    --warning-bg:#2b2618;
-    --warning-border:#6f5630;
-    --warning-text:#f0d6a8;
     --shadow:0 18px 55px rgba(0,0,0,0.38);
 }
 
@@ -242,17 +236,6 @@ body.dark .btn-main{
     background:var(--success-bg);
     color:var(--success);
     border:1px solid rgba(23,107,58,0.25);
-}
-
-.warning-box{
-    background:var(--warning-bg);
-    color:var(--warning-text);
-    border:1px solid var(--warning-border);
-    border-radius:16px;
-    padding:14px;
-    font-size:14px;
-    line-height:1.55;
-    margin-bottom:14px;
 }
 
 .admin-header{
@@ -502,11 +485,6 @@ body.dark .btn-main{
                 Yönetici paneli şifresini ve görünüm ayarlarını buradan değiştirebilirsiniz.
             </p>
 
-            <div class="warning-box">
-                <b>Güvenlik notu:</b>
-                Bu sistem GitHub Pages üzerinde çalıştığı için basit şifre korumasıdır. Normal kullanıcılar için yeterlidir; fakat çok gizli formüller için ileride gerçek sunuculu bir sistem kurmak daha güvenli olur.
-            </div>
-
             <div class="settings-grid">
 
                 <div class="settings-card">
@@ -567,7 +545,7 @@ body.dark .btn-main{
 </div>
 
 <script>
-const DEFAULT_ADMIN_PASSWORD = "beyza";
+const DEFAULT_ADMIN_PASSWORD = "1234";
 const ADMIN_PASSWORD_KEY = "prestijLifeAdminPassword";
 const ADMIN_SESSION_KEY = "prestijLifeAdminSession";
 const ADMIN_THEME_KEY = "prestijLifeAdminTheme";
@@ -634,7 +612,6 @@ function changePassword(){
     const newPassword = document.getElementById("newPassword").value;
     const newPasswordAgain = document.getElementById("newPasswordAgain").value;
 
-    const errorBox = document.getElementById("passwordError");
     const successBox = document.getElementById("passwordSuccess");
 
     hidePasswordMessages();
