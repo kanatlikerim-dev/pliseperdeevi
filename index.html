@@ -5,7 +5,63 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Prestij Life</title>
 
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
 <style>
+:root{
+    --body-bg:#f6f3ee;
+    --card-bg:#ffffff;
+    --panel-bg:#fbf8f4;
+    --soft-bg:#f3eee7;
+    --text:#1f1f1f;
+    --muted:#6f6a64;
+    --border:#e8e2da;
+    --input-border:#ded5ca;
+    --button-bg:#221d18;
+    --button-text:#ffffff;
+    --button-hover:#3a3028;
+    --light-button:#ffffff;
+    --choice-active:#f2ebe2;
+    --accent:#8b6a45;
+    --accent-dark:#745537;
+    --accent-soft:#efe4d6;
+    --note-bg:#fff6e8;
+    --danger-bg:#fff0f0;
+    --danger-border:#ffd0d0;
+    --danger-text:#7a1010;
+    --shadow:0 18px 55px rgba(45,35,25,0.10);
+    --soft-shadow:0 10px 28px rgba(45,35,25,0.08);
+    --modal-bg:rgba(20,16,12,0.74);
+}
+
+body.dark{
+    --body-bg:#151618;
+    --card-bg:#1e2023;
+    --panel-bg:#25282d;
+    --soft-bg:#202328;
+    --text:#f2f0ec;
+    --muted:#b8b2aa;
+    --border:#343840;
+    --input-border:#3d444d;
+    --button-bg:#b38a5d;
+    --button-text:#15110d;
+    --button-hover:#c49a6d;
+    --light-button:#25282d;
+    --choice-active:#30343b;
+    --accent:#b38a5d;
+    --accent-dark:#c49a6d;
+    --accent-soft:#342a20;
+    --note-bg:#2b2618;
+    --danger-bg:#321d1d;
+    --danger-border:#693232;
+    --danger-text:#ffb7b7;
+    --shadow:0 18px 55px rgba(0,0,0,0.38);
+    --soft-shadow:0 10px 28px rgba(0,0,0,0.26);
+    --modal-bg:rgba(0,0,0,0.84);
+}
+
 *{
     margin:0;
     padding:0;
@@ -13,56 +69,152 @@
 }
 
 body{
-    font-family:Arial, Helvetica, sans-serif;
-    background:#f4f4f4;
-    color:#222;
-    padding:20px;
+    font-family:"Inter", Arial, Helvetica, sans-serif;
+    background:
+        radial-gradient(circle at top left, rgba(139,106,69,0.10), transparent 32%),
+        linear-gradient(135deg, var(--body-bg), var(--soft-bg));
+    color:var(--text);
+    padding:22px;
+    transition:background 0.25s, color 0.25s;
 }
 
 .container{
-    max-width:960px;
+    max-width:980px;
     margin:auto;
-    background:#fff;
-    border-radius:18px;
-    padding:25px;
-    box-shadow:0 10px 35px rgba(0,0,0,0.08);
+    background:rgba(255,255,255,0.84);
+    border:1px solid rgba(232,226,218,0.9);
+    border-radius:28px;
+    padding:28px;
+    box-shadow:var(--shadow);
+    backdrop-filter:blur(10px);
+    transition:background 0.25s, box-shadow 0.25s;
+}
+
+body.dark .container{
+    background:rgba(30,32,35,0.92);
+    border-color:var(--border);
 }
 
 .header{
     text-align:center;
-    margin-bottom:25px;
+    margin-bottom:26px;
+    position:relative;
+    padding-top:48px;
+}
+
+.top-actions{
+    position:absolute;
+    top:0;
+    left:0;
+    right:0;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+}
+
+.top-small-btn{
+    background:var(--light-button);
+    color:var(--text);
+    border:1px solid var(--input-border);
+    border-radius:999px;
+    padding:10px 14px;
+    font-size:14px;
+    font-weight:700;
+    white-space:nowrap;
+    box-shadow:var(--soft-shadow);
+}
+
+.top-small-btn:hover{
+    transform:translateY(-2px);
+    border-color:var(--accent);
+    color:var(--accent);
+}
+
+.logo-shell{
+    width:170px;
+    height:96px;
+    margin:0 auto 8px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border-radius:28px;
+    background:linear-gradient(145deg, var(--card-bg), var(--panel-bg));
+    border:1px solid var(--border);
+    box-shadow:var(--soft-shadow);
 }
 
 .header img{
-    width:150px;
+    width:140px;
     max-width:100%;
-    margin-bottom:10px;
 }
 
 .header h1{
-    font-size:34px;
+    font-family:"Cormorant Garamond", serif;
+    font-size:48px;
+    line-height:1;
+    margin-bottom:8px;
+    letter-spacing:0.3px;
+}
+
+.hero-kicker{
+    color:var(--accent);
+    font-weight:800;
+    font-size:14px;
+    letter-spacing:0.5px;
+    text-transform:uppercase;
     margin-bottom:8px;
 }
 
-.header p{
-    color:#777;
+.hero-subtitle{
+    color:var(--muted);
+    max-width:560px;
+    margin:0 auto;
+    line-height:1.6;
+    font-size:15px;
+}
+
+.hero-badges{
+    display:flex;
+    justify-content:center;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-top:16px;
+}
+
+.badge{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    padding:8px 12px;
+    border-radius:999px;
+    background:var(--accent-soft);
+    color:var(--text);
+    border:1px solid rgba(139,106,69,0.22);
+    font-size:13px;
+    font-weight:800;
 }
 
 h2{
     margin:20px 0 12px;
     font-size:22px;
+    letter-spacing:-0.2px;
 }
 
 .card{
-    background:#fafafa;
-    border:1px solid #eee;
-    border-radius:14px;
-    padding:18px;
+    background:linear-gradient(145deg, var(--panel-bg), var(--card-bg));
+    border:1px solid var(--border);
+    border-radius:22px;
+    padding:20px;
     margin-bottom:18px;
+    box-shadow:0 8px 24px rgba(45,35,25,0.04);
 }
 
 .control-card h2{
     margin-top:0;
+    font-family:"Cormorant Garamond", serif;
+    font-size:30px;
+    line-height:1;
 }
 
 .grid{
@@ -74,35 +226,43 @@ h2{
 .field{
     display:flex;
     flex-direction:column;
-    gap:6px;
+    gap:7px;
 }
 
 .field span{
-    font-size:14px;
-    font-weight:700;
-    color:#333;
+    font-size:13px;
+    font-weight:800;
+    color:var(--text);
 }
 
 input, select, textarea{
     width:100%;
-    padding:12px;
-    border:1px solid #ddd;
-    border-radius:10px;
+    padding:13px 14px;
+    border:1px solid var(--input-border);
+    border-radius:14px;
     font-size:15px;
-    background:#fff;
+    background:var(--card-bg);
+    color:var(--text);
+    font-family:"Inter", Arial, Helvetica, sans-serif;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,0.35);
+}
+
+select:disabled{
+    opacity:0.75;
+    cursor:not-allowed;
 }
 
 input:focus,
 select:focus,
 textarea:focus{
     outline:none;
-    border-color:#111;
-    box-shadow:0 0 0 3px rgba(0,0,0,0.06);
+    border-color:var(--accent);
+    box-shadow:0 0 0 4px rgba(139,106,69,0.13);
 }
 
 textarea{
     resize:vertical;
-    min-height:90px;
+    min-height:96px;
     margin-top:12px;
 }
 
@@ -110,85 +270,118 @@ button,
 .btn-main,
 .btn-light{
     border:none;
-    border-radius:12px;
+    border-radius:14px;
     padding:14px 18px;
-    font-size:16px;
+    font-size:15px;
+    font-weight:800;
     cursor:pointer;
-    transition:0.25s;
+    transition:0.22s ease;
+    font-family:"Inter", Arial, Helvetica, sans-serif;
 }
 
 .btn-main{
     display:block;
-    background:#111;
-    color:#fff;
+    background:linear-gradient(135deg, var(--button-bg), var(--accent-dark));
+    color:var(--button-text);
     width:100%;
     margin-top:10px;
     text-align:center;
     text-decoration:none;
+    box-shadow:0 12px 26px rgba(139,106,69,0.22);
 }
 
 .btn-main:hover{
-    background:#333;
+    background:linear-gradient(135deg, var(--button-hover), var(--accent));
     transform:translateY(-2px);
 }
 
 .btn-light{
-    background:#fff;
-    color:#111;
-    border:1px solid #ddd;
+    background:var(--light-button);
+    color:var(--text);
+    border:1px solid var(--input-border);
+    box-shadow:var(--soft-shadow);
 }
 
 .btn-light:hover{
-    background:#f1f1f1;
+    background:var(--choice-active);
+    border-color:var(--accent);
+    color:var(--accent);
     transform:translateY(-2px);
 }
 
+.btn-reset{
+    border-color:#d75c5c;
+    color:#b73333;
+    font-weight:800;
+}
+
+body.dark .btn-reset{
+    color:#ff9b9b;
+    border-color:#8a3c3c;
+}
+
 .hint{
-    margin-top:8px;
-    color:#777;
+    margin-top:9px;
+    color:var(--muted);
     font-size:14px;
-    line-height:1.5;
+    line-height:1.55;
 }
 
 .catalog-actions{
     display:grid;
     grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
     gap:10px;
-    margin-top:15px;
+    margin-top:16px;
 }
 
 .cam-card{
     padding:0;
     overflow:hidden;
+    border-radius:22px;
 }
 
 .cam-card.has-error{
     border-color:#dc3545;
-    box-shadow:0 0 0 3px rgba(220,53,69,0.08);
+    box-shadow:0 0 0 4px rgba(220,53,69,0.08);
+}
+
+.cam-card.open{
+    border-color:rgba(139,106,69,0.42);
+    box-shadow:0 14px 35px rgba(139,106,69,0.10);
 }
 
 .cam-header{
     width:100%;
-    background:#fafafa;
-    color:#111;
+    background:transparent;
+    color:var(--text);
     display:flex;
     align-items:center;
     justify-content:space-between;
     gap:12px;
     text-align:left;
-    border-radius:14px;
+    border-radius:22px;
+    padding:18px 20px;
 }
 
 .cam-header:hover{
-    background:#f0f0f0;
+    background:var(--choice-active);
 }
 
 .cam-header h2{
     margin:0;
-    font-size:21px;
+    font-size:22px;
+    font-family:"Cormorant Garamond", serif;
 }
 
 .cam-arrow{
+    width:32px;
+    height:32px;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    border-radius:50%;
+    background:var(--accent-soft);
+    color:var(--accent);
     font-size:18px;
     transition:0.25s;
 }
@@ -199,7 +392,7 @@ button,
 
 .cam-body{
     display:none;
-    padding:0 18px 18px;
+    padding:0 20px 20px;
 }
 
 .cam-card.open .cam-body{
@@ -207,9 +400,10 @@ button,
 }
 
 .section-title{
-    margin-top:14px;
-    margin-bottom:8px;
-    font-weight:700;
+    margin-top:16px;
+    margin-bottom:9px;
+    font-weight:900;
+    color:var(--text);
 }
 
 .fabric-grid,
@@ -221,26 +415,29 @@ button,
 }
 
 .choice{
-    border:1px solid #ddd;
-    padding:10px;
-    border-radius:10px;
+    border:1px solid var(--input-border);
+    padding:11px;
+    border-radius:14px;
     text-align:center;
     cursor:pointer;
-    background:#fff;
-    transition:0.25s;
+    background:var(--card-bg);
+    transition:0.22s ease;
     font-size:14px;
-    color:#111;
+    color:var(--text);
+    font-weight:700;
 }
 
 .choice:hover{
     transform:translateY(-2px);
-    box-shadow:0 6px 16px rgba(0,0,0,0.08);
+    box-shadow:0 8px 18px rgba(45,35,25,0.08);
+    border-color:var(--accent);
 }
 
 .choice.active{
-    border:2px solid #111;
-    background:#f0f0f0;
-    font-weight:700;
+    border:2px solid var(--accent);
+    background:var(--choice-active);
+    font-weight:900;
+    box-shadow:0 8px 18px rgba(139,106,69,0.12);
 }
 
 .color-choice{
@@ -254,44 +451,226 @@ button,
     width:18px;
     height:18px;
     border-radius:50%;
-    border:1px solid #bbb;
+    border:1px solid #999;
     flex:0 0 auto;
 }
 
 .result{
     margin-top:20px;
-    background:#f8f8f8;
-    border-radius:14px;
+    background:var(--soft-bg);
+    border-radius:24px;
     padding:18px;
     line-height:1.7;
     min-height:55px;
+    border:1px solid var(--border);
+}
+
+.summary-card{
+    background:linear-gradient(145deg, var(--card-bg), var(--panel-bg));
+    border:1px solid var(--border);
+    border-radius:24px;
+    padding:20px;
+    box-shadow:var(--soft-shadow);
+}
+
+.summary-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:14px;
+    margin-bottom:16px;
+}
+
+.eyebrow{
+    display:block;
+    color:var(--accent);
+    font-size:12px;
+    font-weight:900;
+    text-transform:uppercase;
+    letter-spacing:0.6px;
+    margin-bottom:4px;
+}
+
+.summary-head h2{
+    margin:0;
+    font-family:"Cormorant Garamond", serif;
+    font-size:34px;
+    line-height:1;
+}
+
+.summary-head p{
+    color:var(--muted);
+    font-size:14px;
+    margin-top:7px;
+}
+
+.summary-pill{
+    white-space:nowrap;
+    padding:8px 12px;
+    border-radius:999px;
+    background:var(--accent-soft);
+    color:var(--accent);
+    font-size:13px;
+    font-weight:900;
+    border:1px solid rgba(139,106,69,0.22);
+}
+
+.customer-box{
+    background:var(--card-bg);
+    border:1px solid var(--border);
+    border-radius:18px;
+    padding:14px;
+    margin-bottom:16px;
+}
+
+.summary-label{
+    display:block;
+    color:var(--muted);
+    font-size:12px;
+    font-weight:900;
+    text-transform:uppercase;
+    letter-spacing:0.5px;
+    margin-bottom:5px;
+}
+
+.summary-section-title{
+    font-weight:900;
+    margin:14px 0 10px;
+}
+
+.summary-items{
+    display:grid;
+    gap:10px;
 }
 
 .order-item{
-    background:#fff;
-    border:1px solid #eee;
-    border-radius:12px;
-    padding:12px;
-    margin-bottom:12px;
+    background:var(--card-bg);
+    border:1px solid var(--border);
+    border-radius:18px;
+    padding:14px;
 }
 
-.total-box{
-    background:#111;
-    color:#fff;
-    border-radius:14px;
-    padding:16px;
+.order-item-top{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:8px;
+    margin-bottom:8px;
+}
+
+.cam-chip,
+.system-chip{
+    display:inline-flex;
+    align-items:center;
+    padding:6px 10px;
+    border-radius:999px;
+    font-size:12px;
+    font-weight:900;
+}
+
+.cam-chip{
+    background:var(--accent-soft);
+    color:var(--accent);
+}
+
+.system-chip{
+    background:var(--soft-bg);
+    color:var(--text);
+    border:1px solid var(--border);
+}
+
+.dimension{
+    display:block;
+    font-size:21px;
+    letter-spacing:-0.3px;
+    margin-bottom:4px;
+}
+
+.order-line{
+    color:var(--muted);
+    font-size:14px;
+    margin-bottom:10px;
+    font-weight:700;
+}
+
+.order-meta{
+    display:flex;
+    justify-content:space-between;
+    gap:12px;
+    padding:7px 0;
+    border-top:1px dashed var(--border);
+    font-size:14px;
+}
+
+.order-meta span{
+    color:var(--muted);
+}
+
+.order-meta strong{
+    text-align:right;
+}
+
+.price-panel{
     margin-top:14px;
+    background:linear-gradient(135deg, var(--button-bg), var(--accent-dark));
+    color:var(--button-text);
+    border-radius:22px;
+    padding:17px;
+    box-shadow:0 14px 30px rgba(139,106,69,0.20);
 }
 
-.total-box b{
-    font-size:22px;
+.price-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:14px;
+    padding:7px 0;
+}
+
+.price-row span{
+    opacity:0.88;
+    font-weight:700;
+}
+
+.price-row strong{
+    font-weight:900;
+}
+
+.price-row.grand{
+    margin-top:6px;
+    padding-top:14px;
+    border-top:1px solid rgba(255,255,255,0.22);
+}
+
+.price-row.grand strong{
+    font-size:28px;
+    letter-spacing:-0.6px;
+}
+
+.result-actions{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(190px,1fr));
+    gap:10px;
+    margin-top:12px;
+}
+
+.result-actions .btn-main,
+.result-actions .btn-light{
+    margin-top:0;
+}
+
+.copy-status{
+    margin-top:8px;
+    color:var(--muted);
+    font-size:14px;
+    text-align:center;
 }
 
 .error-box{
-    background:#fff0f0;
-    border:1px solid #ffd0d0;
-    color:#7a1010;
-    border-radius:12px;
+    background:var(--danger-bg);
+    border:1px solid var(--danger-border);
+    color:var(--danger-text);
+    border-radius:18px;
     padding:14px;
 }
 
@@ -301,8 +680,8 @@ button,
 }
 
 .social{
-    margin-top:25px;
-    border-top:1px solid #eee;
+    margin-top:26px;
+    border-top:1px solid var(--border);
     padding-top:20px;
 }
 
@@ -311,6 +690,10 @@ button,
     align-items:center;
     gap:10px;
     margin-bottom:12px;
+    background:var(--panel-bg);
+    border:1px solid var(--border);
+    border-radius:16px;
+    padding:10px 12px;
 }
 
 .social-item img{
@@ -325,23 +708,45 @@ button,
 
 .social-item a{
     text-decoration:none;
-    color:#111;
+    color:var(--text);
+    font-weight:800;
 }
 
 .note{
     margin-top:18px;
-    padding:15px;
-    background:#fff8e8;
-    border-radius:12px;
+    padding:16px;
+    background:var(--note-bg);
+    border:1px solid rgba(139,106,69,0.16);
+    border-radius:18px;
     font-size:14px;
     line-height:1.6;
+}
+
+.call-link{
+    display:inline-flex;
+    align-items:center;
+    gap:7px;
+    margin-top:7px;
+    color:var(--text);
+    font-weight:900;
+    text-decoration:none;
+}
+
+.call-link:hover{
+    text-decoration:underline;
+}
+
+.call-icon{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
 }
 
 .modal{
     display:none;
     position:fixed;
     inset:0;
-    background:rgba(0,0,0,0.72);
+    background:var(--modal-bg);
     z-index:9999;
     padding:18px;
 }
@@ -355,10 +760,11 @@ button,
 .modal-content{
     width:min(100%,1000px);
     max-height:92vh;
-    background:#fff;
-    border-radius:16px;
+    background:var(--card-bg);
+    border-radius:22px;
     overflow:hidden;
     box-shadow:0 20px 60px rgba(0,0,0,0.35);
+    border:1px solid var(--border);
 }
 
 .modal-head{
@@ -366,20 +772,21 @@ button,
     align-items:center;
     justify-content:space-between;
     gap:12px;
-    padding:14px 16px;
-    border-bottom:1px solid #eee;
+    padding:15px 18px;
+    border-bottom:1px solid var(--border);
 }
 
 .modal-head h3{
-    font-size:18px;
+    font-size:20px;
+    font-family:"Cormorant Garamond", serif;
 }
 
 .modal-close{
     width:42px;
     height:42px;
     border-radius:50%;
-    background:#111;
-    color:#fff;
+    background:var(--button-bg);
+    color:var(--button-text);
     padding:0;
     font-size:24px;
     line-height:1;
@@ -395,7 +802,45 @@ button,
 .modal-image-wrap img{
     max-width:100%;
     height:auto;
-    border-radius:10px;
+    border-radius:14px;
+}
+
+.modal-options{
+    display:none;
+    padding:18px;
+}
+
+.modal-options.show{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(190px,1fr));
+    gap:12px;
+}
+
+.measure-option-btn{
+    background:var(--panel-bg);
+    color:var(--text);
+    border:1px solid var(--border);
+    border-radius:18px;
+    padding:18px;
+    text-align:left;
+}
+
+.measure-option-btn:hover{
+    background:var(--choice-active);
+    transform:translateY(-2px);
+}
+
+.measure-option-title{
+    display:block;
+    font-size:17px;
+    font-weight:900;
+    margin-bottom:5px;
+}
+
+.measure-option-small{
+    display:block;
+    color:var(--muted);
+    font-size:13px;
 }
 
 @media(max-width:600px){
@@ -405,15 +850,41 @@ button,
 
     .container{
         padding:18px;
-        border-radius:16px;
+        border-radius:22px;
+    }
+
+    .header{
+        padding-top:0;
+    }
+
+    .top-actions{
+        position:static;
+        flex-direction:column;
+        align-items:center;
+        margin-bottom:16px;
+    }
+
+    .top-small-btn{
+        font-size:13.5px;
+        padding:9px 13px;
+    }
+
+    .logo-shell{
+        width:150px;
+        height:88px;
+        border-radius:24px;
     }
 
     .header h1{
-        font-size:28px;
+        font-size:40px;
+    }
+
+    .hero-subtitle{
+        font-size:14px;
     }
 
     .cam-header h2{
-        font-size:19px;
+        font-size:20px;
     }
 
     button,
@@ -422,18 +893,48 @@ button,
         font-size:15px;
         padding:13px 14px;
     }
+
+    .summary-head{
+        flex-direction:column;
+    }
+
+    .summary-head h2{
+        font-size:30px;
+    }
+
+    .price-row.grand strong{
+        font-size:24px;
+    }
 }
 </style>
 </head>
 
 <body>
 
-<div class="container">
+<main class="container">
 
     <div class="header">
-        <img src="logo.png" alt="Prestij Life Logo">
+        <div class="top-actions">
+            <button type="button" class="top-small-btn measure-toggle" onclick="openMeasureMenu()">📏 Ölçü Nasıl Alınır?</button>
+            <button type="button" class="top-small-btn theme-toggle" id="themeToggle" onclick="toggleTheme()">🌙 Koyu Mod</button>
+        </div>
+
+        <div class="logo-shell">
+            <img src="logo.png" alt="Prestij Life Logo">
+        </div>
+
         <h1>Prestij Life</h1>
-        <p>Plise Perde Sipariş & Hesaplama Sistemi</p>
+        <p class="hero-kicker">Plise Perde Sipariş & Hesaplama Sistemi</p>
+        <p class="hero-subtitle">
+            Cam balkon ve pimapen uyumlu plise perde siparişlerinizi kolayca oluşturun,
+            fiyatınızı hesaplayın ve WhatsApp üzerinden hızlıca iletin.
+        </p>
+
+        <div class="hero-badges">
+            <span class="badge">✓ Cam Balkon Uyumlu</span>
+            <span class="badge">✓ Pimapen Uyumlu</span>
+            <span class="badge">✓ Anında Fiyat Hesabı</span>
+        </div>
     </div>
 
     <div class="card control-card">
@@ -455,6 +956,9 @@ button,
             <button type="button" class="btn-light" onclick="openImageModal('Kasa Renkleri','kasa.png')">
                 Kasa Renklerini Gör
             </button>
+            <button type="button" class="btn-light btn-reset" onclick="resetOrderForm()">
+                Formu Sıfırla
+            </button>
         </div>
     </div>
 
@@ -464,7 +968,7 @@ button,
         <h2>Müşteri Bilgileri</h2>
         <div class="grid">
             <input id="name" placeholder="Ad Soyad">
-            <input id="phone" placeholder="Telefon No">
+            <input id="phone" inputmode="tel" placeholder="Telefon No">
         </div>
         <textarea id="address" placeholder="Adres"></textarea>
     </div>
@@ -479,7 +983,7 @@ button,
             <a href="https://wa.me/905053559532" target="_blank">
                 <img src="wplogo.png" alt="WhatsApp">
             </a>
-            <span>+90 505 355 95 32</span>
+            <a href="tel:+905053559532">+90 505 355 95 32</a>
         </div>
 
         <div class="social-item">
@@ -498,12 +1002,15 @@ button,
 
         <div class="note">
             Daha fazla bilgi veya soru sormak için bizimle iletişime geçebilirsiniz.<br>
-            📞 +90 505 355 95 32
+            <a class="call-link" href="tel:+905053559532">
+                <span class="call-icon">📞</span>
+                <span>+90 505 355 95 32</span>
+            </a>
         </div>
 
     </div>
 
-</div>
+</main>
 
 <div class="modal" id="imageModal" onclick="modalOutsideClose(event)">
     <div class="modal-content">
@@ -511,7 +1018,10 @@ button,
             <h3 id="modalTitle">Görsel</h3>
             <button type="button" class="modal-close" onclick="closeImageModal()">×</button>
         </div>
-        <div class="modal-image-wrap">
+
+        <div class="modal-options" id="modalOptions"></div>
+
+        <div class="modal-image-wrap" id="modalImageWrap">
             <img id="modalImage" src="" alt="">
         </div>
     </div>
@@ -522,6 +1032,7 @@ const ASKILI_FIYAT = 450;
 const VIDALI_FIYAT = 400;
 const KARGO = 300;
 const MAX_CAM = 50;
+const ORDER_STORAGE_KEY = "prestijLifeOrderData";
 
 const kasaRenkleri = [
     { name:"Bronz", hex:"#a56a2a" },
@@ -537,7 +1048,6 @@ const kumaslar = [
     "Sude 002 - Bej",
     "Sude 003 - Gri",
     "Sude 004 - Siyah",
-
     "Elmas 001 - Beyaz",
     "Elmas 002 - Krem",
     "Elmas 003 - Bej",
@@ -549,9 +1059,16 @@ const kumaslar = [
 ];
 
 let currentCamCount = 0;
+let isRestoring = false;
+let saveTimer = null;
+let lastOrderText = "";
 
 function init(){
+    initTheme();
+
     const camSelect = document.getElementById("camCount");
+
+    camSelect.innerHTML = "";
 
     for(let i = 1; i <= MAX_CAM; i++){
         const option = document.createElement("option");
@@ -560,10 +1077,26 @@ function init(){
         camSelect.appendChild(option);
     }
 
-    camSelect.value = "1";
+    const savedData = loadSavedState();
+    const savedCamCount = savedData && Number.isInteger(savedData.camCount) && savedData.camCount >= 1 && savedData.camCount <= MAX_CAM
+        ? savedData.camCount
+        : 1;
+
+    isRestoring = true;
+
+    camSelect.value = String(savedCamCount);
     camSelect.addEventListener("change", handleCamCountChange);
 
-    setCamCount(1, false);
+    setCamCount(savedCamCount, false);
+
+    if(savedData){
+        restoreSavedState(savedData);
+    }
+
+    isRestoring = false;
+
+    document.addEventListener("input", queueSaveState);
+    document.addEventListener("change", queueSaveState);
 
     document.addEventListener("keydown", function(e){
         if(e.key === "Escape"){
@@ -572,18 +1105,48 @@ function init(){
     });
 }
 
+function initTheme(){
+    const savedTheme = localStorage.getItem("prestijLifeTheme");
+
+    if(savedTheme === "dark"){
+        document.body.classList.add("dark");
+    }
+
+    updateThemeButton();
+}
+
+function toggleTheme(){
+    document.body.classList.toggle("dark");
+
+    const theme = document.body.classList.contains("dark") ? "dark" : "light";
+    localStorage.setItem("prestijLifeTheme", theme);
+
+    updateThemeButton();
+}
+
+function updateThemeButton(){
+    const button = document.getElementById("themeToggle");
+
+    if(!button) return;
+
+    if(document.body.classList.contains("dark")){
+        button.textContent = "☀️ Açık Mod";
+    }else{
+        button.textContent = "🌙 Koyu Mod";
+    }
+}
+
 function handleCamCountChange(){
     const newCount = parseInt(this.value, 10);
 
-    if(newCount < currentCamCount){
-        const confirmed = confirm("Cam sayısını azaltırsanız sondaki cam bilgileri silinir. Devam edilsin mi?");
-        if(!confirmed){
-            this.value = currentCamCount;
-            return;
-        }
+    if(isNaN(newCount) || newCount < 1 || newCount > MAX_CAM){
+        rebuildOnlyOneCam();
+        queueSaveState();
+        return;
     }
 
     setCamCount(newCount, true);
+    queueSaveState();
 }
 
 function setCamCount(count, preserveData){
@@ -603,10 +1166,32 @@ function setCamCount(count, preserveData){
 
     currentCamCount = count;
 
+    const camSelect = document.getElementById("camCount");
+    if(camSelect){
+        camSelect.value = String(count);
+        camSelect.selectedIndex = count - 1;
+    }
+
     const hasOpenCard = document.querySelector(".cam-card.open");
     if(!hasOpenCard && count > 0){
         openCam(1);
     }
+}
+
+function rebuildOnlyOneCam(){
+    const camArea = document.getElementById("camArea");
+    const camSelect = document.getElementById("camCount");
+
+    camArea.innerHTML = "";
+    currentCamCount = 1;
+
+    if(camSelect){
+        camSelect.value = "1";
+        camSelect.selectedIndex = 0;
+    }
+
+    createCamCard(1);
+    openCam(1);
 }
 
 function createCamCard(index){
@@ -620,23 +1205,31 @@ function createCamCard(index){
             <div class="cam-body">
                 <div class="grid">
                     <label class="field">
+                        <span>Uygulama Alanı</span>
+                        <select class="uygulama" onchange="updateTipOptions(this.closest('.cam-card'))">
+                            <option value="cam_balkon">Cam Balkon</option>
+                            <option value="pimapen">Pimapen / PVC</option>
+                        </select>
+                    </label>
+
+                    <label class="field">
                         <span>En (cm)</span>
-                        <input type="number" min="1" step="0.1" inputmode="decimal" class="en" placeholder="Örn: 148">
+                        <input type="text" inputmode="decimal" class="en" placeholder="Örn: 148">
                     </label>
 
                     <label class="field">
                         <span>Boy (cm)</span>
-                        <input type="number" min="1" step="0.1" inputmode="decimal" class="boy" placeholder="Örn: 53">
+                        <input type="text" inputmode="decimal" class="boy" placeholder="Örn: 53">
                     </label>
 
                     <label class="field">
                         <span>Adet</span>
-                        <input type="number" min="1" step="1" inputmode="numeric" class="adet" placeholder="Örn: 4">
+                        <input type="text" inputmode="numeric" class="adet" placeholder="Örn: 4">
                     </label>
 
                     <label class="field">
                         <span>Açılır Adet</span>
-                        <input type="number" min="0" step="1" inputmode="numeric" class="acilir" placeholder="Örn: 1">
+                        <input type="text" inputmode="numeric" class="acilir" placeholder="Örn: 1">
                     </label>
 
                     <label class="field">
@@ -662,8 +1255,35 @@ function createCamCard(index){
     const card = document.getElementById("cam" + index);
     fillKasaChoices(card);
     fillKumasChoices(card);
+    updateTipOptions(card);
 
     return card;
+}
+
+function updateTipOptions(card){
+    const uygulama = card.querySelector(".uygulama").value;
+    const tipSelect = card.querySelector(".tip");
+    const currentTip = tipSelect.value;
+
+    if(uygulama === "pimapen"){
+        tipSelect.innerHTML = `<option value="vidali">Vidalı</option>`;
+        tipSelect.value = "vidali";
+        tipSelect.disabled = true;
+    }else{
+        tipSelect.disabled = false;
+        tipSelect.innerHTML = `
+            <option value="askili">Askılı</option>
+            <option value="vidali">Vidalı</option>
+        `;
+
+        if(currentTip === "vidali"){
+            tipSelect.value = "vidali";
+        }else{
+            tipSelect.value = "askili";
+        }
+    }
+
+    queueSaveState();
 }
 
 function fillKasaChoices(card){
@@ -717,6 +1337,7 @@ function collectCardData(){
         if(!card) continue;
 
         data.push({
+            uygulama: card.querySelector(".uygulama").value,
             en: card.querySelector(".en").value,
             boy: card.querySelector(".boy").value,
             adet: card.querySelector(".adet").value,
@@ -732,11 +1353,18 @@ function collectCardData(){
 }
 
 function applyCardData(card, data){
+    card.querySelector(".uygulama").value = data.uygulama || "cam_balkon";
+    updateTipOptions(card);
+
     card.querySelector(".en").value = data.en ?? "";
     card.querySelector(".boy").value = data.boy ?? "";
     card.querySelector(".adet").value = data.adet ?? "";
     card.querySelector(".acilir").value = data.acilir ?? "";
-    card.querySelector(".tip").value = data.tip || "askili";
+
+    const tipSelect = card.querySelector(".tip");
+    if(data.tip === "vidali"){
+        tipSelect.value = "vidali";
+    }
 
     setChoiceByValue(card.querySelector(".kasaSecim"), data.kasa);
     setChoiceByValue(card.querySelector(".kumasSecim"), data.kumas);
@@ -744,6 +1372,85 @@ function applyCardData(card, data){
     if(data.open){
         card.classList.add("open");
     }
+}
+
+function restoreSavedState(data){
+    document.getElementById("name").value = data.name || "";
+    document.getElementById("phone").value = data.phone || "";
+    document.getElementById("address").value = data.address || "";
+
+    if(Array.isArray(data.cards)){
+        data.cards.forEach(function(cardData, index){
+            const card = document.getElementById("cam" + (index + 1));
+            if(card){
+                applyCardData(card, cardData);
+            }
+        });
+    }
+
+    const hasOpenCard = document.querySelector(".cam-card.open");
+    if(!hasOpenCard && currentCamCount > 0){
+        openCam(1);
+    }
+}
+
+function loadSavedState(){
+    try{
+        const raw = localStorage.getItem(ORDER_STORAGE_KEY);
+        if(!raw) return null;
+        return JSON.parse(raw);
+    }catch(e){
+        return null;
+    }
+}
+
+function queueSaveState(){
+    if(isRestoring) return;
+
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(saveState, 150);
+}
+
+function saveState(){
+    if(isRestoring) return;
+
+    const state = {
+        camCount: currentCamCount,
+        name: document.getElementById("name").value,
+        phone: document.getElementById("phone").value,
+        address: document.getElementById("address").value,
+        cards: collectCardData(),
+        updatedAt: new Date().toISOString()
+    };
+
+    localStorage.setItem(ORDER_STORAGE_KEY, JSON.stringify(state));
+}
+
+function resetOrderForm(){
+    const confirmed = confirm("Tüm girilen bilgiler silinsin mi?");
+    if(!confirmed) return;
+
+    clearTimeout(saveTimer);
+    saveTimer = null;
+
+    isRestoring = true;
+
+    localStorage.removeItem(ORDER_STORAGE_KEY);
+
+    lastOrderText = "";
+
+    document.getElementById("name").value = "";
+    document.getElementById("phone").value = "";
+    document.getElementById("address").value = "";
+    document.getElementById("result").innerHTML = "";
+
+    rebuildOnlyOneCam();
+
+    isRestoring = false;
+
+    localStorage.removeItem(ORDER_STORAGE_KEY);
+
+    window.scrollTo({ top:0, behavior:"smooth" });
 }
 
 function setChoiceByValue(container, value){
@@ -765,6 +1472,8 @@ function openCam(id){
     if(selectedCard){
         selectedCard.classList.add("open");
     }
+
+    queueSaveState();
 }
 
 function selectChoice(el){
@@ -775,6 +1484,7 @@ function selectChoice(el){
     });
 
     el.classList.add("active");
+    queueSaveState();
 }
 
 function roundUp10(x){
@@ -790,6 +1500,24 @@ function parseInputNumber(value){
     const cleaned = String(value).trim().replace(",", ".");
     if(cleaned === "") return NaN;
     return Number(cleaned);
+}
+
+function normalizePhone(value){
+    const raw = String(value || "").trim();
+    let digits = raw.replace(/\D/g, "");
+
+    if(digits.startsWith("0090")){
+        digits = "0" + digits.slice(4);
+    }else if(digits.startsWith("90") && digits.length === 12){
+        digits = "0" + digits.slice(2);
+    }else if(digits.length === 10 && digits.startsWith("5")){
+        digits = "0" + digits;
+    }
+
+    return {
+        value: digits,
+        valid: /^05\d{9}$/.test(digits)
+    };
 }
 
 function formatNumber(value){
@@ -833,12 +1561,17 @@ function calculateAll(){
     cards.forEach(function(card, index){
         const camNo = index + 1;
 
+        const uygulama = card.querySelector(".uygulama").value;
         const en = parseInputNumber(card.querySelector(".en").value);
         const boy = parseInputNumber(card.querySelector(".boy").value);
         const adet = parseInputNumber(card.querySelector(".adet").value);
         const acilirRaw = card.querySelector(".acilir").value.trim();
         const acilir = acilirRaw === "" ? 0 : parseInputNumber(acilirRaw);
-        const tip = card.querySelector(".tip").value;
+
+        let tip = card.querySelector(".tip").value;
+        if(uygulama === "pimapen"){
+            tip = "vidali";
+        }
 
         const kasa = card.querySelector(".kasaSecim .active")?.dataset.value || "";
         const kumas = card.querySelector(".kumasSecim .active")?.dataset.value || "";
@@ -871,6 +1604,10 @@ function calculateAll(){
 
         if(!isNaN(adet) && !isNaN(acilir) && acilir > adet){
             addCardError("Açılır adet, toplam adetten büyük olamaz.");
+        }
+
+        if(uygulama === "pimapen" && tip !== "vidali"){
+            addCardError("Pimapen / PVC için sadece Vidalı sistem seçilebilir.");
         }
 
         if(!kasa){
@@ -908,20 +1645,24 @@ function calculateAll(){
             tipText: getTipText(tip),
             kasa: kasa,
             kumas: kumas,
-            line: formatNumber(en) + "x" + formatNumber(boy) + " " + adet + " adet " + getTipText(tip)
+            dimension: formatNumber(en) + " × " + formatNumber(boy) + " cm",
+            whatsappDimension: formatNumber(en) + "x" + formatNumber(boy) + " cm"
         });
     });
 
     const ad = document.getElementById("name").value.trim();
-    const tel = document.getElementById("phone").value.trim();
+    const phoneRaw = document.getElementById("phone").value.trim();
     const adr = document.getElementById("address").value.trim();
+    const phoneData = normalizePhone(phoneRaw);
 
     if(!ad){
         errors.push("Müşteri bilgileri: Ad Soyad alanı zorunludur.");
     }
 
-    if(!tel){
+    if(!phoneRaw){
         errors.push("Müşteri bilgileri: Telefon alanı zorunludur.");
+    }else if(!phoneData.valid){
+        errors.push("Müşteri bilgileri: Telefon numarası geçerli olmalıdır. Örnek: 05053559532 veya 5053559532");
     }
 
     if(!adr){
@@ -946,29 +1687,54 @@ function calculateAll(){
         return;
     }
 
+    const tel = phoneData.value;
+    document.getElementById("phone").value = tel;
+
     toplam += KARGO;
 
     const detailsHTML = items.map(function(item){
         return `
             <div class="order-item">
-                <b>${escapeHTML(item.line)}</b><br>
-                Kasa: ${escapeHTML(item.kasa)}<br>
-                Kumaş: ${escapeHTML(item.kumas)}
-                ${item.acilir > 0 ? "<br>(" + item.acilir + " adet açılır)" : ""}
+                <div class="order-item-top">
+                    <span class="cam-chip">Cam ${item.camNo}</span>
+                    <span class="system-chip">${escapeHTML(item.tipText)}</span>
+                </div>
+
+                <b class="dimension">${escapeHTML(item.dimension)}</b>
+                <div class="order-line">${item.adet} adet · ${escapeHTML(item.tipText)}</div>
+
+                <div class="order-meta">
+                    <span>Kasa</span>
+                    <strong>${escapeHTML(item.kasa)}</strong>
+                </div>
+
+                <div class="order-meta">
+                    <span>Kumaş</span>
+                    <strong>${escapeHTML(item.kumas)}</strong>
+                </div>
+
+                ${item.acilir > 0 ? `
+                    <div class="order-meta">
+                        <span>Açılır</span>
+                        <strong>${item.acilir} adet</strong>
+                    </div>
+                ` : ""}
             </div>
         `;
     }).join("");
 
     const whatsappDetails = items.map(function(item){
         return [
-            item.line,
+            "Cam " + item.camNo,
+            item.whatsappDimension,
+            item.adet + " adet " + item.tipText,
             "Kasa: " + item.kasa,
             "Kumaş: " + item.kumas,
-            item.acilir > 0 ? "(" + item.acilir + " adet açılır)" : ""
+            item.acilir > 0 ? "Açılır: " + item.acilir + " adet" : ""
         ].filter(Boolean).join("\n");
     }).join("\n\n");
 
-    const whatsappText = [
+    lastOrderText = [
         ad,
         tel,
         "",
@@ -980,28 +1746,64 @@ function calculateAll(){
         "Kargo Dahil Toplam: " + formatTL(toplam)
     ].join("\n");
 
-    const whatsappLink = "https://wa.me/905053559532?text=" + encodeURIComponent(whatsappText);
+    const whatsappLink = "https://wa.me/905053559532?text=" + encodeURIComponent(lastOrderText);
 
     const resultHTML = `
-        <b>${escapeHTML(ad)}</b><br>
-        ${escapeHTML(tel)}<br>
-        ${escapeHTML(adr).replaceAll("\n","<br>")}<br><br>
+        <div class="summary-card">
+            <div class="summary-head">
+                <div>
+                    <span class="eyebrow">Sipariş Özeti</span>
+                    <h2>Teklif Bilgisi</h2>
+                    <p>Kargo dahil toplam teklifiniz hazır.</p>
+                </div>
+                <span class="summary-pill">Kargo Dahil</span>
+            </div>
 
-        ${detailsHTML}
+            <div class="customer-box">
+                <span class="summary-label">Müşteri</span>
+                <b>${escapeHTML(ad)}</b><br>
+                ${escapeHTML(tel)}<br>
+                ${escapeHTML(adr).replaceAll("\n","<br>")}
+            </div>
 
-        <div class="total-box">
-            Toplam ${toplamAdet} adet<br>
-            Ürün + Kargo Dahil<br>
-            <b>${formatTL(toplam)}</b>
+            <div class="summary-section-title">Ürün Detayları</div>
+
+            <div class="summary-items">
+                ${detailsHTML}
+            </div>
+
+            <div class="price-panel">
+                <div class="price-row">
+                    <span>Toplam Adet</span>
+                    <strong>${toplamAdet}</strong>
+                </div>
+                <div class="price-row">
+                    <span>Kargo</span>
+                    <strong>Dahil</strong>
+                </div>
+                <div class="price-row grand">
+                    <span>Genel Toplam</span>
+                    <strong>${formatTL(toplam)}</strong>
+                </div>
+            </div>
+
+            <div class="result-actions">
+                <a class="btn-main" href="${whatsappLink}" target="_blank">
+                    WhatsApp ile Sipariş Gönder
+                </a>
+                <button type="button" class="btn-light" onclick="copyOrderText()">
+                    Siparişi Kopyala
+                </button>
+            </div>
+
+            <div class="copy-status" id="copyStatus"></div>
         </div>
-
-        <a class="btn-main" href="${whatsappLink}" target="_blank">
-            WhatsApp Sipariş Gönder
-        </a>
     `;
 
     document.getElementById("result").innerHTML = resultHTML;
     document.getElementById("result").scrollIntoView({ behavior:"smooth", block:"start" });
+
+    saveState();
 }
 
 function showErrors(errors){
@@ -1017,10 +1819,76 @@ function showErrors(errors){
     `;
 }
 
+function copyOrderText(){
+    if(!lastOrderText){
+        alert("Önce siparişi hesaplayın.");
+        return;
+    }
+
+    if(navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(lastOrderText).then(function(){
+            showCopyStatus("Sipariş özeti kopyalandı.");
+        }).catch(function(){
+            fallbackCopyOrderText();
+        });
+    }else{
+        fallbackCopyOrderText();
+    }
+}
+
+function fallbackCopyOrderText(){
+    const temp = document.createElement("textarea");
+    temp.value = lastOrderText;
+    document.body.appendChild(temp);
+    temp.select();
+    document.execCommand("copy");
+    document.body.removeChild(temp);
+    showCopyStatus("Sipariş özeti kopyalandı.");
+}
+
+function showCopyStatus(message){
+    const status = document.getElementById("copyStatus");
+    if(!status) return;
+
+    status.textContent = message;
+
+    setTimeout(function(){
+        status.textContent = "";
+    }, 2500);
+}
+
+function openMeasureMenu(){
+    document.getElementById("modalTitle").textContent = "Ölçü Nasıl Alınır?";
+    document.getElementById("modalImage").src = "";
+    document.getElementById("modalImage").alt = "";
+    document.getElementById("modalImageWrap").style.display = "none";
+
+    const options = document.getElementById("modalOptions");
+    options.classList.add("show");
+    options.innerHTML = `
+        <button type="button" class="measure-option-btn" onclick="openImageModal('Cam Balkon Ölçüsü Nasıl Alınır?','cam.png')">
+            <span class="measure-option-title">Cam Balkon</span>
+            <span class="measure-option-small">Cam balkon ölçü görselini aç</span>
+        </button>
+
+        <button type="button" class="measure-option-btn" onclick="openImageModal('Pimapen / PVC Ölçüsü Nasıl Alınır?','pvc.png')">
+            <span class="measure-option-title">Pimapen / PVC</span>
+            <span class="measure-option-small">Pimapen ölçü görselini aç</span>
+        </button>
+    `;
+
+    document.getElementById("imageModal").classList.add("show");
+}
+
 function openImageModal(title, src){
+    const options = document.getElementById("modalOptions");
+    options.classList.remove("show");
+    options.innerHTML = "";
+
     document.getElementById("modalTitle").textContent = title;
     document.getElementById("modalImage").src = src;
     document.getElementById("modalImage").alt = title;
+    document.getElementById("modalImageWrap").style.display = "block";
     document.getElementById("imageModal").classList.add("show");
 }
 
