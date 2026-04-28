@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Prestij Life</title>
 
-<link rel="icon" type="image/png" href="./favicon.png?v=80">
-<link rel="shortcut icon" type="image/png" href="./favicon.png?v=80">
-<link rel="apple-touch-icon" href="./favicon.png?v=80">
+<link rel="icon" type="image/png" href="./favicon.png?v=100">
+<link rel="shortcut icon" type="image/png" href="./favicon.png?v=100">
+<link rel="apple-touch-icon" href="./favicon.png?v=100">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1113,7 +1113,7 @@ body.same-product .product-and-color-area{
         <h1>Prestij Life</h1>
         <p class="hero-kicker">Plise Perde Sipariş & Hesaplama Sistemi</p>
         <p class="hero-subtitle">
-            Klasik seri plise, blackout karartmalı ve çiftli sistem ürünleriniz için ölçülerinizi girin,
+            Klasik seri plise, blackout karartmalı, çiftli sistem ve tül perde ürünleriniz için ölçülerinizi girin,
             fiyatınızı hesaplayın ve WhatsApp üzerinden kolayca sipariş oluşturun.
         </p>
 
@@ -1186,6 +1186,11 @@ body.same-product .product-and-color-area{
 
                         <p class="section-title">Çiftli Sistem Perde Rengi</p>
                         <div class="fabric-grid globalPerdeSecim"></div>
+                    </div>
+
+                    <div class="global-color-section global-color-tul_perde">
+                        <p class="section-title">Tül Rengi</p>
+                        <div class="color-grid globalTulPerdeSecim"></div>
                     </div>
 
                     <p class="optional-note">
@@ -1282,6 +1287,7 @@ const DEFAULT_PRICES = {
     klasik_vidali: 400,
     blackout: 1250,
     ciftli: 1000,
+    tul_perde: 1000,
     kargo: 300
 };
 
@@ -1290,13 +1296,14 @@ let priceLoadedFromApi = false;
 let priceLoadFailed = false;
 
 const MAX_CAM = 50;
-const ORDER_STORAGE_KEY = "prestijLifeOrderData_v4";
+const ORDER_STORAGE_KEY = "prestijLifeOrderData_v5";
 const NOT_SELECTED = "Belirtilmedi";
 
 const productTypes = [
     { key:"klasik", label:"Klasik Seri Plise", desc:"" },
     { key:"blackout", label:"Blackout Karartmalı", desc:"" },
-    { key:"ciftli", label:"Çiftli Sistem", desc:"" }
+    { key:"ciftli", label:"Çiftli Sistem", desc:"" },
+    { key:"tul_perde", label:"Tül Perde", desc:"" }
 ];
 
 const kasaRenkleri = [
@@ -1420,6 +1427,7 @@ async function loadCurrentPrices(){
             klasik_vidali: Number(data.prices.klasik_vidali),
             blackout: Number(data.prices.blackout),
             ciftli: Number(data.prices.ciftli),
+            tul_perde: Number(data.prices.tul_perde),
             kargo: Number(data.prices.kargo)
         };
 
@@ -1480,6 +1488,10 @@ function updateProductDescriptions(){
 
         if(product.key === "ciftli"){
             product.desc = formatTLPlain(currentPrices.ciftli) + " / m²";
+        }
+
+        if(product.key === "tul_perde"){
+            product.desc = formatTLPlain(currentPrices.tul_perde) + " / m²";
         }
     });
 }
@@ -1568,6 +1580,7 @@ function setGlobalProductType(productKey){
     document.querySelector(".global-color-klasik").style.display = globalProductType === "klasik" ? "block" : "none";
     document.querySelector(".global-color-blackout").style.display = globalProductType === "blackout" ? "block" : "none";
     document.querySelector(".global-color-ciftli").style.display = globalProductType === "ciftli" ? "block" : "none";
+    document.querySelector(".global-color-tul_perde").style.display = globalProductType === "tul_perde" ? "block" : "none";
 }
 
 function fillGlobalColorChoices(){
@@ -1576,6 +1589,7 @@ function fillGlobalColorChoices(){
     fillChoiceBox(document.querySelector(".globalBlackoutSecim"), blackoutRenkleri, "color");
     fillChoiceBox(document.querySelector(".globalTulSecim"), tulRenkleri, "color");
     fillChoiceBox(document.querySelector(".globalPerdeSecim"), kumaslar, "text");
+    fillChoiceBox(document.querySelector(".globalTulPerdeSecim"), tulRenkleri, "color");
 }
 
 function handleCamCountChange(){
@@ -1713,6 +1727,11 @@ function createCamCard(index){
                         <div class="fabric-grid perdeSecim"></div>
                     </div>
 
+                    <div class="product-color-section color-tul_perde">
+                        <p class="section-title">Tül Rengi</p>
+                        <div class="color-grid tulPerdeSecim"></div>
+                    </div>
+
                     <p class="optional-note">Renk seçimi zorunlu değildir. Sadece fiyat almak için boş bırakabilirsiniz.</p>
                 </div>
             </div>
@@ -1729,6 +1748,7 @@ function createCamCard(index){
     fillChoiceBox(card.querySelector(".blackoutSecim"), blackoutRenkleri, "color");
     fillChoiceBox(card.querySelector(".tulSecim"), tulRenkleri, "color");
     fillChoiceBox(card.querySelector(".perdeSecim"), kumaslar, "text");
+    fillChoiceBox(card.querySelector(".tulPerdeSecim"), tulRenkleri, "color");
 
     setProductType(card, "klasik");
     updateTipOptions(card);
@@ -1763,6 +1783,7 @@ function setProductType(card, productKey){
     card.querySelector(".color-klasik").style.display = productKey === "klasik" ? "block" : "none";
     card.querySelector(".color-blackout").style.display = productKey === "blackout" ? "block" : "none";
     card.querySelector(".color-ciftli").style.display = productKey === "ciftli" ? "block" : "none";
+    card.querySelector(".color-tul_perde").style.display = productKey === "tul_perde" ? "block" : "none";
 }
 
 function fillChoiceBox(box, items, type){
@@ -1843,7 +1864,8 @@ function collectGlobalData(){
         kumas: getActiveValue(document.querySelector(".globalKumasSecim")),
         blackout: getActiveValue(document.querySelector(".globalBlackoutSecim")),
         tul: getActiveValue(document.querySelector(".globalTulSecim")),
-        perde: getActiveValue(document.querySelector(".globalPerdeSecim"))
+        perde: getActiveValue(document.querySelector(".globalPerdeSecim")),
+        tul_perde: getActiveValue(document.querySelector(".globalTulPerdeSecim"))
     };
 }
 
@@ -1859,6 +1881,7 @@ function applyGlobalData(data){
     setChoiceByValue(document.querySelector(".globalBlackoutSecim"), data.blackout);
     setChoiceByValue(document.querySelector(".globalTulSecim"), data.tul);
     setChoiceByValue(document.querySelector(".globalPerdeSecim"), data.perde);
+    setChoiceByValue(document.querySelector(".globalTulPerdeSecim"), data.tul_perde);
 }
 
 function collectCardData(){
@@ -1881,6 +1904,7 @@ function collectCardData(){
             blackout: getActiveValue(card.querySelector(".blackoutSecim")),
             tul: getActiveValue(card.querySelector(".tulSecim")),
             perde: getActiveValue(card.querySelector(".perdeSecim")),
+            tul_perde: getActiveValue(card.querySelector(".tulPerdeSecim")),
             open: card.classList.contains("open")
         });
     }
@@ -1908,6 +1932,7 @@ function applyCardData(card, data){
     setChoiceByValue(card.querySelector(".blackoutSecim"), data.blackout);
     setChoiceByValue(card.querySelector(".tulSecim"), data.tul);
     setChoiceByValue(card.querySelector(".perdeSecim"), data.perde);
+    setChoiceByValue(card.querySelector(".tulPerdeSecim"), data.tul_perde);
 
     if(data.open){
         card.classList.add("open");
@@ -2111,6 +2136,7 @@ function getTipText(tip){
 function getUnitPrice(productKey, tip){
     if(productKey === "blackout") return Number(currentPrices.blackout);
     if(productKey === "ciftli") return Number(currentPrices.ciftli);
+    if(productKey === "tul_perde") return Number(currentPrices.tul_perde);
     return tip === "askili" ? Number(currentPrices.klasik_askili) : Number(currentPrices.klasik_vidali);
 }
 
@@ -2131,7 +2157,8 @@ function getItemColors(card, productKey){
             kumas: global.kumas || NOT_SELECTED,
             blackout: global.blackout || NOT_SELECTED,
             tul: global.tul || NOT_SELECTED,
-            perde: global.perde || NOT_SELECTED
+            perde: global.perde || NOT_SELECTED,
+            tul_perde: global.tul_perde || NOT_SELECTED
         };
     }
 
@@ -2140,7 +2167,8 @@ function getItemColors(card, productKey){
         kumas: getActiveValue(card.querySelector(".kumasSecim")) || NOT_SELECTED,
         blackout: getActiveValue(card.querySelector(".blackoutSecim")) || NOT_SELECTED,
         tul: getActiveValue(card.querySelector(".tulSecim")) || NOT_SELECTED,
-        perde: getActiveValue(card.querySelector(".perdeSecim")) || NOT_SELECTED
+        perde: getActiveValue(card.querySelector(".perdeSecim")) || NOT_SELECTED,
+        tul_perde: getActiveValue(card.querySelector(".tulPerdeSecim")) || NOT_SELECTED
     };
 }
 
@@ -2272,6 +2300,7 @@ function calculateAll(){
             blackout: colors.blackout,
             tul: colors.tul,
             perde: colors.perde,
+            tul_perde: colors.tul_perde,
             dimension: formatNumber(en) + " × " + formatNumber(boy) + " cm",
             whatsappDimension: formatNumber(en) + "x" + formatNumber(boy) + " cm"
         });
@@ -2324,6 +2353,10 @@ function calculateAll(){
 
         if(item.productKey === "ciftli"){
             return item.tul === NOT_SELECTED || item.perde === NOT_SELECTED;
+        }
+
+        if(item.productKey === "tul_perde"){
+            return item.tul_perde === NOT_SELECTED;
         }
 
         return false;
@@ -2513,6 +2546,15 @@ function getColorRowsHTML(item){
         `;
     }
 
+    if(item.productKey === "tul_perde"){
+        return `
+            <div class="order-meta">
+                <span>Tül Rengi</span>
+                <strong>${escapeHTML(item.tul_perde)}</strong>
+            </div>
+        `;
+    }
+
     return `
         <div class="order-meta">
             <span>Kumaş</span>
@@ -2531,6 +2573,10 @@ function getColorLinesText(item){
             "Tül Rengi: " + item.tul,
             "Perde Rengi: " + item.perde
         ];
+    }
+
+    if(item.productKey === "tul_perde"){
+        return ["Tül Rengi: " + item.tul_perde];
     }
 
     return ["Kumaş: " + item.kumas];
