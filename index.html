@@ -20,7 +20,7 @@ body{
 }
 
 .container{
-    max-width:900px;
+    max-width:960px;
     margin:auto;
     background:#fff;
     border-radius:18px;
@@ -61,10 +61,26 @@ h2{
     margin-bottom:18px;
 }
 
+.control-card h2{
+    margin-top:0;
+}
+
 .grid{
     display:grid;
     grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
     gap:12px;
+}
+
+.field{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+}
+
+.field span{
+    font-size:14px;
+    font-weight:700;
+    color:#333;
 }
 
 input, select, textarea{
@@ -73,14 +89,26 @@ input, select, textarea{
     border:1px solid #ddd;
     border-radius:10px;
     font-size:15px;
+    background:#fff;
+}
+
+input:focus,
+select:focus,
+textarea:focus{
+    outline:none;
+    border-color:#111;
+    box-shadow:0 0 0 3px rgba(0,0,0,0.06);
 }
 
 textarea{
     resize:vertical;
     min-height:90px;
+    margin-top:12px;
 }
 
-button{
+button,
+.btn-main,
+.btn-light{
     border:none;
     border-radius:12px;
     padding:14px 18px;
@@ -90,10 +118,13 @@ button{
 }
 
 .btn-main{
+    display:block;
     background:#111;
     color:#fff;
     width:100%;
     margin-top:10px;
+    text-align:center;
+    text-decoration:none;
 }
 
 .btn-main:hover{
@@ -101,31 +132,90 @@ button{
     transform:translateY(-2px);
 }
 
-.btn-add{
-    background:#0d6efd;
-    color:#fff;
+.btn-light{
+    background:#fff;
+    color:#111;
+    border:1px solid #ddd;
+}
+
+.btn-light:hover{
+    background:#f1f1f1;
+    transform:translateY(-2px);
+}
+
+.hint{
+    margin-top:8px;
+    color:#777;
+    font-size:14px;
+    line-height:1.5;
+}
+
+.catalog-actions{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+    gap:10px;
+    margin-top:15px;
+}
+
+.cam-card{
+    padding:0;
+    overflow:hidden;
+}
+
+.cam-card.has-error{
+    border-color:#dc3545;
+    box-shadow:0 0 0 3px rgba(220,53,69,0.08);
+}
+
+.cam-header{
     width:100%;
-    margin-bottom:15px;
+    background:#fafafa;
+    color:#111;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    text-align:left;
+    border-radius:14px;
 }
 
-.btn-add:hover{
-    background:#0b5ed7;
+.cam-header:hover{
+    background:#f0f0f0;
 }
 
-.btn-delete{
-    background:#dc3545;
-    color:#fff;
-    margin-top:12px;
+.cam-header h2{
+    margin:0;
+    font-size:21px;
 }
 
-.btn-delete:hover{
-    background:#bb2d3b;
+.cam-arrow{
+    font-size:18px;
+    transition:0.25s;
+}
+
+.cam-card.open .cam-arrow{
+    transform:rotate(180deg);
+}
+
+.cam-body{
+    display:none;
+    padding:0 18px 18px;
+}
+
+.cam-card.open .cam-body{
+    display:block;
+}
+
+.section-title{
+    margin-top:14px;
+    margin-bottom:8px;
+    font-weight:700;
 }
 
 .fabric-grid,
 .color-grid{
     display:grid;
-    grid-template-columns:repeat(auto-fit,minmax(130px,1fr));
+    grid-template-columns:repeat(auto-fit,minmax(135px,1fr));
     gap:8px;
     margin-top:8px;
 }
@@ -139,6 +229,7 @@ button{
     background:#fff;
     transition:0.25s;
     font-size:14px;
+    color:#111;
 }
 
 .choice:hover{
@@ -149,6 +240,22 @@ button{
 .choice.active{
     border:2px solid #111;
     background:#f0f0f0;
+    font-weight:700;
+}
+
+.color-choice{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+}
+
+.color-dot{
+    width:18px;
+    height:18px;
+    border-radius:50%;
+    border:1px solid #bbb;
+    flex:0 0 auto;
 }
 
 .result{
@@ -157,6 +264,40 @@ button{
     border-radius:14px;
     padding:18px;
     line-height:1.7;
+    min-height:55px;
+}
+
+.order-item{
+    background:#fff;
+    border:1px solid #eee;
+    border-radius:12px;
+    padding:12px;
+    margin-bottom:12px;
+}
+
+.total-box{
+    background:#111;
+    color:#fff;
+    border-radius:14px;
+    padding:16px;
+    margin-top:14px;
+}
+
+.total-box b{
+    font-size:22px;
+}
+
+.error-box{
+    background:#fff0f0;
+    border:1px solid #ffd0d0;
+    color:#7a1010;
+    border-radius:12px;
+    padding:14px;
+}
+
+.error-box ul{
+    margin-top:8px;
+    padding-left:20px;
 }
 
 .social{
@@ -196,9 +337,90 @@ button{
     line-height:1.6;
 }
 
+.modal{
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.72);
+    z-index:9999;
+    padding:18px;
+}
+
+.modal.show{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+}
+
+.modal-content{
+    width:min(100%,1000px);
+    max-height:92vh;
+    background:#fff;
+    border-radius:16px;
+    overflow:hidden;
+    box-shadow:0 20px 60px rgba(0,0,0,0.35);
+}
+
+.modal-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    padding:14px 16px;
+    border-bottom:1px solid #eee;
+}
+
+.modal-head h3{
+    font-size:18px;
+}
+
+.modal-close{
+    width:42px;
+    height:42px;
+    border-radius:50%;
+    background:#111;
+    color:#fff;
+    padding:0;
+    font-size:24px;
+    line-height:1;
+}
+
+.modal-image-wrap{
+    padding:12px;
+    max-height:calc(92vh - 72px);
+    overflow:auto;
+    text-align:center;
+}
+
+.modal-image-wrap img{
+    max-width:100%;
+    height:auto;
+    border-radius:10px;
+}
+
 @media(max-width:600px){
+    body{
+        padding:12px;
+    }
+
+    .container{
+        padding:18px;
+        border-radius:16px;
+    }
+
     .header h1{
         font-size:28px;
+    }
+
+    .cam-header h2{
+        font-size:19px;
+    }
+
+    button,
+    .btn-main,
+    .btn-light{
+        font-size:15px;
+        padding:13px 14px;
     }
 }
 </style>
@@ -208,217 +430,611 @@ button{
 
 <div class="container">
 
-<div class="header">
-    <img src="logo.png" alt="Logo">
-    <h1>Prestij Life</h1>
-    <p>Plise Perde Sipariş & Hesaplama Sistemi</p>
-</div>
-
-<button class="btn-add" onclick="addCam()">+ Yeni Cam Ekle</button>
-
-<div id="camArea"></div>
-
-<div class="card">
-    <h2>Müşteri Bilgileri</h2>
-    <div class="grid">
-        <input id="name" placeholder="Ad Soyad">
-        <input id="phone" placeholder="Telefon No">
+    <div class="header">
+        <img src="logo.png" alt="Prestij Life Logo">
+        <h1>Prestij Life</h1>
+        <p>Plise Perde Sipariş & Hesaplama Sistemi</p>
     </div>
-    <textarea id="address" placeholder="Adres"></textarea>
+
+    <div class="card control-card">
+        <h2>Sipariş Bilgileri</h2>
+
+        <label class="field" for="camCount">
+            <span>Toplam Cam Sayısı</span>
+            <select id="camCount"></select>
+        </label>
+
+        <p class="hint">
+            Kaç farklı cam ölçüsü girecekseniz buradan seçiniz. Sistem seçtiğiniz sayı kadar cam alanını otomatik açar.
+        </p>
+
+        <div class="catalog-actions">
+            <button type="button" class="btn-light" onclick="openImageModal('Kumaş Kataloğu','katalog.png')">
+                Kumaş Kataloğunu Gör
+            </button>
+            <button type="button" class="btn-light" onclick="openImageModal('Kasa Renkleri','kasa.png')">
+                Kasa Renklerini Gör
+            </button>
+        </div>
+    </div>
+
+    <div id="camArea"></div>
+
+    <div class="card">
+        <h2>Müşteri Bilgileri</h2>
+        <div class="grid">
+            <input id="name" placeholder="Ad Soyad">
+            <input id="phone" placeholder="Telefon No">
+        </div>
+        <textarea id="address" placeholder="Adres"></textarea>
+    </div>
+
+    <button class="btn-main" onclick="calculateAll()">Siparişi Hesapla</button>
+
+    <div class="result" id="result"></div>
+
+    <div class="social">
+
+        <div class="social-item">
+            <a href="https://wa.me/905053559532" target="_blank">
+                <img src="wplogo.png" alt="WhatsApp">
+            </a>
+            <span>+90 505 355 95 32</span>
+        </div>
+
+        <div class="social-item">
+            <a href="https://www.instagram.com/pliseperdeevi/" target="_blank">
+                <img src="instalogo.png" alt="Instagram">
+            </a>
+            <a href="https://www.instagram.com/pliseperdeevi/" target="_blank">@pliseperdeevi</a>
+        </div>
+
+        <div class="social-item">
+            <a href="https://www.instagram.com/pliseperde_ayferdemiryurek" target="_blank">
+                <img src="instalogo.png" alt="Instagram">
+            </a>
+            <a href="https://www.instagram.com/pliseperde_ayferdemiryurek" target="_blank">@pliseperde_ayferdemiryurek</a>
+        </div>
+
+        <div class="note">
+            Daha fazla bilgi veya soru sormak için bizimle iletişime geçebilirsiniz.<br>
+            📞 +90 505 355 95 32
+        </div>
+
+    </div>
+
 </div>
 
-<button class="btn-main" onclick="calculateAll()">Siparişi Hesapla</button>
-
-<div class="result" id="result"></div>
-
-<div class="social">
-
-<div class="social-item">
-<a href="https://wa.me/905053559532" target="_blank">
-<img src="wplogo.png">
-</a>
-<span>+90 505 355 95 32</span>
-</div>
-
-<div class="social-item">
-<a href="https://www.instagram.com/pliseperdeevi/" target="_blank">
-<img src="instalogo.png">
-</a>
-<a href="https://www.instagram.com/pliseperdeevi/" target="_blank">@pliseperdeevi</a>
-</div>
-
-<div class="social-item">
-<a href="https://www.instagram.com/pliseperde_ayferdemiryurek" target="_blank">
-<img src="instalogo.png">
-</a>
-<a href="https://www.instagram.com/pliseperde_ayferdemiryurek" target="_blank">@pliseperde_ayferdemiryurek</a>
-</div>
-
-<div class="note">
-Daha fazla bilgi veya soru sormak için bizimle iletişime geçebilirsiniz.<br>
-📞 +90 505 355 95 32
-</div>
-
-</div>
-
+<div class="modal" id="imageModal" onclick="modalOutsideClose(event)">
+    <div class="modal-content">
+        <div class="modal-head">
+            <h3 id="modalTitle">Görsel</h3>
+            <button type="button" class="modal-close" onclick="closeImageModal()">×</button>
+        </div>
+        <div class="modal-image-wrap">
+            <img id="modalImage" src="" alt="">
+        </div>
+    </div>
 </div>
 
 <script>
 const ASKILI_FIYAT = 450;
 const VIDALI_FIYAT = 400;
 const KARGO = 300;
+const MAX_CAM = 50;
 
 const kasaRenkleri = [
-"Antrasit","Beyaz","Krem","Kahverengi","Siyah","Gri"
+    { name:"Bronz", hex:"#a56a2a" },
+    { name:"Beyaz", hex:"#ffffff" },
+    { name:"Krem", hex:"#f2dfbd" },
+    { name:"Kahverengi", hex:"#7a4a2a" },
+    { name:"Antrasit", hex:"#34383b" },
+    { name:"Gri", hex:"#9b9b9b" }
 ];
 
 const kumaslar = [
-"Sude 001 - Beyaz",
-"Sude 002 - Krem",
-"Sude 003 - Gri",
-"Sude 004 - Siyah",
-"Elmas 001 - Kırık Beyaz",
-"Elmas 002 - Krem",
-"Elmas 003 - Bej",
-"Elmas 004 - Vizon",
-"Elmas 005 - Turkuaz",
-"Elmas 006 - Sarı",
-"Elmas 007 - Kırmızı",
-"Elmas 008 - Lacivert"
+    "Sude 001 - Beyaz",
+    "Sude 002 - Bej",
+    "Sude 003 - Gri",
+    "Sude 004 - Siyah",
+
+    "Elmas 001 - Beyaz",
+    "Elmas 002 - Krem",
+    "Elmas 003 - Bej",
+    "Elmas 004 - Kahverengi",
+    "Elmas 005 - Turkuaz",
+    "Elmas 006 - Sarı",
+    "Elmas 007 - Kırmızı",
+    "Elmas 008 - Lacivert"
 ];
 
-let camNo = 0;
+let currentCamCount = 0;
 
-function roundUp10(x){
-    return Math.ceil(x/10)*10;
+function init(){
+    const camSelect = document.getElementById("camCount");
+
+    for(let i = 1; i <= MAX_CAM; i++){
+        const option = document.createElement("option");
+        option.value = i;
+        option.textContent = i;
+        camSelect.appendChild(option);
+    }
+
+    camSelect.value = "1";
+    camSelect.addEventListener("change", handleCamCountChange);
+
+    setCamCount(1, false);
+
+    document.addEventListener("keydown", function(e){
+        if(e.key === "Escape"){
+            closeImageModal();
+        }
+    });
 }
 
-function saleM2(m2){
-    if(m2<=1) return 1;
-    return Math.ceil(m2*10)/10;
+function handleCamCountChange(){
+    const newCount = parseInt(this.value, 10);
+
+    if(newCount < currentCamCount){
+        const confirmed = confirm("Cam sayısını azaltırsanız sondaki cam bilgileri silinir. Devam edilsin mi?");
+        if(!confirmed){
+            this.value = currentCamCount;
+            return;
+        }
+    }
+
+    setCamCount(newCount, true);
 }
 
-function addCam(){
-    camNo++;
+function setCamCount(count, preserveData){
+    const oldData = preserveData ? collectCardData() : [];
+    const camArea = document.getElementById("camArea");
 
-    let html = `
-    <div class="card cam-card" id="cam${camNo}">
-        <h2>Cam ${camNo}</h2>
+    camArea.innerHTML = "";
 
-        <div class="grid">
-            <input placeholder="En (cm)" class="en">
-            <input placeholder="Boy (cm)" class="boy">
-            <input placeholder="Adet" class="adet">
-            <input placeholder="Açılır Adet" class="acilir">
-            <select class="tip">
-                <option value="askili">Askılı</option>
-                <option value="vidali">Vidalı</option>
-            </select>
+    for(let i = 1; i <= count; i++){
+        const card = createCamCard(i);
+        const data = oldData[i - 1];
+
+        if(data){
+            applyCardData(card, data);
+        }
+    }
+
+    currentCamCount = count;
+
+    const hasOpenCard = document.querySelector(".cam-card.open");
+    if(!hasOpenCard && count > 0){
+        openCam(1);
+    }
+}
+
+function createCamCard(index){
+    const html = `
+        <div class="card cam-card" id="cam${index}" data-cam="${index}">
+            <button type="button" class="cam-header" onclick="openCam(${index})">
+                <h2>Cam ${index}</h2>
+                <span class="cam-arrow">⌄</span>
+            </button>
+
+            <div class="cam-body">
+                <div class="grid">
+                    <label class="field">
+                        <span>En (cm)</span>
+                        <input type="number" min="1" step="0.1" inputmode="decimal" class="en" placeholder="Örn: 148">
+                    </label>
+
+                    <label class="field">
+                        <span>Boy (cm)</span>
+                        <input type="number" min="1" step="0.1" inputmode="decimal" class="boy" placeholder="Örn: 53">
+                    </label>
+
+                    <label class="field">
+                        <span>Adet</span>
+                        <input type="number" min="1" step="1" inputmode="numeric" class="adet" placeholder="Örn: 4">
+                    </label>
+
+                    <label class="field">
+                        <span>Açılır Adet</span>
+                        <input type="number" min="0" step="1" inputmode="numeric" class="acilir" placeholder="Örn: 1">
+                    </label>
+
+                    <label class="field">
+                        <span>Sistem Tipi</span>
+                        <select class="tip">
+                            <option value="askili">Askılı</option>
+                            <option value="vidali">Vidalı</option>
+                        </select>
+                    </label>
+                </div>
+
+                <p class="section-title">Kasa Rengi</p>
+                <div class="color-grid kasaSecim"></div>
+
+                <p class="section-title">Kumaş Seçimi</p>
+                <div class="fabric-grid kumasSecim"></div>
+            </div>
         </div>
-
-        <p style="margin-top:12px;"><b>Kasa Rengi</b></p>
-        <div class="color-grid kasaSecim"></div>
-
-        <p style="margin-top:12px;"><b>Kumaş Seçimi</b></p>
-        <div class="fabric-grid kumasSecim"></div>
-
-        <button class="btn-delete" onclick="removeCam(${camNo})">Sil</button>
-    </div>
     `;
 
     document.getElementById("camArea").insertAdjacentHTML("beforeend", html);
 
-    let card = document.getElementById("cam"+camNo);
+    const card = document.getElementById("cam" + index);
+    fillKasaChoices(card);
+    fillKumasChoices(card);
 
-    let kasaBox = card.querySelector(".kasaSecim");
-    kasaRenkleri.forEach(r=>{
-        kasaBox.innerHTML += `<div class="choice" onclick="selectChoice(this,'kasa')">${r}</div>`;
-    });
+    return card;
+}
 
-    let kumasBox = card.querySelector(".kumasSecim");
-    kumaslar.forEach(k=>{
-        kumasBox.innerHTML += `<div class="choice" onclick="selectChoice(this,'kumas')">${k}</div>`;
+function fillKasaChoices(card){
+    const kasaBox = card.querySelector(".kasaSecim");
+
+    kasaRenkleri.forEach(function(renk){
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "choice color-choice";
+        btn.dataset.value = renk.name;
+        btn.onclick = function(){
+            selectChoice(this);
+        };
+
+        const dot = document.createElement("span");
+        dot.className = "color-dot";
+        dot.style.background = renk.hex;
+
+        const text = document.createElement("span");
+        text.textContent = renk.name;
+
+        btn.appendChild(dot);
+        btn.appendChild(text);
+
+        kasaBox.appendChild(btn);
     });
 }
 
-function selectChoice(el,type){
-    let parent = el.parentElement;
-    parent.querySelectorAll(".choice").forEach(x=>x.classList.remove("active"));
+function fillKumasChoices(card){
+    const kumasBox = card.querySelector(".kumasSecim");
+
+    kumaslar.forEach(function(kumas){
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "choice";
+        btn.dataset.value = kumas;
+        btn.textContent = kumas;
+        btn.onclick = function(){
+            selectChoice(this);
+        };
+
+        kumasBox.appendChild(btn);
+    });
+}
+
+function collectCardData(){
+    const data = [];
+
+    for(let i = 1; i <= currentCamCount; i++){
+        const card = document.getElementById("cam" + i);
+        if(!card) continue;
+
+        data.push({
+            en: card.querySelector(".en").value,
+            boy: card.querySelector(".boy").value,
+            adet: card.querySelector(".adet").value,
+            acilir: card.querySelector(".acilir").value,
+            tip: card.querySelector(".tip").value,
+            kasa: card.querySelector(".kasaSecim .active")?.dataset.value || "",
+            kumas: card.querySelector(".kumasSecim .active")?.dataset.value || "",
+            open: card.classList.contains("open")
+        });
+    }
+
+    return data;
+}
+
+function applyCardData(card, data){
+    card.querySelector(".en").value = data.en ?? "";
+    card.querySelector(".boy").value = data.boy ?? "";
+    card.querySelector(".adet").value = data.adet ?? "";
+    card.querySelector(".acilir").value = data.acilir ?? "";
+    card.querySelector(".tip").value = data.tip || "askili";
+
+    setChoiceByValue(card.querySelector(".kasaSecim"), data.kasa);
+    setChoiceByValue(card.querySelector(".kumasSecim"), data.kumas);
+
+    if(data.open){
+        card.classList.add("open");
+    }
+}
+
+function setChoiceByValue(container, value){
+    if(!value) return;
+
+    container.querySelectorAll(".choice").forEach(function(choice){
+        if(choice.dataset.value === value){
+            choice.classList.add("active");
+        }
+    });
+}
+
+function openCam(id){
+    document.querySelectorAll(".cam-card").forEach(function(card){
+        card.classList.remove("open");
+    });
+
+    const selectedCard = document.getElementById("cam" + id);
+    if(selectedCard){
+        selectedCard.classList.add("open");
+    }
+}
+
+function selectChoice(el){
+    const parent = el.parentElement;
+
+    parent.querySelectorAll(".choice").forEach(function(choice){
+        choice.classList.remove("active");
+    });
+
     el.classList.add("active");
 }
 
-function removeCam(id){
-    document.getElementById("cam"+id).remove();
+function roundUp10(x){
+    return Math.ceil(x / 10) * 10;
+}
+
+function saleM2(m2){
+    if(m2 <= 1) return 1;
+    return Math.ceil((m2 - 0.000000001) * 10) / 10;
+}
+
+function parseInputNumber(value){
+    const cleaned = String(value).trim().replace(",", ".");
+    if(cleaned === "") return NaN;
+    return Number(cleaned);
+}
+
+function formatNumber(value){
+    return Number.isInteger(value)
+        ? String(value)
+        : value.toLocaleString("tr-TR", { maximumFractionDigits: 2 });
+}
+
+function formatTL(value){
+    return value.toLocaleString("tr-TR", {
+        maximumFractionDigits: 0
+    }) + " TL";
+}
+
+function getTipText(tip){
+    return tip === "askili" ? "Askılı" : "Vidalı";
+}
+
+function escapeHTML(value){
+    return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
 }
 
 function calculateAll(){
-
-    let cards = document.querySelectorAll(".cam-card");
+    const cards = document.querySelectorAll(".cam-card");
+    const errors = [];
+    const items = [];
 
     let toplam = 0;
     let toplamAdet = 0;
-    let detay = "";
+    let firstInvalidCam = null;
 
-    cards.forEach((card,index)=>{
+    document.querySelectorAll(".cam-card").forEach(function(card){
+        card.classList.remove("has-error");
+    });
 
-        let en = parseFloat(card.querySelector(".en").value);
-        let boy = parseFloat(card.querySelector(".boy").value);
-        let adet = parseFloat(card.querySelector(".adet").value);
-        let acilir = parseFloat(card.querySelector(".acilir").value)||0;
-        let tip = card.querySelector(".tip").value;
+    cards.forEach(function(card, index){
+        const camNo = index + 1;
 
-        if(isNaN(en)||isNaN(boy)||isNaN(adet)) return;
+        const en = parseInputNumber(card.querySelector(".en").value);
+        const boy = parseInputNumber(card.querySelector(".boy").value);
+        const adet = parseInputNumber(card.querySelector(".adet").value);
+        const acilirRaw = card.querySelector(".acilir").value.trim();
+        const acilir = acilirRaw === "" ? 0 : parseInputNumber(acilirRaw);
+        const tip = card.querySelector(".tip").value;
 
-        let kasa = card.querySelector(".kasaSecim .active")?.innerText || "-";
-        let kumas = card.querySelector(".kumasSecim .active")?.innerText || "-";
+        const kasa = card.querySelector(".kasaSecim .active")?.dataset.value || "";
+        const kumas = card.querySelector(".kumasSecim .active")?.dataset.value || "";
 
-        let fiyat = tip=="askili" ? ASKILI_FIYAT : VIDALI_FIYAT;
+        let cardHasError = false;
 
-        let re = roundUp10(en);
-        let rb = roundUp10(boy);
+        function addCardError(message){
+            errors.push("Cam " + camNo + ": " + message);
+            cardHasError = true;
+            if(firstInvalidCam === null){
+                firstInvalidCam = camNo;
+            }
+        }
 
-        let ham = (re*rb)/10000;
-        let satis = saleM2(ham);
+        if(isNaN(en) || en <= 0){
+            addCardError("En ölçüsü zorunlu ve 0'dan büyük olmalıdır.");
+        }
 
-        let tutar = satis * fiyat * adet;
+        if(isNaN(boy) || boy <= 0){
+            addCardError("Boy ölçüsü zorunlu ve 0'dan büyük olmalıdır.");
+        }
+
+        if(isNaN(adet) || adet <= 0 || !Number.isInteger(adet)){
+            addCardError("Adet zorunlu, 0'dan büyük ve tam sayı olmalıdır.");
+        }
+
+        if(isNaN(acilir) || acilir < 0 || !Number.isInteger(acilir)){
+            addCardError("Açılır adet boş bırakılabilir veya 0 ve üzeri tam sayı olmalıdır.");
+        }
+
+        if(!isNaN(adet) && !isNaN(acilir) && acilir > adet){
+            addCardError("Açılır adet, toplam adetten büyük olamaz.");
+        }
+
+        if(!kasa){
+            addCardError("Kasa rengi seçilmelidir.");
+        }
+
+        if(!kumas){
+            addCardError("Kumaş seçilmelidir.");
+        }
+
+        if(cardHasError){
+            card.classList.add("has-error");
+            return;
+        }
+
+        const fiyat = tip === "askili" ? ASKILI_FIYAT : VIDALI_FIYAT;
+
+        const roundedEn = roundUp10(en);
+        const roundedBoy = roundUp10(boy);
+
+        const hamM2 = (roundedEn * roundedBoy) / 10000;
+        const satisM2 = saleM2(hamM2);
+
+        const tutar = satisM2 * fiyat * adet;
 
         toplam += tutar;
         toplamAdet += adet;
 
-        detay += `
-${en}x${boy} ${adet} adet ${tip}
-Kasa: ${kasa}
-Kumaş: ${kumas}
-${acilir>0 ? "(" + acilir + " adet açılır)" : ""}
-<br><br>`;
+        items.push({
+            camNo: camNo,
+            en: en,
+            boy: boy,
+            adet: adet,
+            acilir: acilir,
+            tipText: getTipText(tip),
+            kasa: kasa,
+            kumas: kumas,
+            line: formatNumber(en) + "x" + formatNumber(boy) + " " + adet + " adet " + getTipText(tip)
+        });
     });
+
+    const ad = document.getElementById("name").value.trim();
+    const tel = document.getElementById("phone").value.trim();
+    const adr = document.getElementById("address").value.trim();
+
+    if(!ad){
+        errors.push("Müşteri bilgileri: Ad Soyad alanı zorunludur.");
+    }
+
+    if(!tel){
+        errors.push("Müşteri bilgileri: Telefon alanı zorunludur.");
+    }
+
+    if(!adr){
+        errors.push("Müşteri bilgileri: Adres alanı zorunludur.");
+    }
+
+    if(items.length === 0 && errors.length === 0){
+        errors.push("En az 1 geçerli cam bilgisi girilmelidir.");
+    }
+
+    if(errors.length > 0){
+        showErrors(errors);
+
+        if(firstInvalidCam !== null){
+            openCam(firstInvalidCam);
+            const invalidCard = document.getElementById("cam" + firstInvalidCam);
+            invalidCard?.scrollIntoView({ behavior:"smooth", block:"center" });
+        }else{
+            document.getElementById("result").scrollIntoView({ behavior:"smooth", block:"start" });
+        }
+
+        return;
+    }
 
     toplam += KARGO;
 
-    let ad = document.getElementById("name").value;
-    let tel = document.getElementById("phone").value;
-    let adr = document.getElementById("address").value;
+    const detailsHTML = items.map(function(item){
+        return `
+            <div class="order-item">
+                <b>${escapeHTML(item.line)}</b><br>
+                Kasa: ${escapeHTML(item.kasa)}<br>
+                Kumaş: ${escapeHTML(item.kumas)}
+                ${item.acilir > 0 ? "<br>(" + item.acilir + " adet açılır)" : ""}
+            </div>
+        `;
+    }).join("");
 
-    let sonuc = `
-<b>${ad}</b><br>
-${tel}<br>
-${adr}<br><br>
+    const whatsappDetails = items.map(function(item){
+        return [
+            item.line,
+            "Kasa: " + item.kasa,
+            "Kumaş: " + item.kumas,
+            item.acilir > 0 ? "(" + item.acilir + " adet açılır)" : ""
+        ].filter(Boolean).join("\n");
+    }).join("\n\n");
 
-${detay}
+    const whatsappText = [
+        ad,
+        tel,
+        "",
+        adr,
+        "",
+        whatsappDetails,
+        "",
+        "Toplam " + toplamAdet + " adet",
+        "Kargo Dahil Toplam: " + formatTL(toplam)
+    ].join("\n");
 
-<b>Toplam ${toplamAdet} adet</b><br>
-Ürün + Kargo Dahil<br>
-<b>${toplam.toFixed(2)} TL</b><br><br>
+    const whatsappLink = "https://wa.me/905053559532?text=" + encodeURIComponent(whatsappText);
 
-<a href="https://wa.me/905053559532?text=${encodeURIComponent(ad + '\n' + tel + '\n' + adr + '\n\n' + detay.replace(/<br>/g,'\n') + '\nToplam: ' + toplam.toFixed(2) + ' TL')}" target="_blank">
-<button class="btn-main">WhatsApp Sipariş Gönder</button>
-</a>
-`;
+    const resultHTML = `
+        <b>${escapeHTML(ad)}</b><br>
+        ${escapeHTML(tel)}<br>
+        ${escapeHTML(adr).replaceAll("\n","<br>")}<br><br>
 
-    document.getElementById("result").innerHTML = sonuc;
+        ${detailsHTML}
+
+        <div class="total-box">
+            Toplam ${toplamAdet} adet<br>
+            Ürün + Kargo Dahil<br>
+            <b>${formatTL(toplam)}</b>
+        </div>
+
+        <a class="btn-main" href="${whatsappLink}" target="_blank">
+            WhatsApp Sipariş Gönder
+        </a>
+    `;
+
+    document.getElementById("result").innerHTML = resultHTML;
+    document.getElementById("result").scrollIntoView({ behavior:"smooth", block:"start" });
 }
 
-addCam();
+function showErrors(errors){
+    const list = errors.map(function(error){
+        return "<li>" + escapeHTML(error) + "</li>";
+    }).join("");
+
+    document.getElementById("result").innerHTML = `
+        <div class="error-box">
+            <b>Eksik veya hatalı alanlar var:</b>
+            <ul>${list}</ul>
+        </div>
+    `;
+}
+
+function openImageModal(title, src){
+    document.getElementById("modalTitle").textContent = title;
+    document.getElementById("modalImage").src = src;
+    document.getElementById("modalImage").alt = title;
+    document.getElementById("imageModal").classList.add("show");
+}
+
+function closeImageModal(){
+    document.getElementById("imageModal").classList.remove("show");
+}
+
+function modalOutsideClose(event){
+    if(event.target.id === "imageModal"){
+        closeImageModal();
+    }
+}
+
+init();
 </script>
 
 </body>
