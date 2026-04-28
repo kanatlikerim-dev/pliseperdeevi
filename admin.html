@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prestij Life Admin Paneli</title>
+
+<link rel="icon" type="image/png" href="./favicon.png?v=20">
+<link rel="shortcut icon" type="image/png" href="./favicon.png?v=20">
+<link rel="apple-touch-icon" href="./favicon.png?v=20">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+:root{
+    --bg:#f6f3ee;
+    --card:#ffffff;
+    --panel:#fbf8f4;
+    --text:#1f1f1f;
+    --muted:#6f6a64;
+    --border:#e8e2da;
+    --accent:#8b6a45;
+    --accent-dark:#745537;
+    --accent-soft:#efe4d6;
+    --danger:#b73333;
+    --shadow:0 18px 55px rgba(45,35,25,0.10);
+}
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    font-family:"Inter", Arial, sans-serif;
+    background:
+        radial-gradient(circle at top left, rgba(139,106,69,0.12), transparent 34%),
+        linear-gradient(135deg, var(--bg), #efe8dd);
+    color:var(--text);
+    min-height:100vh;
+    padding:22px;
+}
+
+.container{
+    max-width:980px;
+    margin:auto;
+}
+
+.login-card,
+.admin-card{
+    background:rgba(255,255,255,0.9);
+    border:1px solid var(--border);
+    border-radius:28px;
+    padding:28px;
+    box-shadow:var(--shadow);
+    backdrop-filter:blur(10px);
+}
+
+.login-card{
+    max-width:430px;
+    margin:70px auto;
+    text-align:center;
+}
+
+.logo-shell{
+    width:160px;
+    min-height:94px;
+    margin:0 auto 14px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border-radius:28px;
+    background:#fff;
+    border:1px solid rgba(139,106,69,0.18);
+    box-shadow:0 14px 36px rgba(45,35,25,0.10),
+               inset 0 0 0 8px rgba(246,243,238,0.72);
+    padding:14px;
+}
+
+.logo-shell img{
+    width:130px;
+    max-width:100%;
+    display:block;
+}
+
+h1{
+    font-family:"Cormorant Garamond", serif;
+    font-size:42px;
+    line-height:1;
+    margin-bottom:8px;
+}
+
+h2{
+    font-size:24px;
+    margin-bottom:10px;
+}
+
+.subtitle{
+    color:var(--muted);
+    font-size:14px;
+    line-height:1.6;
+    margin-bottom:20px;
+}
+
+input,
+textarea{
+    width:100%;
+    padding:14px 15px;
+    border:1px solid var(--border);
+    border-radius:14px;
+    font-size:15px;
+    font-family:"Inter", Arial, sans-serif;
+    background:#fff;
+    color:var(--text);
+}
+
+textarea{
+    min-height:160px;
+    resize:vertical;
+}
+
+input:focus,
+textarea:focus{
+    outline:none;
+    border-color:var(--accent);
+    box-shadow:0 0 0 4px rgba(139,106,69,0.13);
+}
+
+button{
+    width:100%;
+    border:none;
+    border-radius:14px;
+    padding:14px 18px;
+    font-size:15px;
+    font-weight:800;
+    cursor:pointer;
+    transition:0.22s ease;
+    font-family:"Inter", Arial, sans-serif;
+}
+
+.btn-main{
+    margin-top:12px;
+    background:linear-gradient(135deg, #221d18, var(--accent-dark));
+    color:#fff;
+    box-shadow:0 12px 26px rgba(139,106,69,0.22);
+}
+
+.btn-main:hover{
+    transform:translateY(-2px);
+}
+
+.btn-light{
+    background:#fff;
+    color:var(--text);
+    border:1px solid var(--border);
+}
+
+.btn-light:hover{
+    background:var(--accent-soft);
+    border-color:var(--accent);
+}
+
+.error{
+    display:none;
+    margin-top:12px;
+    color:var(--danger);
+    font-size:14px;
+    font-weight:700;
+}
+
+.admin-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:14px;
+    margin-bottom:20px;
+}
+
+.admin-title span{
+    display:block;
+    color:var(--accent);
+    font-size:13px;
+    font-weight:900;
+    letter-spacing:0.6px;
+    text-transform:uppercase;
+    margin-bottom:4px;
+}
+
+.admin-title h1{
+    margin:0;
+}
+
+.logout-btn{
+    width:auto;
+    padding:11px 15px;
+}
+
+.admin-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
+    gap:14px;
+    margin-bottom:18px;
+}
+
+.module-card{
+    background:linear-gradient(145deg, var(--panel), #fff);
+    border:1px solid var(--border);
+    border-radius:22px;
+    padding:20px;
+    cursor:pointer;
+    transition:0.22s ease;
+}
+
+.module-card:hover{
+    transform:translateY(-3px);
+    border-color:var(--accent);
+    box-shadow:0 10px 28px rgba(45,35,25,0.08);
+}
+
+.module-card.active{
+    border:2px solid var(--accent);
+    background:var(--accent-soft);
+}
+
+.module-card strong{
+    display:block;
+    font-size:18px;
+    margin-bottom:7px;
+}
+
+.module-card p{
+    color:var(--muted);
+    font-size:14px;
+    line-height:1.5;
+}
+
+.panel-section{
+    display:none;
+    background:linear-gradient(145deg, var(--panel), #fff);
+    border:1px solid var(--border);
+    border-radius:24px;
+    padding:22px;
+}
+
+.panel-section.active{
+    display:block;
+}
+
+.placeholder{
+    color:var(--muted);
+    font-size:14px;
+    line-height:1.7;
+    background:#fff;
+    border:1px dashed var(--border);
+    border-radius:18px;
+    padding:16px;
+    margin-top:12px;
+}
+
+.actions{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+    gap:10px;
+    margin-top:12px;
+}
+
+@media(max-width:600px){
+    body{
+        padding:12px;
+    }
+
+    .login-card,
+    .admin-card{
+        padding:20px;
+        border-radius:22px;
+    }
+
+    .admin-header{
+        flex-direction:column;
+        align-items:flex-start;
+    }
+
+    .logout-btn{
+        width:100%;
+    }
+
+    h1{
+        font-size:36px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <section class="login-card" id="loginScreen">
+        <div class="logo-shell">
+            <img src="logo.png" alt="Prestij Life Logo">
+        </div>
+
+        <h1>Prestij Life</h1>
+        <p class="subtitle">
+            Yönetici paneline giriş yapmak için şifrenizi girin.
+        </p>
+
+        <input type="password" id="passwordInput" placeholder="Şifre">
+        <button class="btn-main" onclick="login()">Giriş Yap</button>
+
+        <div class="error" id="loginError">
+            Şifre hatalı. Lütfen tekrar deneyin.
+        </div>
+    </section>
+
+    <section class="admin-card" id="adminPanel" style="display:none;">
+        <div class="admin-header">
+            <div class="admin-title">
+                <span>Yönetici Paneli</span>
+                <h1>Prestij Life Admin</h1>
+            </div>
+
+            <button class="btn-light logout-btn" onclick="logout()">Çıkış Yap</button>
+        </div>
+
+        <div class="admin-grid">
+            <div class="module-card active" onclick="openSection('imalat', this)">
+                <strong>İmalat Fişi</strong>
+                <p>Sipariş metninden üretim için düzenli imalat fişi oluşturma alanı.</p>
+            </div>
+
+            <div class="module-card" onclick="openSection('muhasebe', this)">
+                <strong>Muhasebe</strong>
+                <p>İleride tahsilat, ödeme, masraf ve günlük kayıtlar için kullanılacak alan.</p>
+            </div>
+
+            <div class="module-card" onclick="openSection('ayarlar', this)">
+                <strong>Ayarlar</strong>
+                <p>İleride fiyat, ürün, katalog ve sistem ayarlarının yönetileceği alan.</p>
+            </div>
+        </div>
+
+        <div class="panel-section active" id="section-imalat">
+            <h2>İmalat Fişi</h2>
+            <p class="subtitle">
+                Buraya daha sonra sipariş metnini yapıştırıp otomatik imalat fişi oluşturacağımız sistemi ekleyeceğiz.
+            </p>
+
+            <textarea id="orderText" placeholder="Sipariş metnini buraya yapıştırın..."></textarea>
+
+            <div class="actions">
+                <button class="btn-main" onclick="showComingSoon()">İmalat Fişi Oluştur</button>
+                <button class="btn-light" onclick="clearOrderText()">Temizle</button>
+            </div>
+
+            <div class="placeholder" id="imalatOutput">
+                Şimdilik admin panelinin ana yapısını oluşturduk. Bir sonraki adımda buraya imalat fişi formülünü ekleyeceğiz.
+            </div>
+        </div>
+
+        <div class="panel-section" id="section-muhasebe">
+            <h2>Muhasebe</h2>
+            <div class="placeholder">
+                Bu bölüm ileride muhasebe kayıtları için kullanılacak. Şimdilik hazırlık alanı olarak duruyor.
+            </div>
+        </div>
+
+        <div class="panel-section" id="section-ayarlar">
+            <h2>Ayarlar</h2>
+            <div class="placeholder">
+                Bu bölüm ileride ürün fiyatları, ürün tipleri, kataloglar ve yönetici ayarları için kullanılacak.
+            </div>
+        </div>
+    </section>
+
+</div>
+
+<script>
+const ADMIN_PASSWORD = "kerimbeyza";
+const ADMIN_SESSION_KEY = "prestijLifeAdminSession";
+
+function initAdmin(){
+    const loggedIn = sessionStorage.getItem(ADMIN_SESSION_KEY) === "true";
+
+    if(loggedIn){
+        showAdminPanel();
+    }
+}
+
+function login(){
+    const password = document.getElementById("passwordInput").value;
+    const error = document.getElementById("loginError");
+
+    if(password === ADMIN_PASSWORD){
+        sessionStorage.setItem(ADMIN_SESSION_KEY, "true");
+        error.style.display = "none";
+        showAdminPanel();
+    }else{
+        error.style.display = "block";
+    }
+}
+
+function logout(){
+    sessionStorage.removeItem(ADMIN_SESSION_KEY);
+    document.getElementById("passwordInput").value = "";
+    document.getElementById("adminPanel").style.display = "none";
+    document.getElementById("loginScreen").style.display = "block";
+}
+
+function showAdminPanel(){
+    document.getElementById("loginScreen").style.display = "none";
+    document.getElementById("adminPanel").style.display = "block";
+}
+
+function openSection(sectionName, cardEl){
+    document.querySelectorAll(".module-card").forEach(function(card){
+        card.classList.remove("active");
+    });
+
+    cardEl.classList.add("active");
+
+    document.querySelectorAll(".panel-section").forEach(function(section){
+        section.classList.remove("active");
+    });
+
+    document.getElementById("section-" + sectionName).classList.add("active");
+}
+
+function showComingSoon(){
+    const text = document.getElementById("orderText").value.trim();
+    const output = document.getElementById("imalatOutput");
+
+    if(!text){
+        output.innerHTML = "Önce sipariş metnini yapıştırın. Bir sonraki aşamada bu metni imalat fişine çevireceğiz.";
+        return;
+    }
+
+    output.innerHTML = `
+        <b>Sipariş metni alındı.</b><br>
+        Bir sonraki adımda buraya imalat formülünü ekleyip otomatik imalat fişi oluşturacağız.
+    `;
+}
+
+function clearOrderText(){
+    document.getElementById("orderText").value = "";
+    document.getElementById("imalatOutput").innerHTML =
+        "Şimdilik admin panelinin ana yapısını oluşturduk. Bir sonraki adımda buraya imalat fişi formülünü ekleyeceğiz.";
+}
+
+document.getElementById("passwordInput").addEventListener("keydown", function(e){
+    if(e.key === "Enter"){
+        login();
+    }
+});
+
+initAdmin();
+</script>
+
+</body>
+</html>
