@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Prestij Life</title>
 
-<link rel="icon" type="image/png" href="./favicon.png?v=10">
-<link rel="shortcut icon" type="image/png" href="./favicon.png?v=10">
-<link rel="apple-touch-icon" href="./favicon.png?v=10">
+<link rel="icon" type="image/png" href="./favicon.png?v=11">
+<link rel="shortcut icon" type="image/png" href="./favicon.png?v=11">
+<link rel="apple-touch-icon" href="./favicon.png?v=11">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1232,7 +1232,6 @@ function init(){
     fillGlobalColorChoices();
 
     const camSelect = document.getElementById("camCount");
-
     camSelect.innerHTML = "";
 
     for(let i = 1; i <= MAX_CAM; i++){
@@ -1430,7 +1429,7 @@ function createCamCard(index){
 
                     <label class="field">
                         <span>Açılır Adet</span>
-                        <input type="text" inputmode="numeric" class="acilir" placeholder="Yoksa 0 yazın">
+                        <input type="text" inputmode="numeric" class="acilir" placeholder="Yoksa boş bırakın">
                     </label>
 
                     <label class="field">
@@ -1787,6 +1786,7 @@ function calculateAll(){
     let toplam = 0;
     let toplamAdet = 0;
     let firstInvalidCam = null;
+    let hasBlankAcilir = false;
 
     document.querySelectorAll(".cam-card").forEach(function(card){
         card.classList.remove("has-error");
@@ -1800,7 +1800,14 @@ function calculateAll(){
         const boy = parseInputNumber(card.querySelector(".boy").value);
         const adet = parseInputNumber(card.querySelector(".adet").value);
         const acilirRaw = card.querySelector(".acilir").value.trim();
-        const acilir = parseInputNumber(acilirRaw);
+
+        let acilir = 0;
+        if(acilirRaw === ""){
+            acilir = 0;
+            hasBlankAcilir = true;
+        }else{
+            acilir = parseInputNumber(acilirRaw);
+        }
 
         let tip = card.querySelector(".tip").value;
         if(uygulama === "pimapen"){
@@ -1848,8 +1855,8 @@ function calculateAll(){
             addCardError("Adet zorunlu, 0'dan büyük ve tam sayı olmalıdır.");
         }
 
-        if(acilirRaw === "" || isNaN(acilir) || acilir < 0 || !Number.isInteger(acilir)){
-            addCardError("Açılır adet zorunludur. Açılır yoksa 0 yazılmalıdır.");
+        if(acilirRaw !== "" && (isNaN(acilir) || acilir < 0 || !Number.isInteger(acilir))){
+            addCardError("Açılır adet boş bırakılabilir veya 0 ve üzeri tam sayı olmalıdır.");
         }
 
         if(!isNaN(adet) && !isNaN(acilir) && acilir > adet){
@@ -1948,6 +1955,15 @@ function calculateAll(){
             <div class="warning-box">
                 <b>Müşteri bilgileri eksik.</b>
                 Fiyat hesaplaması için müşteri bilgileri zorunlu değildir. Ancak sipariş vermek isterseniz ad soyad, telefon ve adres bilgilerinizi doldurmanız gerekir.
+            </div>
+        `;
+    }
+
+    if(hasBlankAcilir){
+        warningHTML += `
+            <div class="warning-box">
+                <b>Açılır adet boş bırakıldı.</b>
+                Açılır adet girilmeyen camlar 0 adet kabul edilmiştir. Açılır kanat varsa ilgili cama açılır adet yazmanız önerilir.
             </div>
         `;
     }
