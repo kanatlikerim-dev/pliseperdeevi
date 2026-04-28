@@ -4,8 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Prestij Life</title>
-<link rel="icon" type="image/png" href="favicon.png">
-<link rel="apple-touch-icon" href="favicon.png">
+
+<link rel="icon" type="image/png" href="./favicon.png?v=10">
+<link rel="shortcut icon" type="image/png" href="./favicon.png?v=10">
+<link rel="apple-touch-icon" href="./favicon.png?v=10">
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -1401,7 +1404,7 @@ function createCamCard(index){
 
                     <label class="field">
                         <span>Açılır Adet</span>
-                        <input type="text" inputmode="numeric" class="acilir" placeholder="Örn: 1">
+                        <input type="text" inputmode="numeric" class="acilir" placeholder="Yoksa 0 yazın">
                     </label>
 
                     <label class="field">
@@ -1771,7 +1774,7 @@ function calculateAll(){
         const boy = parseInputNumber(card.querySelector(".boy").value);
         const adet = parseInputNumber(card.querySelector(".adet").value);
         const acilirRaw = card.querySelector(".acilir").value.trim();
-        const acilir = acilirRaw === "" ? 0 : parseInputNumber(acilirRaw);
+        const acilir = parseInputNumber(acilirRaw);
 
         let tip = card.querySelector(".tip").value;
         if(uygulama === "pimapen"){
@@ -1819,8 +1822,8 @@ function calculateAll(){
             addCardError("Adet zorunlu, 0'dan büyük ve tam sayı olmalıdır.");
         }
 
-        if(isNaN(acilir) || acilir < 0 || !Number.isInteger(acilir)){
-            addCardError("Açılır adet boş bırakılabilir veya 0 ve üzeri tam sayı olmalıdır.");
+        if(acilirRaw === "" || isNaN(acilir) || acilir < 0 || !Number.isInteger(acilir)){
+            addCardError("Açılır adet zorunludur. Açılır yoksa 0 yazılmalıdır.");
         }
 
         if(!isNaN(adet) && !isNaN(acilir) && acilir > adet){
@@ -1926,12 +1929,10 @@ function calculateAll(){
                     <strong>${escapeHTML(item.kumas)}</strong>
                 </div>
 
-                ${item.acilir > 0 ? `
-                    <div class="order-meta">
-                        <span>Açılır</span>
-                        <strong>${item.acilir} adet</strong>
-                    </div>
-                ` : ""}
+                <div class="order-meta">
+                    <span>Açılır</span>
+                    <strong>${item.acilir} adet</strong>
+                </div>
             </div>
         `;
     }).join("");
@@ -1943,8 +1944,8 @@ function calculateAll(){
             item.adet + " adet " + item.tipText,
             "Kasa: " + item.kasa,
             "Kumaş: " + item.kumas,
-            item.acilir > 0 ? "Açılır: " + item.acilir + " adet" : ""
-        ].filter(Boolean).join("\n");
+            "Açılır: " + item.acilir + " adet"
+        ].join("\n");
     }).join("\n\n");
 
     lastOrderText = [
