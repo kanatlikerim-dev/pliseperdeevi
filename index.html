@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Prestij Life</title>
 
-<link rel="icon" type="image/png" href="./favicon.png?v=130">
-<link rel="shortcut icon" type="image/png" href="./favicon.png?v=130">
-<link rel="apple-touch-icon" href="./favicon.png?v=130">
+<link rel="icon" type="image/png" href="./favicon.png?v=132">
+<link rel="shortcut icon" type="image/png" href="./favicon.png?v=132">
+<link rel="apple-touch-icon" href="./favicon.png?v=132">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1664,7 +1664,7 @@ function createCamCard(index){
     const html = `
         <div class="card cam-card" id="cam${index}" data-cam="${index}">
             <button type="button" class="cam-header" onclick="openCam(${index})">
-                <h2>Cam ${index}</h2>
+                <h2>${index}. Cam</h2>
                 <span class="cam-arrow">⌄</span>
             </button>
 
@@ -2198,7 +2198,6 @@ function calculateAll(){
     let toplam = 0;
     let toplamAdet = 0;
     let firstInvalidCam = null;
-    let hasBlankAcilir = false;
 
     document.querySelectorAll(".cam-card").forEach(function(card){
         card.classList.remove("has-error");
@@ -2219,7 +2218,6 @@ function calculateAll(){
         let acilir = 0;
         if(acilirRaw === ""){
             acilir = 0;
-            hasBlankAcilir = true;
         }else{
             acilir = parseInputNumber(acilirRaw);
         }
@@ -2234,7 +2232,7 @@ function calculateAll(){
         let cardHasError = false;
 
         function addCardError(message){
-            errors.push("Cam " + camNo + ": " + message);
+            errors.push(camNo + ". Cam: " + message);
             cardHasError = true;
             if(firstInvalidCam === null){
                 firstInvalidCam = camNo;
@@ -2348,23 +2346,10 @@ function calculateAll(){
 
     const hasMissingColor = items.some(function(item){
         if(item.kasa === NOT_SELECTED) return true;
-
-        if(item.productKey === "klasik"){
-            return item.kumas === NOT_SELECTED;
-        }
-
-        if(item.productKey === "blackout"){
-            return item.blackout === NOT_SELECTED;
-        }
-
-        if(item.productKey === "ciftli"){
-            return item.tul === NOT_SELECTED || item.perde === NOT_SELECTED;
-        }
-
-        if(item.productKey === "tul_perde"){
-            return item.tul_perde === NOT_SELECTED;
-        }
-
+        if(item.productKey === "klasik") return item.kumas === NOT_SELECTED;
+        if(item.productKey === "blackout") return item.blackout === NOT_SELECTED;
+        if(item.productKey === "ciftli") return item.tul === NOT_SELECTED || item.perde === NOT_SELECTED;
+        if(item.productKey === "tul_perde") return item.tul_perde === NOT_SELECTED;
         return false;
     });
 
@@ -2390,15 +2375,6 @@ function calculateAll(){
         `;
     }
 
-    if(hasBlankAcilir){
-        warningHTML += `
-            <div class="warning-box">
-                <b>Açılır adet boş bırakıldı.</b>
-                Açılır adet girilmeyen camlar 0 adet kabul edilmiştir. Açılır kanat varsa ilgili cama açılır adet yazmanız önerilir.
-            </div>
-        `;
-    }
-
     const sharedProductColorHTML = selectionMode === "same" && items.length > 0
         ? getSharedProductColorHTML(items[0])
         : "";
@@ -2409,7 +2385,7 @@ function calculateAll(){
         return `
             <div class="order-item">
                 <div class="order-item-top">
-                    <span class="cam-chip">Cam ${item.camNo}</span>
+                    <span class="cam-chip">${item.camNo}. Ölçü</span>
                     <span class="system-chip">${escapeHTML(item.tipText)}</span>
                 </div>
 
@@ -2429,10 +2405,12 @@ function calculateAll(){
                     ${colorRows}
                 ` : ""}
 
-                <div class="order-meta">
-                    <span>Açılır</span>
-                    <strong>${item.acilir} adet</strong>
-                </div>
+                ${item.acilir > 0 ? `
+                    <div class="order-meta">
+                        <span>Açılır Cam</span>
+                        <strong>${item.acilir} adet</strong>
+                    </div>
+                ` : ""}
             </div>
         `;
     }).join("");
@@ -2447,7 +2425,7 @@ function calculateAll(){
         const colorLines = selectionMode === "same" ? [] : getColorLinesText(item);
 
         const lines = [
-            "Cam " + item.camNo,
+            item.camNo + ". Ölçü",
             item.whatsappDimension,
             item.adet + " adet " + item.productLabel,
             "Sistem: " + item.tipText
@@ -2458,7 +2436,9 @@ function calculateAll(){
             lines.push(...colorLines);
         }
 
-        lines.push("Açılır: " + item.acilir + " adet");
+        if(item.acilir > 0){
+            lines.push("Açılır Cam: " + item.acilir + " adet");
+        }
 
         return lines.join("\n");
     }).join("\n\n");
