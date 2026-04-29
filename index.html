@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Prestij Life</title>
 
-<link rel="icon" type="image/png" href="./favicon.png?v=102">
-<link rel="shortcut icon" type="image/png" href="./favicon.png?v=102">
-<link rel="apple-touch-icon" href="./favicon.png?v=102">
+<link rel="icon" type="image/png" href="./favicon.png?v=130">
+<link rel="shortcut icon" type="image/png" href="./favicon.png?v=130">
+<link rel="apple-touch-icon" href="./favicon.png?v=130">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1280,21 +1280,13 @@ body.same-product .product-and-color-area{
 <script>
 const PRICE_API_URL = "https://script.google.com/macros/s/AKfycbzcTBOxRGOsFO0dzLS1EKrWMtn0GgxjHI-dUonwg-qehva7MSIry8w0K8Y_63voFcAz/exec";
 
-const DEFAULT_PRICES = {
-    klasik_askili: 450,
-    klasik_vidali: 400,
-    blackout: 1250,
-    ciftli: 1000,
-    tul_perde: 1000,
-    kargo: 300
-};
-
-let currentPrices = Object.assign({}, DEFAULT_PRICES);
+let currentPrices = null;
+let priceReady = false;
 let priceLoadedFromApi = false;
 let priceLoadFailed = false;
 
 const MAX_CAM = 50;
-const ORDER_STORAGE_KEY = "prestijLifeOrderData_v5";
+const ORDER_STORAGE_KEY = "prestijLifeOrderData_v6";
 const NOT_SELECTED = "Belirtilmedi";
 
 const productTypes = [
@@ -1421,22 +1413,10 @@ async function loadCurrentPrices(){
             throw new Error(data.message || "Fiyat bilgisi alınamadı.");
         }
 
-        const incomingPrices = {
-            klasik_askili: Number(data.prices.klasik_askili),
-            klasik_vidali: Number(data.prices.klasik_vidali),
-            blackout: Number(data.prices.blackout),
-            ciftli: Number(data.prices.ciftli),
-            tul_perde: Number(data.prices.tul_perde),
-            kargo: Number(data.prices.kargo)
-        };
-
-        Object.keys(incomingPrices).forEach(function(key){
-            if(isNaN(incomingPrices[key]) || incomingPrices[key] < 0){
-                throw new Error("Geçersiz fiyat verisi: " + key);
-            }
-        });
+        const incomingPrices = validatePriceData(data.prices);
 
         currentPrices = incomingPrices;
+        priceReady = true;
         priceLoadedFromApi = true;
         priceLoadFailed = false;
 
@@ -1445,15 +1425,42 @@ async function loadCurrentPrices(){
 
         setPriceStatus("ok", "Güncel fiyatlar yüklendi.");
     }catch(error){
+        currentPrices = null;
+        priceReady = false;
         priceLoadedFromApi = false;
         priceLoadFailed = true;
 
         updateProductDescriptions();
         refreshProductChoiceTexts();
 
-        setPriceStatus("fail", "Fiyat bağlantısı kurulamadı. Sayfayı yenileyin.");
+        setPriceStatus("fail", "Güncel fiyat bilgisi alınamadı.");
         console.error("Fiyatlar yüklenemedi:", error);
     }
+}
+
+function validatePriceData(prices){
+    const required = {
+        klasik_askili: "Klasik Seri Askılı m²",
+        klasik_vidali: "Klasik Seri Vidalı m²",
+        blackout: "Blackout Karartmalı m²",
+        ciftli: "Çiftli Sistem m²",
+        tul_perde: "Tül Perde m²",
+        kargo: "Kargo"
+    };
+
+    const cleanPrices = {};
+
+    Object.keys(required).forEach(function(key){
+        const value = Number(prices[key]);
+
+        if(isNaN(value) || value <= 0){
+            throw new Error(required[key] + " fiyatı geçersiz veya eksik.");
+        }
+
+        cleanPrices[key] = value;
+    });
+
+    return cleanPrices;
 }
 
 function setPriceStatus(type, message){
@@ -1477,6 +1484,11 @@ function setPriceStatus(type, message){
 
 function updateProductDescriptions(){
     productTypes.forEach(function(product){
+        if(!currentPrices){
+            product.desc = "Güncel fiyat alınamadı";
+            return;
+        }
+
         if(product.key === "klasik"){
             product.desc = "Askılı " + formatTLPlain(currentPrices.klasik_askili) + " / m² · Vidalı " + formatTLPlain(currentPrices.klasik_vidali) + " / m²";
         }
@@ -2173,6 +2185,12 @@ function escapeHTML(value){
 }
 
 function calculateAll(){
+    if(!priceReady || !currentPrices){
+        showPriceUnavailable();
+        document.getElementById("result").scrollIntoView({ behavior:"smooth", block:"start" });
+        return;
+    }
+
     const cards = document.querySelectorAll(".cam-card");
     const errors = [];
     const items = [];
@@ -2353,15 +2371,6 @@ function calculateAll(){
     const hasMissingCustomerInfo = !ad || !tel || !adr;
 
     let warningHTML = "";
-
-    if(priceLoadFailed){
-        warningHTML += `
-            <div class="warning-box">
-                <b>Güncel fiyat bağlantısı kurulamadı.</b>
-                Hesaplama mevcut yedek fiyatlarla yapılmıştır. Sipariş vermeden önce bizimle iletişime geçmeniz önerilir.
-            </div>
-        `;
-    }
 
     if(hasMissingColor){
         warningHTML += `
@@ -2679,6 +2688,15 @@ function showErrors(errors){
         <div class="error-box">
             <b>Eksik veya hatalı alanlar var:</b>
             <ul>${list}</ul>
+        </div>
+    `;
+}
+
+function showPriceUnavailable(){
+    document.getElementById("result").innerHTML = `
+        <div class="error-box">
+            <b>Güncel fiyat bilgisi alınamadı.</b><br>
+            Lütfen sayfayı yenileyin veya WhatsApp üzerinden bizimle iletişime geçin.
         </div>
     `;
 }
