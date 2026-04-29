@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Prestij Life Admin Paneli</title>
 
-<link rel="icon" type="image/png" href="./favicon.png?v=111">
-<link rel="shortcut icon" type="image/png" href="./favicon.png?v=111">
-<link rel="apple-touch-icon" href="./favicon.png?v=111">
+<link rel="icon" type="image/png" href="./favicon.png?v=120">
+<link rel="shortcut icon" type="image/png" href="./favicon.png?v=120">
+<link rel="apple-touch-icon" href="./favicon.png?v=120">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -469,9 +469,7 @@ body.dark .btn-main{
         </div>
 
         <h1>Prestij Life</h1>
-        <p class="subtitle">
-            Yönetici paneline giriş yapmak için şifrenizi girin.
-        </p>
+        <p class="subtitle">Yönetici paneline giriş yapmak için şifrenizi girin.</p>
 
         <input type="password" id="passwordInput" placeholder="Şifre">
         <button class="btn-main" id="loginBtn" onclick="login()">Giriş Yap</button>
@@ -547,7 +545,7 @@ body.dark .btn-main{
                 <div class="settings-card">
                     <h3>Güncel Fiyatlar</h3>
                     <p>
-                        Buradan kaydedilen fiyatlar Google Sheets’e yazılır. Müşteri sitesi güncel fiyatları buradan okuyacaktır.
+                        Buradan kaydedilen fiyatlar Google Sheets’e yazılır. Kayıt sonrası sistem fiyatları tekrar okuyup doğrular.
                     </p>
 
                     <div class="api-status">
@@ -558,32 +556,32 @@ body.dark .btn-main{
                     <div class="price-grid">
                         <label class="field">
                             <span>Klasik Seri Askılı m²</span>
-                            <input type="number" id="priceKlasikAskili" min="0" step="1" placeholder="450">
+                            <input type="number" id="priceKlasikAskili" min="1" step="1" placeholder="450">
                         </label>
 
                         <label class="field">
                             <span>Klasik Seri Vidalı m²</span>
-                            <input type="number" id="priceKlasikVidali" min="0" step="1" placeholder="400">
+                            <input type="number" id="priceKlasikVidali" min="1" step="1" placeholder="400">
                         </label>
 
                         <label class="field">
                             <span>Blackout Karartmalı m²</span>
-                            <input type="number" id="priceBlackout" min="0" step="1" placeholder="1250">
+                            <input type="number" id="priceBlackout" min="1" step="1" placeholder="1250">
                         </label>
 
                         <label class="field">
                             <span>Çiftli Sistem m²</span>
-                            <input type="number" id="priceCiftli" min="0" step="1" placeholder="1000">
+                            <input type="number" id="priceCiftli" min="1" step="1" placeholder="1000">
                         </label>
 
                         <label class="field">
                             <span>Tül Perde m²</span>
-                            <input type="number" id="priceTulPerde" min="0" step="1" placeholder="1000">
+                            <input type="number" id="priceTulPerde" min="1" step="1" placeholder="1000">
                         </label>
 
                         <label class="field">
                             <span>Kargo</span>
-                            <input type="number" id="priceKargo" min="0" step="1" placeholder="300">
+                            <input type="number" id="priceKargo" min="1" step="1" placeholder="300">
                         </label>
                     </div>
 
@@ -597,7 +595,7 @@ body.dark .btn-main{
                     <div class="message warning" id="priceWarning"></div>
 
                     <div class="small-note">
-                        Fiyatlara sadece sayı yazın. Örneğin 1000 TL yerine 1000 yazın.
+                        Fiyatlara sadece sayı yazın. Boş, 0 veya eksi fiyat kaydedilemez.
                     </div>
                 </div>
 
@@ -665,15 +663,6 @@ const ADMIN_THEME_KEY = "prestijLifeAdminTheme";
 const PRICE_API_URL = "https://script.google.com/macros/s/AKfycbzcTBOxRGOsFO0dzLS1EKrWMtn0GgxjHI-dUonwg-qehva7MSIry8w0K8Y_63voFcAz/exec";
 const ADMIN_API_KEY = "prestijlife2026";
 
-const DEFAULT_PRICES = {
-    klasik_askili: 450,
-    klasik_vidali: 400,
-    blackout: 1250,
-    ciftli: 1000,
-    tul_perde: 1000,
-    kargo: 300
-};
-
 let priceFormDirty = false;
 let pricesLoadedOnce = false;
 let priceRequestId = 0;
@@ -690,14 +679,7 @@ function initAdmin(){
 }
 
 function bindPriceInputProtection(){
-    const ids = [
-        "priceKlasikAskili",
-        "priceKlasikVidali",
-        "priceBlackout",
-        "priceCiftli",
-        "priceTulPerde",
-        "priceKargo"
-    ];
+    const ids = getPriceInputIds();
 
     ids.forEach(function(id){
         const input = document.getElementById(id);
@@ -709,6 +691,17 @@ function bindPriceInputProtection(){
             setPriceStatus("loading", "Kaydedilmemiş fiyat değişikliği var.");
         });
     });
+}
+
+function getPriceInputIds(){
+    return [
+        "priceKlasikAskili",
+        "priceKlasikVidali",
+        "priceBlackout",
+        "priceCiftli",
+        "priceTulPerde",
+        "priceKargo"
+    ];
 }
 
 async function fetchWithTimeout(url, options = {}, timeoutMs = 10000){
@@ -860,7 +853,7 @@ async function loadPrices(force = false){
             return;
         }
 
-        const prices = Object.assign({}, DEFAULT_PRICES, data.prices || {});
+        const prices = validateIncomingPrices(data.prices);
         fillPriceInputs(prices);
 
         pricesLoadedOnce = true;
@@ -882,18 +875,57 @@ async function loadPrices(force = false){
     }
 }
 
-function safePrice(value, fallback){
-    const numberValue = Number(value);
-    return isNaN(numberValue) ? fallback : numberValue;
+function validateIncomingPrices(prices){
+    if(!prices){
+        throw new Error("Fiyat verisi alınamadı.");
+    }
+
+    const required = {
+        klasik_askili: "Klasik Seri Askılı m²",
+        klasik_vidali: "Klasik Seri Vidalı m²",
+        blackout: "Blackout Karartmalı m²",
+        ciftli: "Çiftli Sistem m²",
+        tul_perde: "Tül Perde m²",
+        kargo: "Kargo"
+    };
+
+    const cleanPrices = {};
+
+    Object.keys(required).forEach(function(key){
+        const value = Number(prices[key]);
+
+        if(isNaN(value) || value <= 0){
+            throw new Error(required[key] + " fiyatı geçersiz veya eksik.");
+        }
+
+        cleanPrices[key] = value;
+    });
+
+    return cleanPrices;
+}
+
+function pricesMatch(inputPrices, savedPrices){
+    const keys = [
+        "klasik_askili",
+        "klasik_vidali",
+        "blackout",
+        "ciftli",
+        "tul_perde",
+        "kargo"
+    ];
+
+    return keys.every(function(key){
+        return Number(inputPrices[key]) === Number(savedPrices[key]);
+    });
 }
 
 function fillPriceInputs(prices){
-    document.getElementById("priceKlasikAskili").value = safePrice(prices.klasik_askili, DEFAULT_PRICES.klasik_askili);
-    document.getElementById("priceKlasikVidali").value = safePrice(prices.klasik_vidali, DEFAULT_PRICES.klasik_vidali);
-    document.getElementById("priceBlackout").value = safePrice(prices.blackout, DEFAULT_PRICES.blackout);
-    document.getElementById("priceCiftli").value = safePrice(prices.ciftli, DEFAULT_PRICES.ciftli);
-    document.getElementById("priceTulPerde").value = safePrice(prices.tul_perde, DEFAULT_PRICES.tul_perde);
-    document.getElementById("priceKargo").value = safePrice(prices.kargo, DEFAULT_PRICES.kargo);
+    document.getElementById("priceKlasikAskili").value = prices.klasik_askili;
+    document.getElementById("priceKlasikVidali").value = prices.klasik_vidali;
+    document.getElementById("priceBlackout").value = prices.blackout;
+    document.getElementById("priceCiftli").value = prices.ciftli;
+    document.getElementById("priceTulPerde").value = prices.tul_perde;
+    document.getElementById("priceKargo").value = prices.kargo;
 }
 
 function getPriceInputs(){
@@ -908,10 +940,11 @@ function getPriceInputs(){
 }
 
 function parsePriceValue(id, label){
-    const value = Number(document.getElementById(id).value);
+    const rawValue = document.getElementById(id).value;
+    const value = Number(rawValue);
 
-    if(isNaN(value) || value < 0){
-        throw new Error(label + " geçerli bir sayı olmalıdır.");
+    if(rawValue === "" || isNaN(value) || value <= 0){
+        throw new Error(label + " 0'dan büyük geçerli bir sayı olmalıdır.");
     }
 
     return value;
@@ -945,14 +978,19 @@ async function savePrices(){
             throw new Error(data.message || "Fiyatlar kaydedilemedi.");
         }
 
-        const savedPrices = Object.assign({}, DEFAULT_PRICES, data.prices || prices);
+        const savedPrices = validateIncomingPrices(data.prices);
+
+        if(!pricesMatch(prices, savedPrices)){
+            throw new Error("Fiyatlar Google Sheets’e beklenen şekilde kaydedilemedi. Lütfen tekrar kontrol edin.");
+        }
+
         fillPriceInputs(savedPrices);
 
         priceFormDirty = false;
         pricesLoadedOnce = true;
 
-        showPriceSuccess("Fiyatlar başarıyla kaydedildi. Müşteri sitesi artık güncel fiyatları kullanacak.");
-        setPriceStatus("ok", "Fiyatlar güncel.");
+        showPriceSuccess("Fiyatlar başarıyla kaydedildi ve Google Sheets üzerinden doğrulandı.");
+        setPriceStatus("ok", "Fiyatlar güncel ve doğrulandı.");
     }catch(error){
         if(error.name === "AbortError"){
             showPriceError("Kaydetme işlemi gecikti. Lütfen tekrar deneyin.");
@@ -970,6 +1008,8 @@ async function savePrices(){
 function setPriceStatus(type, message){
     const dot = document.getElementById("priceStatusDot");
     const text = document.getElementById("priceStatusText");
+
+    if(!dot || !text) return;
 
     dot.classList.remove("ok", "fail");
 
