@@ -1286,7 +1286,7 @@ let priceLoadedFromApi = false;
 let priceLoadFailed = false;
 
 const MAX_CAM = 50;
-const ORDER_STORAGE_KEY = "prestijLifeOrderData_v6";
+const ORDER_STORAGE_KEY = "prestijLifeOrderData_v7";
 const NOT_SELECTED = "Belirtilmedi";
 
 const productTypes = [
@@ -1337,6 +1337,8 @@ let currentCamCount = 0;
 let isRestoring = false;
 let saveTimer = null;
 let lastOrderText = "";
+let lastCalculatedOrderData = null;
+let orderSubmitInProgress = false;
 let selectionMode = "same";
 let globalProductType = "";
 
@@ -1357,71 +1359,39 @@ async function init(){
         camSelect.appendChild(option);
     }
 
-    const savedData = loadSavedState();
-    const savedCamCount = savedData && Number.isInteger(savedData.camCount) && savedData.camCount >= 1 && savedData.camCount <= MAX_CAM
-        ? savedData.camCount
-        : 1;
-
-    isRestoring = true;
-
-    if(savedData){
-        selectionMode = savedData.selectionMode === "individual" ? "individual" : "same";
-        globalProductType = savedData.globalProductType || "";
-    }
-
-    camSelect.value = String(savedCamCount);
     camSelect.addEventListener("change", handleCamCountChange);
 
-    setCamCount(savedCamCount, false);
+    const restored = restoreState();
 
-    if(savedData){
-        restoreSavedState(savedData);
+    if(!restored){
+        setCamCount(1, false);
+        setSelectionMode("same");
     }
 
-    if(!globalProductType){
-        setGlobalProductType("klasik");
-    }else{
-        setGlobalProductType(globalProductType);
-    }
-
-    applySelectionModeUI();
-
-    isRestoring = false;
-
-    document.addEventListener("input", queueSaveState);
-    document.addEventListener("change", queueSaveState);
-
-    document.addEventListener("keydown", function(e){
-        if(e.key === "Escape"){
-            closeImageModal();
-        }
-    });
+    bindAutoSave();
 }
 
 async function loadCurrentPrices(){
     setPriceStatus("loading", "Güncel fiyatlar yükleniyor...");
 
     try{
-        const response = await fetch(PRICE_API_URL + "?v=" + Date.now(), {
+        const response = await fetch(PRICE_API_URL + "?t=" + Date.now(), {
             method:"GET",
             cache:"no-store"
         });
 
         const data = await response.json();
 
-        if(!data.success || !data.prices){
-            throw new Error(data.message || "Fiyat bilgisi alınamadı.");
+        if(!data.success){
+            throw new Error(data.message || "Fiyatlar alınamadı.");
         }
 
-        const incomingPrices = validatePriceData(data.prices);
+        const prices = validatePrices(data.prices);
 
-        currentPrices = incomingPrices;
+        currentPrices = prices;
         priceReady = true;
         priceLoadedFromApi = true;
         priceLoadFailed = false;
-
-        updateProductDescriptions();
-        refreshProductChoiceTexts();
 
         setPriceStatus("ok", "Güncel fiyatlar yüklendi.");
     }catch(error){
@@ -1430,22 +1400,22 @@ async function loadCurrentPrices(){
         priceLoadedFromApi = false;
         priceLoadFailed = true;
 
-        updateProductDescriptions();
-        refreshProductChoiceTexts();
-
         setPriceStatus("fail", "Güncel fiyat bilgisi alınamadı.");
-        console.error("Fiyatlar yüklenemedi:", error);
     }
 }
 
-function validatePriceData(prices){
+function validatePrices(prices){
+    if(!prices){
+        throw new Error("Fiyat verisi boş.");
+    }
+
     const required = {
-        klasik_askili: "Klasik Seri Askılı m²",
-        klasik_vidali: "Klasik Seri Vidalı m²",
-        blackout: "Blackout Karartmalı m²",
-        ciftli: "Çiftli Sistem m²",
-        tul_perde: "Tül Perde m²",
-        kargo: "Kargo"
+        klasik_askili:"Klasik Seri Askılı",
+        klasik_vidali:"Klasik Seri Vidalı",
+        blackout:"Blackout",
+        ciftli:"Çiftli Sistem",
+        tul_perde:"Tül Perde",
+        kargo:"Kargo"
     };
 
     const cleanPrices = {};
@@ -1454,7 +1424,7 @@ function validatePriceData(prices){
         const value = Number(prices[key]);
 
         if(isNaN(value) || value <= 0){
-            throw new Error(required[key] + " fiyatı geçersiz veya eksik.");
+            throw new Error(required[key] + " fiyatı geçersiz.");
         }
 
         cleanPrices[key] = value;
@@ -1463,11 +1433,9 @@ function validatePriceData(prices){
     return cleanPrices;
 }
 
-function setPriceStatus(type, message){
+function setPriceStatus(type, text){
     const dot = document.getElementById("priceStatusDot");
-    const text = document.getElementById("priceStatusText");
-
-    if(!dot || !text) return;
+    const label = document.getElementById("priceStatusText");
 
     dot.classList.remove("ok", "fail");
 
@@ -1479,44 +1447,7 @@ function setPriceStatus(type, message){
         dot.classList.add("fail");
     }
 
-    text.textContent = message;
-}
-
-function updateProductDescriptions(){
-    productTypes.forEach(function(product){
-        if(!currentPrices){
-            product.desc = "Güncel fiyat alınamadı";
-            return;
-        }
-
-        if(product.key === "klasik"){
-            product.desc = "Askılı " + formatTLPlain(currentPrices.klasik_askili) + " / m² · Vidalı " + formatTLPlain(currentPrices.klasik_vidali) + " / m²";
-        }
-
-        if(product.key === "blackout"){
-            product.desc = formatTLPlain(currentPrices.blackout) + " / m²";
-        }
-
-        if(product.key === "ciftli"){
-            product.desc = formatTLPlain(currentPrices.ciftli) + " / m²";
-        }
-
-        if(product.key === "tul_perde"){
-            product.desc = formatTLPlain(currentPrices.tul_perde) + " / m²";
-        }
-    });
-}
-
-function refreshProductChoiceTexts(){
-    document.querySelectorAll(".product-choice").forEach(function(btn){
-        const product = productTypes.find(function(item){
-            return item.key === btn.dataset.value;
-        });
-
-        if(product){
-            btn.innerHTML = `<strong>${product.label}</strong><small>${product.desc}</small>`;
-        }
-    });
+    label.textContent = text;
 }
 
 function initTheme(){
@@ -1531,72 +1462,155 @@ function initTheme(){
 
 function toggleTheme(){
     document.body.classList.toggle("dark");
-    const theme = document.body.classList.contains("dark") ? "dark" : "light";
-    localStorage.setItem("prestijLifeTheme", theme);
+    localStorage.setItem("prestijLifeTheme", document.body.classList.contains("dark") ? "dark" : "light");
     updateThemeButton();
 }
 
 function updateThemeButton(){
-    const button = document.getElementById("themeToggle");
-    if(!button) return;
-    button.textContent = document.body.classList.contains("dark") ? "☀️ Açık Mod" : "🌙 Koyu Mod";
+    const btn = document.getElementById("themeToggle");
+    if(!btn) return;
+
+    btn.textContent = document.body.classList.contains("dark") ? "☀️ Açık Mod" : "🌙 Koyu Mod";
+}
+
+function fillGlobalProductChoices(){
+    const box = document.querySelector(".globalProductSecim");
+    if(!box) return;
+
+    fillProductChoices(box, function(productKey){
+        setGlobalProduct(productKey);
+        queueSaveState();
+    });
+}
+
+function fillGlobalColorChoices(){
+    fillColorChoices(document.querySelector(".globalKasaSecim"));
+    fillFabricChoices(document.querySelector(".globalKumasSecim"), klasikKumaslar);
+    fillFabricChoices(document.querySelector(".globalBlackoutSecim"), lilyumKumaslar);
+    fillFabricChoices(document.querySelector(".globalTulSecim"), beyzaKumaslar);
+    fillFabricChoices(document.querySelector(".globalPerdeSecim"), klasikKumaslar);
+    fillFabricChoices(document.querySelector(".globalTulPerdeSecim"), beyzaKumaslar);
+}
+
+function setGlobalProduct(productKey){
+    globalProductType = productKey;
+
+    setActiveChoice(document.querySelector(".globalProductSecim"), productKey);
+
+    const globalColorArea = document.getElementById("globalColorArea");
+    if(globalColorArea){
+        globalColorArea.style.display = productKey ? "block" : "none";
+    }
+
+    document.querySelectorAll(".global-color-section").forEach(function(section){
+        section.style.display = "none";
+    });
+
+    if(productKey){
+        const section = document.querySelector(".global-color-" + productKey);
+        if(section){
+            section.style.display = "block";
+        }
+    }
+
+    applySelectionModeUI();
+}
+
+function fillProductChoices(container, clickHandler){
+    if(!container) return;
+
+    container.innerHTML = "";
+
+    productTypes.forEach(function(product){
+        const div = document.createElement("div");
+        div.className = "product-choice";
+        div.dataset.value = product.key;
+        div.innerHTML = `
+            <strong>${product.label}</strong>
+            <small>${product.desc}</small>
+        `;
+        div.onclick = function(){
+            clickHandler(product.key);
+        };
+        container.appendChild(div);
+    });
+}
+
+function fillColorChoices(container){
+    if(!container) return;
+
+    container.innerHTML = "";
+
+    kasaRenkleri.forEach(function(color){
+        const div = document.createElement("div");
+        div.className = "choice color-choice";
+        div.dataset.value = color.name;
+        div.innerHTML = `
+            <span class="color-dot" style="background:${color.hex}"></span>
+            <span>${color.name}</span>
+        `;
+        div.onclick = function(){
+            setActiveChoice(container, color.name);
+            queueSaveState();
+        };
+        container.appendChild(div);
+    });
+}
+
+function fillFabricChoices(container, fabrics){
+    if(!container) return;
+
+    container.innerHTML = "";
+
+    fabrics.forEach(function(name){
+        const div = document.createElement("div");
+        div.className = "choice";
+        div.dataset.value = name;
+        div.textContent = name;
+        div.onclick = function(){
+            setActiveChoice(container, name);
+            queueSaveState();
+        };
+        container.appendChild(div);
+    });
+}
+
+function setActiveChoice(container, value){
+    if(!container) return;
+
+    container.querySelectorAll(".choice, .product-choice").forEach(function(div){
+        div.classList.toggle("active", div.dataset.value === value);
+    });
+}
+
+function getActiveValue(container){
+    if(!container) return "";
+
+    const active = container.querySelector(".active");
+    return active ? active.dataset.value : "";
 }
 
 function setSelectionMode(mode){
     selectionMode = mode === "individual" ? "individual" : "same";
+
+    document.querySelectorAll('input[name="selectionMode"]').forEach(function(input){
+        input.checked = input.value === selectionMode;
+    });
+
     applySelectionModeUI();
     queueSaveState();
 }
 
 function applySelectionModeUI(){
-    document.querySelectorAll('input[name="selectionMode"]').forEach(function(input){
-        input.checked = input.value === selectionMode;
-    });
+    const globalSelection = document.getElementById("globalSelection");
 
-    document.getElementById("globalSelection").classList.toggle("show", selectionMode === "same");
-    document.body.classList.toggle("same-product", selectionMode === "same");
-}
-
-function fillGlobalProductChoices(){
-    const box = document.querySelector(".globalProductSecim");
-    box.innerHTML = "";
-
-    productTypes.forEach(function(product){
-        const btn = document.createElement("button");
-        btn.type = "button";
-        btn.className = "product-choice";
-        btn.dataset.value = product.key;
-        btn.innerHTML = `<strong>${product.label}</strong><small>${product.desc}</small>`;
-        btn.onclick = function(){
-            setGlobalProductType(product.key);
-            queueSaveState();
-        };
-        box.appendChild(btn);
-    });
-}
-
-function setGlobalProductType(productKey){
-    globalProductType = productKey || "klasik";
-
-    document.querySelectorAll(".globalProductSecim .product-choice").forEach(function(btn){
-        btn.classList.toggle("active", btn.dataset.value === globalProductType);
-    });
-
-    document.getElementById("globalColorArea").style.display = "block";
-
-    document.querySelector(".global-color-klasik").style.display = globalProductType === "klasik" ? "block" : "none";
-    document.querySelector(".global-color-blackout").style.display = globalProductType === "blackout" ? "block" : "none";
-    document.querySelector(".global-color-ciftli").style.display = globalProductType === "ciftli" ? "block" : "none";
-    document.querySelector(".global-color-tul_perde").style.display = globalProductType === "tul_perde" ? "block" : "none";
-}
-
-function fillGlobalColorChoices(){
-    fillChoiceBox(document.querySelector(".globalKasaSecim"), kasaRenkleri, "color");
-    fillChoiceBox(document.querySelector(".globalKumasSecim"), klasikKumaslar, "text");
-    fillChoiceBox(document.querySelector(".globalBlackoutSecim"), lilyumKumaslar, "text");
-    fillChoiceBox(document.querySelector(".globalTulSecim"), beyzaKumaslar, "text");
-    fillChoiceBox(document.querySelector(".globalPerdeSecim"), klasikKumaslar, "text");
-    fillChoiceBox(document.querySelector(".globalTulPerdeSecim"), beyzaKumaslar, "text");
+    if(selectionMode === "same"){
+        document.body.classList.add("same-product");
+        globalSelection.classList.add("show");
+    }else{
+        document.body.classList.remove("same-product");
+        globalSelection.classList.remove("show");
+    }
 }
 
 function handleCamCountChange(){
@@ -1685,12 +1699,12 @@ function createCamCard(index){
 
                     <label class="field">
                         <span>En (cm)</span>
-                        <input type="text" inputmode="decimal" class="en" placeholder="Örn: 148">
+                        <input type="text" inputmode="decimal" class="en" placeholder="Örn: 60">
                     </label>
 
                     <label class="field">
                         <span>Boy (cm)</span>
-                        <input type="text" inputmode="decimal" class="boy" placeholder="Örn: 53">
+                        <input type="text" inputmode="decimal" class="boy" placeholder="Örn: 150">
                     </label>
 
                     <label class="field">
@@ -1749,123 +1763,160 @@ function createCamCard(index){
 
     const card = document.getElementById("cam" + index);
 
-    fillProductChoices(card);
-    fillChoiceBox(card.querySelector(".kasaSecim"), kasaRenkleri, "color");
-    fillChoiceBox(card.querySelector(".kumasSecim"), klasikKumaslar, "text");
-    fillChoiceBox(card.querySelector(".blackoutSecim"), lilyumKumaslar, "text");
-    fillChoiceBox(card.querySelector(".tulSecim"), beyzaKumaslar, "text");
-    fillChoiceBox(card.querySelector(".perdeSecim"), klasikKumaslar, "text");
-    fillChoiceBox(card.querySelector(".tulPerdeSecim"), beyzaKumaslar, "text");
+    fillProductChoices(card.querySelector(".productSecim"), function(productKey){
+        setCardProduct(card, productKey);
+        queueSaveState();
+    });
 
-    setProductType(card, "klasik");
+    fillColorChoices(card.querySelector(".kasaSecim"));
+    fillFabricChoices(card.querySelector(".kumasSecim"), klasikKumaslar);
+    fillFabricChoices(card.querySelector(".blackoutSecim"), lilyumKumaslar);
+    fillFabricChoices(card.querySelector(".tulSecim"), beyzaKumaslar);
+    fillFabricChoices(card.querySelector(".perdeSecim"), klasikKumaslar);
+    fillFabricChoices(card.querySelector(".tulPerdeSecim"), beyzaKumaslar);
+
+    setCardProduct(card, "");
     updateTipOptions(card);
+    bindCardInputs(card);
 
     return card;
 }
 
-function fillProductChoices(card){
-    const box = card.querySelector(".productSecim");
-
-    productTypes.forEach(function(product){
-        const btn = document.createElement("button");
-        btn.type = "button";
-        btn.className = "product-choice";
-        btn.dataset.value = product.key;
-        btn.innerHTML = `<strong>${product.label}</strong><small>${product.desc}</small>`;
-        btn.onclick = function(){
-            setProductType(card, product.key);
-            queueSaveState();
-        };
-        box.appendChild(btn);
+function bindCardInputs(card){
+    card.querySelectorAll("input, select").forEach(function(input){
+        input.addEventListener("input", queueSaveState);
+        input.addEventListener("change", queueSaveState);
     });
 }
 
-function setProductType(card, productKey){
-    card.dataset.product = productKey;
+function openCam(index){
+    const card = document.getElementById("cam" + index);
+    if(!card) return;
 
-    card.querySelectorAll(".product-choice").forEach(function(btn){
-        btn.classList.toggle("active", btn.dataset.value === productKey);
+    const isOpen = card.classList.contains("open");
+
+    document.querySelectorAll(".cam-card").forEach(function(item){
+        item.classList.remove("open");
     });
 
-    card.querySelector(".color-klasik").style.display = productKey === "klasik" ? "block" : "none";
-    card.querySelector(".color-blackout").style.display = productKey === "blackout" ? "block" : "none";
-    card.querySelector(".color-ciftli").style.display = productKey === "ciftli" ? "block" : "none";
-    card.querySelector(".color-tul_perde").style.display = productKey === "tul_perde" ? "block" : "none";
+    if(!isOpen){
+        card.classList.add("open");
+    }
 }
 
-function fillChoiceBox(box, items, type){
-    if(!box) return;
+function setCardProduct(card, productKey){
+    setActiveChoice(card.querySelector(".productSecim"), productKey);
 
-    box.innerHTML = "";
+    card.dataset.product = productKey || "";
 
-    items.forEach(function(item){
-        if(type === "color"){
-            box.appendChild(createColorChoice(item));
-        }else{
-            box.appendChild(createTextChoice(item));
+    card.querySelectorAll(".product-color-section").forEach(function(section){
+        section.style.display = "none";
+    });
+
+    if(productKey){
+        const section = card.querySelector(".color-" + productKey);
+        if(section){
+            section.style.display = "block";
         }
-    });
-}
-
-function createColorChoice(item){
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "choice color-choice";
-    btn.dataset.value = item.name;
-    btn.onclick = function(){
-        selectChoice(this);
-    };
-
-    const dot = document.createElement("span");
-    dot.className = "color-dot";
-    dot.style.background = item.hex;
-
-    const text = document.createElement("span");
-    text.textContent = item.name;
-
-    btn.appendChild(dot);
-    btn.appendChild(text);
-
-    return btn;
-}
-
-function createTextChoice(value){
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "choice";
-    btn.dataset.value = value;
-    btn.textContent = value;
-    btn.onclick = function(){
-        selectChoice(this);
-    };
-
-    return btn;
+    }
 }
 
 function updateTipOptions(card){
     const uygulama = card.querySelector(".uygulama").value;
-    const tipSelect = card.querySelector(".tip");
-    const currentTip = tipSelect.value;
+    const tip = card.querySelector(".tip");
 
     if(uygulama === "pimapen"){
-        tipSelect.innerHTML = `<option value="vidali">Vidalı</option>`;
-        tipSelect.value = "vidali";
-        tipSelect.disabled = true;
+        tip.value = "vidali";
+        tip.disabled = true;
     }else{
-        tipSelect.disabled = false;
-        tipSelect.innerHTML = `
-            <option value="askili">Askılı</option>
-            <option value="vidali">Vidalı</option>
-        `;
-        tipSelect.value = currentTip === "vidali" ? "vidali" : "askili";
+        tip.disabled = false;
     }
 
     queueSaveState();
 }
 
-function collectGlobalData(){
+function getItemProduct(card){
+    if(selectionMode === "same"){
+        return globalProductType;
+    }
+
+    return card.dataset.product || "";
+}
+
+function getProductLabel(key){
+    const found = productTypes.find(function(product){
+        return product.key === key;
+    });
+
+    return found ? found.label : "";
+}
+
+function getTipText(tip){
+    if(tip === "askili") return "Askılı";
+    if(tip === "vidali") return "Vidalı";
+    return tip || "";
+}
+
+function getUnitPrice(productKey, tip){
+    if(productKey === "klasik"){
+        return tip === "vidali" ? currentPrices.klasik_vidali : currentPrices.klasik_askili;
+    }
+
+    if(productKey === "blackout") return currentPrices.blackout;
+    if(productKey === "ciftli") return currentPrices.ciftli;
+    if(productKey === "tul_perde") return currentPrices.tul_perde;
+
+    return 0;
+}
+
+function parseInputNumber(value){
+    const cleaned = String(value).trim().replace(",", ".");
+    if(cleaned === "") return NaN;
+    return Number(cleaned);
+}
+
+function roundUp10(value){
+    return Math.ceil(value / 10) * 10;
+}
+
+function saleM2(m2){
+    if(m2 <= 1) return 1;
+    return Math.ceil(m2 * 10) / 10;
+}
+
+function formatNumber(value){
+    return Number(value).toLocaleString("tr-TR", { maximumFractionDigits:2 });
+}
+
+function formatTL(value){
+    return Math.round(value).toLocaleString("tr-TR") + " TL";
+}
+
+function normalizePhone(value){
+    const digits = String(value || "").replace(/\D/g, "");
+
+    if(!digits){
+        return { valid:false, value:"" };
+    }
+
+    let finalDigits = digits;
+
+    if(finalDigits.startsWith("90") && finalDigits.length === 12){
+        finalDigits = "0" + finalDigits.slice(2);
+    }else if(finalDigits.startsWith("5") && finalDigits.length === 10){
+        finalDigits = "0" + finalDigits;
+    }
+
+    const valid = /^05\d{9}$/.test(finalDigits);
+
     return {
-        product: globalProductType,
+        valid,
+        value: valid ? finalDigits : value
+    };
+}
+
+function getGlobalColors(){
+    return {
         kasa: getActiveValue(document.querySelector(".globalKasaSecim")),
         kumas: getActiveValue(document.querySelector(".globalKumasSecim")),
         blackout: getActiveValue(document.querySelector(".globalBlackoutSecim")),
@@ -1875,286 +1926,10 @@ function collectGlobalData(){
     };
 }
 
-function applyGlobalData(data){
-    if(!data) return;
-
-    if(data.product){
-        setGlobalProductType(data.product);
-    }
-
-    setChoiceByValue(document.querySelector(".globalKasaSecim"), data.kasa);
-    setChoiceByValue(document.querySelector(".globalKumasSecim"), data.kumas);
-    setChoiceByValue(document.querySelector(".globalBlackoutSecim"), data.blackout);
-    setChoiceByValue(document.querySelector(".globalTulSecim"), data.tul);
-    setChoiceByValue(document.querySelector(".globalPerdeSecim"), data.perde);
-    setChoiceByValue(document.querySelector(".globalTulPerdeSecim"), data.tul_perde);
-}
-
-function collectCardData(){
-    const data = [];
-
-    for(let i = 1; i <= currentCamCount; i++){
-        const card = document.getElementById("cam" + i);
-        if(!card) continue;
-
-        data.push({
-            product: card.dataset.product || "klasik",
-            uygulama: card.querySelector(".uygulama").value,
-            en: card.querySelector(".en").value,
-            boy: card.querySelector(".boy").value,
-            adet: card.querySelector(".adet").value,
-            acilir: card.querySelector(".acilir").value,
-            tip: card.querySelector(".tip").value,
-            kasa: getActiveValue(card.querySelector(".kasaSecim")),
-            kumas: getActiveValue(card.querySelector(".kumasSecim")),
-            blackout: getActiveValue(card.querySelector(".blackoutSecim")),
-            tul: getActiveValue(card.querySelector(".tulSecim")),
-            perde: getActiveValue(card.querySelector(".perdeSecim")),
-            tul_perde: getActiveValue(card.querySelector(".tulPerdeSecim")),
-            open: card.classList.contains("open")
-        });
-    }
-
-    return data;
-}
-
-function applyCardData(card, data){
-    setProductType(card, data.product || "klasik");
-
-    card.querySelector(".uygulama").value = data.uygulama || "cam_balkon";
-    updateTipOptions(card);
-
-    card.querySelector(".en").value = data.en ?? "";
-    card.querySelector(".boy").value = data.boy ?? "";
-    card.querySelector(".adet").value = data.adet ?? "";
-    card.querySelector(".acilir").value = data.acilir ?? "";
-
-    if(data.tip === "vidali"){
-        card.querySelector(".tip").value = "vidali";
-    }
-
-    setChoiceByValue(card.querySelector(".kasaSecim"), data.kasa);
-    setChoiceByValue(card.querySelector(".kumasSecim"), data.kumas);
-    setChoiceByValue(card.querySelector(".blackoutSecim"), data.blackout);
-    setChoiceByValue(card.querySelector(".tulSecim"), data.tul);
-    setChoiceByValue(card.querySelector(".perdeSecim"), data.perde);
-    setChoiceByValue(card.querySelector(".tulPerdeSecim"), data.tul_perde);
-
-    if(data.open){
-        card.classList.add("open");
-    }
-}
-
-function restoreSavedState(data){
-    document.getElementById("name").value = data.name || "";
-    document.getElementById("phone").value = data.phone || "";
-    document.getElementById("address").value = data.address || "";
-
-    applyGlobalData(data.globalSelection);
-
-    if(Array.isArray(data.cards)){
-        data.cards.forEach(function(cardData, index){
-            const card = document.getElementById("cam" + (index + 1));
-            if(card){
-                applyCardData(card, cardData);
-            }
-        });
-    }
-
-    const hasOpenCard = document.querySelector(".cam-card.open");
-    if(!hasOpenCard && currentCamCount > 0){
-        openCam(1);
-    }
-
-    applySelectionModeUI();
-}
-
-function loadSavedState(){
-    try{
-        const raw = localStorage.getItem(ORDER_STORAGE_KEY);
-        if(!raw) return null;
-        return JSON.parse(raw);
-    }catch(e){
-        return null;
-    }
-}
-
-function queueSaveState(){
-    if(isRestoring) return;
-    clearTimeout(saveTimer);
-    saveTimer = setTimeout(saveState, 150);
-}
-
-function saveState(){
-    if(isRestoring) return;
-
-    const state = {
-        camCount: currentCamCount,
-        selectionMode: selectionMode,
-        globalProductType: globalProductType,
-        globalSelection: collectGlobalData(),
-        name: document.getElementById("name").value,
-        phone: document.getElementById("phone").value,
-        address: document.getElementById("address").value,
-        cards: collectCardData(),
-        updatedAt: new Date().toISOString()
-    };
-
-    localStorage.setItem(ORDER_STORAGE_KEY, JSON.stringify(state));
-}
-
-function resetOrderForm(){
-    const confirmed = confirm("Tüm girilen bilgiler silinsin mi?");
-    if(!confirmed) return;
-
-    clearTimeout(saveTimer);
-    saveTimer = null;
-
-    isRestoring = true;
-
-    localStorage.removeItem(ORDER_STORAGE_KEY);
-
-    lastOrderText = "";
-
-    document.getElementById("name").value = "";
-    document.getElementById("phone").value = "";
-    document.getElementById("address").value = "";
-    document.getElementById("result").innerHTML = "";
-
-    document.querySelectorAll(".choice, .product-choice").forEach(function(choice){
-        choice.classList.remove("active");
-    });
-
-    selectionMode = "same";
-    setGlobalProductType("klasik");
-    applySelectionModeUI();
-
-    rebuildOnlyOneCam();
-
-    isRestoring = false;
-
-    localStorage.removeItem(ORDER_STORAGE_KEY);
-
-    window.scrollTo({ top:0, behavior:"smooth" });
-}
-
-function getActiveValue(container){
-    if(!container) return "";
-    return container.querySelector(".active")?.dataset.value || "";
-}
-
-function setChoiceByValue(container, value){
-    if(!container || !value) return;
-
-    container.querySelectorAll(".choice").forEach(function(choice){
-        choice.classList.toggle("active", choice.dataset.value === value);
-    });
-}
-
-function openCam(id){
-    document.querySelectorAll(".cam-card").forEach(function(card){
-        card.classList.remove("open");
-    });
-
-    const selectedCard = document.getElementById("cam" + id);
-    if(selectedCard){
-        selectedCard.classList.add("open");
-    }
-
-    queueSaveState();
-}
-
-function selectChoice(el){
-    const parent = el.parentElement;
-
-    parent.querySelectorAll(".choice").forEach(function(choice){
-        choice.classList.remove("active");
-    });
-
-    el.classList.add("active");
-    queueSaveState();
-}
-
-function roundUp10(x){
-    return Math.ceil(x / 10) * 10;
-}
-
-function saleM2(m2){
-    if(m2 <= 1) return 1;
-    return Math.ceil((m2 - 0.000000001) * 10) / 10;
-}
-
-function parseInputNumber(value){
-    const cleaned = String(value).trim().replace(",", ".");
-    if(cleaned === "") return NaN;
-    return Number(cleaned);
-}
-
-function normalizePhone(value){
-    const raw = String(value || "").trim();
-    let digits = raw.replace(/\D/g, "");
-
-    if(digits.startsWith("0090")){
-        digits = "0" + digits.slice(4);
-    }else if(digits.startsWith("90") && digits.length === 12){
-        digits = "0" + digits.slice(2);
-    }else if(digits.length === 10 && digits.startsWith("5")){
-        digits = "0" + digits;
-    }
-
-    return {
-        value: digits,
-        valid: /^05\d{9}$/.test(digits)
-    };
-}
-
-function formatNumber(value){
-    return Number.isInteger(value)
-        ? String(value)
-        : value.toLocaleString("tr-TR", { maximumFractionDigits: 2 });
-}
-
-function formatTL(value){
-    return value.toLocaleString("tr-TR", {
-        maximumFractionDigits: 0
-    }) + " TL";
-}
-
-function formatTLPlain(value){
-    return Number(value).toLocaleString("tr-TR", {
-        maximumFractionDigits: 0
-    }) + " TL";
-}
-
-function getProductLabel(productKey){
-    const product = productTypes.find(function(item){
-        return item.key === productKey;
-    });
-
-    return product ? product.label : "Klasik Seri Plise";
-}
-
-function getTipText(tip){
-    return tip === "askili" ? "Askılı" : "Vidalı";
-}
-
-function getUnitPrice(productKey, tip){
-    if(productKey === "blackout") return Number(currentPrices.blackout);
-    if(productKey === "ciftli") return Number(currentPrices.ciftli);
-    if(productKey === "tul_perde") return Number(currentPrices.tul_perde);
-    return tip === "askili" ? Number(currentPrices.klasik_askili) : Number(currentPrices.klasik_vidali);
-}
-
-function getItemProduct(card){
-    if(selectionMode === "same"){
-        return globalProductType || "klasik";
-    }
-    return card.dataset.product || "klasik";
-}
-
 function getItemColors(card, productKey){
     if(selectionMode === "same"){
-        const global = collectGlobalData();
+        const global = getGlobalColors();
+
         return {
             kasa: global.kasa || NOT_SELECTED,
             kumas: global.kumas || NOT_SELECTED,
@@ -2185,6 +1960,8 @@ function escapeHTML(value){
 }
 
 function calculateAll(){
+    lastCalculatedOrderData = null;
+
     if(!priceReady || !currentPrices){
         showPriceUnavailable();
         document.getElementById("result").scrollIntoView({ behavior:"smooth", block:"start" });
@@ -2294,11 +2071,19 @@ function calculateAll(){
             camNo,
             productKey,
             productLabel,
+            uygulamaKey: uygulama,
+            uygulamaText: uygulama === "pimapen" ? "Pimapen / PVC" : "Cam Balkon",
+            tipKey: tip,
+            tipText:getTipText(tip),
             en,
             boy,
+            hesapEn: roundedEn,
+            hesapBoy: roundedBoy,
             adet,
             acilir,
-            tipText:getTipText(tip),
+            satisM2,
+            unitPrice,
+            tutar,
             kasa: colors.kasa,
             kumas: colors.kumas,
             blackout: colors.blackout,
@@ -2457,6 +2242,8 @@ function calculateAll(){
 
     const whatsappLink = "https://wa.me/905053559532?text=" + encodeURIComponent(lastOrderText);
 
+    lastCalculatedOrderData = buildSiteOrderPayload(items, ad, tel, adr);
+
     const resultHTML = `
         <div class="summary-card">
             ${warningHTML}
@@ -2501,7 +2288,10 @@ function calculateAll(){
             </div>
 
             <div class="result-actions">
-                <a class="btn-main" href="${whatsappLink}" target="_blank">
+                <button type="button" class="btn-main" id="orderSubmitBtn" onclick="submitSiteOrder()">
+                    Sipariş Ver
+                </button>
+                <a class="btn-light" href="${whatsappLink}" target="_blank">
                     WhatsApp ile Sipariş Gönder
                 </a>
                 <button type="button" class="btn-light" onclick="copyOrderText()">
@@ -2509,6 +2299,7 @@ function calculateAll(){
                 </button>
             </div>
 
+            <div class="copy-status" id="orderSaveStatus"></div>
             <div class="copy-status" id="copyStatus"></div>
         </div>
     `;
@@ -2681,6 +2472,131 @@ function showPriceUnavailable(){
     `;
 }
 
+function buildSiteOrderPayload(items, ad, tel, adr){
+    return {
+        action: "createOrder",
+        customer:{
+            name: ad,
+            phone: tel,
+            address: adr
+        },
+        items: items.map(function(item){
+            return {
+                productKey: item.productKey,
+                productLabel: item.productLabel,
+                urun: item.productLabel,
+                uygulama_yeri: item.uygulamaText,
+                montaj_tipi: item.tipText,
+                kasa_rengi: item.kasa,
+                kumas: item.productKey === "klasik" ? item.kumas : "",
+                blackout_kumas: item.productKey === "blackout" ? item.blackout : "",
+                tul_kumas: item.productKey === "ciftli" ? item.tul : (item.productKey === "tul_perde" ? item.tul_perde : ""),
+                perde_kumas: item.productKey === "ciftli" ? item.perde : "",
+                gercek_en: item.en,
+                gercek_boy: item.boy,
+                hesap_en: item.hesapEn,
+                hesap_boy: item.hesapBoy,
+                adet: item.adet,
+                acilir_adet: item.acilir,
+                satis_m2: item.satisM2
+            };
+        })
+    };
+}
+
+function orderPayloadHasMissingColor(payload){
+    if(!payload || !payload.items) return false;
+
+    return payload.items.some(function(item){
+        if(!item.kasa_rengi || item.kasa_rengi === NOT_SELECTED) return true;
+        if(item.productKey === "klasik") return !item.kumas || item.kumas === NOT_SELECTED;
+        if(item.productKey === "blackout") return !item.blackout_kumas || item.blackout_kumas === NOT_SELECTED;
+        if(item.productKey === "ciftli") return !item.tul_kumas || item.tul_kumas === NOT_SELECTED || !item.perde_kumas || item.perde_kumas === NOT_SELECTED;
+        if(item.productKey === "tul_perde") return !item.tul_kumas || item.tul_kumas === NOT_SELECTED;
+        return false;
+    });
+}
+
+async function submitSiteOrder(){
+    const button = document.getElementById("orderSubmitBtn");
+
+    if(!lastCalculatedOrderData){
+        alert("Önce siparişi hesaplayın.");
+        return;
+    }
+
+    const ad = document.getElementById("name").value.trim();
+    const phoneRaw = document.getElementById("phone").value.trim();
+    const adr = document.getElementById("address").value.trim();
+    const phoneData = normalizePhone(phoneRaw);
+
+    if(!ad || !phoneRaw || !adr){
+        showOrderSaveStatus("Sipariş vermek için ad soyad, telefon ve adres bilgilerini doldurun.", true);
+        return;
+    }
+
+    if(!phoneData.valid){
+        showOrderSaveStatus("Telefon numarası geçerli olmalıdır. Örnek: 05053559532 veya 5053559532", true);
+        return;
+    }
+
+    const payload = JSON.parse(JSON.stringify(lastCalculatedOrderData));
+    payload.customer.name = ad;
+    payload.customer.phone = phoneData.value;
+    payload.customer.address = adr;
+
+    if(orderPayloadHasMissingColor(payload)){
+        const confirmedColor = confirm("Bazı renk/kumaş seçimleri eksik görünüyor. Yine de siparişi admin paneline göndermek istiyor musunuz?");
+        if(!confirmedColor) return;
+    }
+
+    const confirmed = confirm("Siparişiniz admin paneline gönderilecek. Onaylıyor musunuz?");
+    if(!confirmed) return;
+
+    if(orderSubmitInProgress) return;
+    orderSubmitInProgress = true;
+
+    if(button){
+        button.disabled = true;
+        button.textContent = "Sipariş Gönderiliyor...";
+    }
+
+    showOrderSaveStatus("Siparişiniz gönderiliyor...", false);
+
+    try{
+        const response = await fetch(PRICE_API_URL, {
+            method:"POST",
+            headers:{ "Content-Type":"text/plain;charset=utf-8" },
+            body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+
+        if(!data.success){
+            throw new Error(data.message || "Sipariş kaydedilemedi.");
+        }
+
+        showOrderSaveStatus("Siparişiniz alınmıştır. En kısa sürede sizinle iletişime geçilecektir.", false);
+    }catch(error){
+        showOrderSaveStatus("Sipariş gönderilemedi. Lütfen tekrar deneyin veya WhatsApp üzerinden iletişime geçin. Hata: " + error.message, true);
+    }finally{
+        orderSubmitInProgress = false;
+        if(button){
+            button.disabled = false;
+            button.textContent = "Sipariş Ver";
+        }
+    }
+}
+
+function showOrderSaveStatus(message, isError){
+    const status = document.getElementById("orderSaveStatus");
+    if(!status) return;
+
+    status.textContent = message;
+    status.style.color = isError ? "var(--danger-text)" : "var(--muted)";
+    status.style.fontWeight = isError ? "900" : "700";
+}
+
 function copyOrderText(){
     if(!lastOrderText){
         alert("Önce siparişi hesaplayın.");
@@ -2775,10 +2691,14 @@ function openImageModal(title, src){
     options.classList.remove("show");
     options.innerHTML = "";
 
+    const wrap = document.getElementById("modalImageWrap");
+    const image = document.getElementById("modalImage");
+
     document.getElementById("modalTitle").textContent = title;
-    document.getElementById("modalImage").src = src;
-    document.getElementById("modalImage").alt = title;
-    document.getElementById("modalImageWrap").style.display = "block";
+    image.src = src;
+    image.alt = title;
+    wrap.style.display = "block";
+
     document.getElementById("imageModal").classList.add("show");
 }
 
@@ -2791,6 +2711,171 @@ function modalOutsideClose(event){
         closeImageModal();
     }
 }
+
+function collectCardData(){
+    return Array.from(document.querySelectorAll(".cam-card")).map(function(card){
+        return {
+            product: card.dataset.product || "",
+            uygulama: card.querySelector(".uygulama").value,
+            en: card.querySelector(".en").value,
+            boy: card.querySelector(".boy").value,
+            adet: card.querySelector(".adet").value,
+            acilir: card.querySelector(".acilir").value,
+            tip: card.querySelector(".tip").value,
+            kasa: getActiveValue(card.querySelector(".kasaSecim")),
+            kumas: getActiveValue(card.querySelector(".kumasSecim")),
+            blackout: getActiveValue(card.querySelector(".blackoutSecim")),
+            tul: getActiveValue(card.querySelector(".tulSecim")),
+            perde: getActiveValue(card.querySelector(".perdeSecim")),
+            tul_perde: getActiveValue(card.querySelector(".tulPerdeSecim"))
+        };
+    });
+}
+
+function applyCardData(card, data){
+    if(!data) return;
+
+    setCardProduct(card, data.product || "");
+    card.querySelector(".uygulama").value = data.uygulama || "cam_balkon";
+    card.querySelector(".en").value = data.en || "";
+    card.querySelector(".boy").value = data.boy || "";
+    card.querySelector(".adet").value = data.adet || "";
+    card.querySelector(".acilir").value = data.acilir || "";
+
+    updateTipOptions(card);
+    card.querySelector(".tip").value = data.tip || "askili";
+
+    if(card.querySelector(".uygulama").value === "pimapen"){
+        card.querySelector(".tip").value = "vidali";
+    }
+
+    setActiveChoice(card.querySelector(".kasaSecim"), data.kasa || "");
+    setActiveChoice(card.querySelector(".kumasSecim"), data.kumas || "");
+    setActiveChoice(card.querySelector(".blackoutSecim"), data.blackout || "");
+    setActiveChoice(card.querySelector(".tulSecim"), data.tul || "");
+    setActiveChoice(card.querySelector(".perdeSecim"), data.perde || "");
+    setActiveChoice(card.querySelector(".tulPerdeSecim"), data.tul_perde || "");
+}
+
+function collectGlobalData(){
+    return {
+        product: globalProductType,
+        kasa: getActiveValue(document.querySelector(".globalKasaSecim")),
+        kumas: getActiveValue(document.querySelector(".globalKumasSecim")),
+        blackout: getActiveValue(document.querySelector(".globalBlackoutSecim")),
+        tul: getActiveValue(document.querySelector(".globalTulSecim")),
+        perde: getActiveValue(document.querySelector(".globalPerdeSecim")),
+        tul_perde: getActiveValue(document.querySelector(".globalTulPerdeSecim"))
+    };
+}
+
+function applyGlobalData(data){
+    if(!data) return;
+
+    setGlobalProduct(data.product || "");
+    setActiveChoice(document.querySelector(".globalKasaSecim"), data.kasa || "");
+    setActiveChoice(document.querySelector(".globalKumasSecim"), data.kumas || "");
+    setActiveChoice(document.querySelector(".globalBlackoutSecim"), data.blackout || "");
+    setActiveChoice(document.querySelector(".globalTulSecim"), data.tul || "");
+    setActiveChoice(document.querySelector(".globalPerdeSecim"), data.perde || "");
+    setActiveChoice(document.querySelector(".globalTulPerdeSecim"), data.tul_perde || "");
+}
+
+function saveState(){
+    if(isRestoring) return;
+
+    const state = {
+        camCount: currentCamCount,
+        selectionMode,
+        global: collectGlobalData(),
+        cards: collectCardData(),
+        customer:{
+            name: document.getElementById("name").value,
+            phone: document.getElementById("phone").value,
+            address: document.getElementById("address").value
+        }
+    };
+
+    localStorage.setItem(ORDER_STORAGE_KEY, JSON.stringify(state));
+}
+
+function queueSaveState(){
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(saveState, 200);
+}
+
+function bindAutoSave(){
+    ["name", "phone", "address"].forEach(function(id){
+        const el = document.getElementById(id);
+        el.addEventListener("input", queueSaveState);
+    });
+}
+
+function restoreState(){
+    const raw = localStorage.getItem(ORDER_STORAGE_KEY);
+    if(!raw) return false;
+
+    try{
+        isRestoring = true;
+        const state = JSON.parse(raw);
+
+        setSelectionMode(state.selectionMode || "same");
+        applyGlobalData(state.global || {});
+
+        const count = Number(state.camCount) || 1;
+        setCamCount(Math.min(Math.max(count, 1), MAX_CAM), false);
+
+        (state.cards || []).forEach(function(data, index){
+            const card = document.getElementById("cam" + (index + 1));
+            if(card){
+                applyCardData(card, data);
+            }
+        });
+
+        if(state.customer){
+            document.getElementById("name").value = state.customer.name || "";
+            document.getElementById("phone").value = state.customer.phone || "";
+            document.getElementById("address").value = state.customer.address || "";
+        }
+
+        applySelectionModeUI();
+        openCam(1);
+        return true;
+    }catch(error){
+        localStorage.removeItem(ORDER_STORAGE_KEY);
+        return false;
+    }finally{
+        isRestoring = false;
+    }
+}
+
+function resetOrderForm(){
+    const confirmed = confirm("Girilen tüm ölçü ve seçimler temizlensin mi?");
+    if(!confirmed) return;
+
+    localStorage.removeItem(ORDER_STORAGE_KEY);
+    lastOrderText = "";
+    lastCalculatedOrderData = null;
+    selectionMode = "same";
+    globalProductType = "";
+
+    document.getElementById("name").value = "";
+    document.getElementById("phone").value = "";
+    document.getElementById("address").value = "";
+    document.getElementById("result").innerHTML = "";
+
+    fillGlobalProductChoices();
+    fillGlobalColorChoices();
+    setSelectionMode("same");
+    setCamCount(1, false);
+    saveState();
+}
+
+window.addEventListener("keydown", function(event){
+    if(event.key === "Escape"){
+        closeImageModal();
+    }
+});
 
 init();
 </script>
