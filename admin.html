@@ -303,9 +303,43 @@ async function savePrices(){hidePriceMessages();let prices;try{prices=getPriceIn
 
 async function loadSellerPrices(force=false){hideSellerPriceMessages();if(sellerPricesDirty&&!force){showSellerPriceWarning("Kaydedilmemiş satıcı fiyatı değişikliği var.");return;}if(sellerPricesDirty&&force&&!confirm("Kaydedilmemiş satıcı fiyatı değişikliği var. Google Sheets’ten yeniden yüklemek istiyor musunuz?"))return;sellerPricesDirty=false;const btn=document.getElementById("loadSellerPricesBtn");if(btn){btn.disabled=true;btn.textContent="Yükleniyor...";}try{const data=await apiPost({action:"listSellers",apiKey:ADMIN_API_KEY});if(!data.success)throw new Error(data.message||"Satıcı fiyatları alınamadı.");sellersList=Array.isArray(data.sellers)?data.sellers:[];sellerPriceRows=Array.isArray(data.sellerPrices)?data.sellerPrices:[];sellerPricesLoadedOnce=true;sellerPricesDirty=false;fillSellerFilter();renderSellerPricesTable();showSellerPriceSuccess("Satıcı fiyatları Google Sheets’ten yüklendi.");}catch(error){showSellerPriceError(error.name==="AbortError"?"Satıcı fiyatları yüklenirken bağlantı gecikti.":"Satıcı fiyatları yüklenemedi. Hata: "+error.message);}finally{if(btn){btn.disabled=false;btn.textContent="Satıcı Fiyatlarını Yükle";}}}
 function renderSellerPricesTable(){const wrap=document.getElementById("sellerPricesTableWrap");const body=document.getElementById("sellerPricesTableBody");body.innerHTML="";if(!sellerPriceRows.length){wrap.style.display="none";showSellerPriceWarning("Satıcı fiyat satırı bulunamadı. Google Sheets’te satici_fiyatlari sekmesini kontrol edin.");return;}sellerPriceRows.forEach((row,index)=>{const tr=document.createElement("tr");tr.dataset.index=index;tr.innerHTML=`<td><strong>${escapeHtml(row.satici_adi||"")}</strong><small>${escapeHtml(row.satici_id||"")}</small></td><td>${escapeHtml(row.urun||"")}</td><td>${escapeHtml(row.montaj_tipi||"")}</td><td><span class="tag">${escapeHtml(row.bolge_kodu||"")}</span></td><td>${escapeHtml(row.fiyat_tipi||"")}</td><td><input class="table-input seller-sales-price" type="number" min="1" step="1" value="${escapeAttr(row.satis_m2_fiyat||"")}" placeholder="450"></td><td><input class="table-input seller-cost-price" type="number" min="1" step="1" value="${escapeAttr(row.satici_m2_fiyat||"")}" placeholder="330"></td><td><input class="table-input seller-cargo" type="number" min="0" step="1" value="${escapeAttr(row.kargo||0)}" placeholder="0"></td><td><input class="table-input seller-note" type="text" value="${escapeAttr(row.not||"")}" placeholder="Not"></td>`;tr.querySelectorAll("input").forEach(input=>input.addEventListener("input",()=>{sellerPricesDirty=true;hideSellerPriceMessages();}));body.appendChild(tr);});wrap.style.display="block";}
-function collectSellerPriceRows(){const rows=[];document.querySelectorAll("#sellerPricesTableBody tr").forEach(tr=>{const index=Number(tr.dataset.index);const base=sellerPriceRows[index];const satis=tr.querySelector(".seller-sales-price").value;const satici=tr.querySelector(".seller-cost-price").value;const kargo=tr.querySelector(".seller-cargo").value;const note=tr.querySelector(".seller-note").value;rows.push({satici_id:base.satici_id,satici_adi:base.satici_adi,urun:base.urun,montaj_tipi:base.montaj_tipi,bolge_kodu:base.bolge_kodu,fiyat_tipi:base.fiyat_tipi,satis_m2_fiyat:parseSellerNumber(satis,base.satici_adi+" / "+base.urun+" / satış m²"),satici_m2_fiyat:parseSellerNumber(satici,base.satici_adi+" / "+base.urun+" / satıcı m²"),kargo:parseSellerCargo(kargo),not:note});});return rows;}
-function parseSellerNumber(value,label){const n=Number(value);if(value===""||isNaN(n)||n<=0)throw new Error(label+" 0'dan büyük geçerli bir sayı olmalıdır.");return n;}
-function parseSellerCargo(value){if(value===""||value===null||value===undefined)return 0;const n=Number(value);if(isNaN(n)||n<0)throw new Error("Kargo 0 veya daha büyük olmalıdır.");return n;}
+function collectSellerPriceRows(){
+    const rows=[];
+    document.querySelectorAll("#sellerPricesTableBody tr").forEach(tr=>{
+        const index=Number(tr.dataset.index);
+        const base=sellerPriceRows[index];
+        const satis=tr.querySelector(".seller-sales-price").value;
+        const satici=tr.querySelector(".seller-cost-price").value;
+        const kargo=tr.querySelector(".seller-cargo").value;
+        const note=tr.querySelector(".seller-note").value;
+
+        rows.push({
+            satici_id:base.satici_id,
+            satici_adi:base.satici_adi,
+            urun:base.urun,
+            montaj_tipi:base.montaj_tipi,
+            bolge_kodu:String(base.bolge_kodu || "").padStart(2,"0"),
+            fiyat_tipi:base.fiyat_tipi,
+            satis_m2_fiyat:parseOptionalSellerNumber(satis,base.satici_adi+" / "+base.urun+" / satış m²"),
+            satici_m2_fiyat:parseOptionalSellerNumber(satici,base.satici_adi+" / "+base.urun+" / satıcı m²"),
+            kargo:parseSellerCargo(kargo),
+            not:note
+        });
+    });
+    return rows;
+}
+function parseOptionalSellerNumber(value,label){
+    if(value==="" || value===null || value===undefined) return "";
+    const n=Number(value);
+    if(isNaN(n)||n<=0)throw new Error(label+" 0'dan büyük geçerli bir sayı olmalıdır.");
+    return n;
+}
+function parseSellerCargo(value){
+    if(value===""||value===null||value===undefined)return 0;
+    const n=Number(value);
+    if(isNaN(n)||n<0)throw new Error("Kargo 0 veya daha büyük olmalıdır.");
+    return n;
+}
 async function saveSellerPrices(){hideSellerPriceMessages();let rows;try{rows=collectSellerPriceRows();}catch(error){showSellerPriceError(error.message);return;}if(!rows.length){showSellerPriceWarning("Kaydedilecek satıcı fiyatı yok.");return;}const btn=document.getElementById("saveSellerPricesBtn");btn.disabled=true;btn.textContent="Kaydediliyor...";try{const data=await apiPost({action:"updateSellerPrices",apiKey:ADMIN_API_KEY,rows},16000);if(!data.success)throw new Error(data.message||"Satıcı fiyatları kaydedilemedi.");sellerPriceRows=Array.isArray(data.sellerPrices)?data.sellerPrices:rows;sellerPricesDirty=false;sellerPricesLoadedOnce=true;renderSellerPricesTable();showSellerPriceSuccess("Satıcı fiyatları Google Sheets’e kaydedildi.");}catch(error){showSellerPriceError(error.name==="AbortError"?"Kaydetme işlemi gecikti. Lütfen tekrar deneyin.":"Satıcı fiyatları kaydedilemedi. Hata: "+error.message);}finally{btn.disabled=false;btn.textContent="Satıcı Fiyatlarını Kaydet";}}
 
 async function loadOrders(){hideOrderMessages();try{const data=await apiPost({action:"listOrders",apiKey:ADMIN_API_KEY,dateStart:document.getElementById("orderDateStart").value,dateEnd:document.getElementById("orderDateEnd").value,sellerId:document.getElementById("orderSellerFilter").value},12000);if(!data.success)throw new Error(data.message||"Siparişler alınamadı.");renderOrdersTable(Array.isArray(data.orders)?data.orders:[]);}catch(error){showOrderError(error.name==="AbortError"?"Siparişler yüklenirken bağlantı gecikti.":"Siparişler yüklenemedi. Hata: "+error.message);}}
