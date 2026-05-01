@@ -11,6 +11,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 :root{--bg:#f6f3ee;--bg2:#efe8dd;--card:#ffffff;--panel:#fbf8f4;--text:#1f1f1f;--muted:#6f6a64;--border:#e8e2da;--input-border:#ded5ca;--accent:#8b6a45;--accent-dark:#745537;--accent-soft:#efe4d6;--danger:#b73333;--danger-bg:#fff0f0;--success:#176b3a;--success-bg:#ecfff3;--warning:#7a5318;--warning-bg:#fff8e8;--shadow:0 18px 55px rgba(45,35,25,.10)}
 body.dark{--bg:#151618;--bg2:#202328;--card:#1e2023;--panel:#25282d;--text:#f2f0ec;--muted:#b8b2aa;--border:#343840;--input-border:#3d444d;--accent:#b38a5d;--accent-dark:#c49a6d;--accent-soft:#342a20;--danger:#ff9b9b;--danger-bg:#321d1d;--success:#94e4ae;--success-bg:#17331f;--warning:#f0d6a8;--warning-bg:#2b2618;--shadow:0 18px 55px rgba(0,0,0,.38)}
@@ -94,25 +95,80 @@ function buildStandaloneSlipHTML(header,details){
 function downloadSlipPdf(code){
     try{
         const data=collectCurrentSlipForDownload();
-        const holder=document.createElement("div");
-        holder.style.position="fixed";
-        holder.style.left="0";
-        holder.style.top="0";
-        holder.style.width="800px";
-        holder.style.background="#fff";
-        holder.style.zIndex="999999";
-        holder.style.padding="0";
-        holder.style.margin="0";
-        holder.style.opacity="1";
-        holder.innerHTML=buildSlipBodyHTML(data.header,data.details);
-        const style=document.createElement("style");
-        style.textContent=`.pdf-slip-sheet{width:760px;margin:0;background:#fff;color:#111;padding:12px;box-sizing:border-box;font-family:Arial,sans-serif}.pdf-slip-title{text-align:center;font-size:28px;font-weight:900;margin:4px 0 12px;color:#111}.pdf-slip-meta{width:100%;border-collapse:separate;border-spacing:6px 6px;margin-bottom:8px}.pdf-slip-meta td{border:1px solid #222;padding:8px;font-size:13px;color:#111;background:#fff}.pdf-slip-table{width:100%;border-collapse:collapse;margin-top:8px}.pdf-slip-table th{border:1px solid #222;padding:8px;font-size:12px;text-align:left;background:#e6e6e6!important;color:#111!important;font-weight:900}.pdf-slip-table td{border:1px solid #222;padding:8px;font-size:12px;text-align:left;background:#fff;color:#111}.pdf-slip-total{text-align:right;font-weight:900;font-size:16px;margin-top:12px;color:#111}.pdf-slip-note{font-size:13px;margin-top:12px;color:#111}`;
-        holder.prepend(style);
-        document.body.appendChild(holder);
-        const target=holder.querySelector(".pdf-slip-sheet");
-        setTimeout(()=>{
-            html2pdf().set({margin:[8,8,8,8],filename:(code||data.header.fis_kodu||"imalat-fisi")+".pdf",image:{type:"jpeg",quality:1},html2canvas:{scale:2,backgroundColor:"#ffffff",scrollX:0,scrollY:0,windowWidth:800,windowHeight:1100},jsPDF:{unit:"mm",format:"a4",orientation:"portrait"},pagebreak:{mode:["avoid-all","css","legacy"]}}).from(target).save().then(()=>holder.remove()).catch(err=>{holder.remove();showSlipError("PDF indirilemedi: "+err.message)});
-        },150);
+        const jsPDF=(window.jspdf&&window.jspdf.jsPDF)?window.jspdf.jsPDF:null;
+        if(!jsPDF)throw new Error("PDF kütüphanesi yüklenemedi.");
+
+        const h=data.header;
+        const rows=data.details||[];
+        const doc=new jsPDF({orientation:"portrait",unit:"mm",format:"a4"});
+        const pageW=210;
+        let y=14;
+
+        doc.setFont("helvetica","bold");
+        doc.setFontSize(20);
+        doc.text("IMALAT FISI",pageW/2,y,{align:"center"});
+        y+=12;
+
+        const leftX=12;
+        const rightX=106;
+        const boxW=92;
+        const boxH=10;
+        const gapY=2;
+
+        function box(x,y,label,value){
+            doc.setDrawColor(30,30,30);
+            doc.setLineWidth(0.25);
+            doc.rect(x,y,boxW,boxH);
+            doc.setFont("helvetica","bold");
+            doc.setFontSize(9);
+            doc.text(String(label||""),x+2,y+6.5);
+            doc.setFont("helvetica","normal");
+            doc.text(String(value||""),x+28,y+6.5,{maxWidth:boxW-30});
+        }
+
+        box(leftX,y,"Fis Kodu:",h.fis_kodu); box(rightX,y,"Siparis Kodu:",h.siparis_kodu); y+=boxH+gapY;
+        box(leftX,y,"Firma:",h.firma_adi||"Prestij Life"); box(rightX,y,"Tarih:",h.tarih||""); y+=boxH+gapY;
+        box(leftX,y,"Musteri:",h.musteri_ad||""); box(rightX,y,"Satici:",h.satici_adi||""); y+=boxH+gapY;
+        box(leftX,y,"Urun:",h.urun_adi||""); box(rightX,y,"Kasa:",h.kasa_cesidi||""); y+=boxH+7;
+
+        const cols=[
+            {t:"Sira",w:18},
+            {t:"Adet",w:22},
+            {t:"En",w:24},
+            {t:"Boy",w:24},
+            {t:"Pile",w:24},
+            {t:"Ip",w:24},
+            {t:"m2",w:22},
+            {t:"Not",w:28}
+        ];
+        const tableX=12;
+        const rowH=9;
+        let x=tableX;
+
+        doc.setFillColor(230,230,230);
+        doc.setFont("helvetica","bold");
+        doc.setFontSize(9);
+        cols.forEach(c=>{doc.rect(x,y,c.w,rowH,"FD");doc.text(c.t,x+2,y+6);x+=c.w});
+        y+=rowH;
+
+        doc.setFont("helvetica","normal");
+        rows.forEach((r,i)=>{
+            if(y>270){doc.addPage();y=14}
+            const vals=[i+1,r.adet,r.en,r.boy,r.pile||"",r.ip||"",r.m2,r.not||""];
+            x=tableX;
+            vals.forEach((v,idx)=>{doc.rect(x,y,cols[idx].w,rowH);doc.text(String(v??""),x+2,y+6,{maxWidth:cols[idx].w-4});x+=cols[idx].w});
+            y+=rowH;
+        });
+
+        y+=8;
+        doc.setFont("helvetica","bold");
+        doc.setFontSize(12);
+        doc.text("Toplam: "+String(h.toplam_adet||0)+" adet / "+num(h.toplam_m2||0)+" m2",pageW-12,y,{align:"right"});
+        y+=10;
+        doc.setFontSize(10);
+        doc.text("Not: "+String(h.not||""),12,y,{maxWidth:186});
+
+        doc.save((code||h.fis_kodu||"imalat-fisi")+".pdf");
     }catch(e){showSlipError("PDF indirilemedi: "+e.message)}
 }
 function downloadSlipExcel(code){
