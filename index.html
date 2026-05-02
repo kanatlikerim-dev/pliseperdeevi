@@ -1230,11 +1230,6 @@ body.same-product .product-and-color-area{
 
     <div class="social">
         <div class="social-item">
-            <a href="tel:+905327881099">📞</a>
-            <a href="tel:+905327881099">Toptan Satışlar İçin: 0 532 788 10 99</a>
-        </div>
-
-        <div class="social-item">
             <a href="https://wa.me/905053559532" target="_blank">
                 <img src="wplogo.png" alt="WhatsApp">
             </a>
@@ -1255,9 +1250,11 @@ body.same-product .product-and-color-area{
             <a href="https://www.instagram.com/pliseperde_ayferdemiryurek" target="_blank">@pliseperde_ayferdemiryurek</a>
         </div>
 
-        <div class="note">
-            Daha fazla bilgi veya soru sormak için bizimle iletişime geçebilirsiniz.<br>
-            <a class="call-link" href="tel:+905053559532">📞 +90 505 355 95 32</a>
+        
+
+        <div class="social-item">
+            <a href="tel:+905327881099">📞</a>
+            <a href="tel:+905327881099">Toptan Satışlar İçin: 0 532 788 10 99</a>
         </div>
     </div>
 
@@ -1294,15 +1291,10 @@ const MAX_CAM = 50;
 const ORDER_STORAGE_KEY = "prestijLifeOrderData_v7";
 const NOT_SELECTED = "Belirtilmedi";
 
-const productTypes = [
-    { key:"klasik", label:"Klasik Seri Plise", desc:"" },
-    { key:"blackout", label:"Blackout Karartmalı", desc:"" },
-    { key:"ciftli", label:"Çiftli Sistem", desc:"" },
-    { key:"tul_perde", label:"Tül Perde", desc:"" }
-];
-
-const kasaRenkleri = [
-    { name:"Bronz", hex:"#76634b" },
+const DEFAULT_PRODUCT_TYPES = [
+    { key:"klasik", sourceId:"U001", label:"Klasik Seri Plise", desc:"" },
+    { key:"blackout", sourceId:"U002", label:"Blackout Karartmalı", desc:"" },
+    { key:"ciftli",:"Bronz", hex:"#76634b" },
     { name:"Beyaz", hex:"#ffffff" },
     { name:"Krem", hex:"#e3d6c0" },
     { name:"Kahverengi", hex:"#54382b" },
@@ -1363,11 +1355,7 @@ async function init(){
     for(let i = 1; i <= MAX_CAM; i++){
         const option = document.createElement("option");
         option.value = i;
-        option.textContent = i;
-        camSelect.appendChild(option);
-    }
-
-    camSelect.addEventListener("change", handleCamCountChange);
+        option.textCont    camSelect.addEventListener("change", handleCamCountChange);
 
     const restored = restoreState();
 
@@ -1499,10 +1487,14 @@ async function loadCatalogData(){
 
         const catalogRows = Array.isArray(data.catalogs) ? data.catalogs : [];
         const productRows = Array.isArray(data.products) ? data.products : [];
+        const fabricRows = Array.isArray(data.fabrics) ? data.fabrics : [];
 
-        activeCatalogs = catalogRows
-            .filter(function(catalog){
-                return String(catalog.durum || "aktif").toLowerCase() !== "pasif";
+        productsList = productRows.filter(function(product){
+            return String(product.durum || "aktif").toLowerCase() !== "pasif";
+        });
+
+        fabricsList = fabricRows.filter(function(fabric){
+            return String(fabric.durum || "aktif").toLowerCase() !== "pas             return String(catalog.durum || "aktif").toLowerCase() !== "pasif";
             })
             .map(function(catalog){
                 const productFromList = productRows.find(function(product){
@@ -1527,6 +1519,54 @@ async function loadCatalogData(){
     }
 }
 
+function updateProductTypesFromAdmin(products){
+    if(!Array.isArray(products) || !products.length){
+        productTypes = [...DEFAULT_PRODUCT_TYPES];
+        return;
+    }
+
+    const result = [];
+    const added = new Set();
+
+    products.forEach(function(product){
+        const label = String(product.urun_adi || "").trim();
+        if(!label) return;
+
+        const sourceId = String(product.urun_id || "").trim();
+        const key = getProductKeyFromAdminProduct(product);
+        if(!key || added.has(key)) return;
+
+        result.push({
+            key: key,
+            sourceId: sourceId,
+            label: label,
+            desc: String(product.        added.add(key);
+    });
+
+    DEFAULT_PRODUCT_TYPES.forEach(function(product){
+        if(!added.has(product.key)){
+            result.push(product);
+            added.add(product.key);
+        }
+    });
+
+    productTypes = result;
+}
+
+function getProductKeyFromAdminProduct(product){
+    const id = String(product.urun_id || "").trim().toUpperCase();
+    const name = normalizeText(product.urun_adi || "");
+
+    if(id === "U001" || name.includes("klasik")) return "klasik";
+    if(id === "U002" || name.includes("blackout")) return "blackout";
+    if(id === "U003" || name.includes("ciftli")) return "ciftli";
+    if(id === "U004" || name.includes("tul perde")) return "tul_perde";
+
+    const cleanId = id ? id.toLowerCase().replace(/[^a-z0-9_]/g, "_") : "";
+    const cleanName = name.replace(/[^a-z0-9_]/g, "_").replace(/_+/g, "_").replace(/^_|_$/g, "");
+    return "custom_" + (cleanId || cleanName || Date.now());
+}
+
 function normalizeText(value){
     return String(value || "")
         .toLowerCase()
@@ -1542,6 +1582,14 @@ function getCatalogProductKey(catalog){
     const id = String(catalog.urun_id || "").trim().toUpperCase();
     const name = normalizeText(catalog.urun_adi || "");
 
+    const dynamicProduct = productTypes.find(function(product){
+        return String(product.sourceId || "").trim().toUpperCase() === id;
+    });
+
+    if(dynamicProduct){
+        return dynamicProduct.key;
+    }
+
     if(id === "U001" || name.includes("klasik")) return "klasik";
     if(id === "U002" || name.includes("blackout")) return "blackout";
     if(id === "U003" || name.includes("ciftli")) return "ciftli";
@@ -1550,11 +1598,7 @@ function getCatalogProductKey(catalog){
     return "";
 }
 
-function getCatalogImageSource(catalog){
-    const driveUrl = String(catalog.gorsel_url || "").trim();
-    const fileName = String(catalog.dosya_adi || "").trim();
-
-    if(driveUrl) return driveUrl;
+function getCatalog return driveUrl;
     if(fileName) return fileName.startsWith("http") ? fileName : "./" + fileName.replace(/^\.\//, "");
 
     return "";
@@ -2186,6 +2230,13 @@ function calculateAll(){
         }
 
         const unitPrice = getUnitPrice(productKey, tip);
+
+        if(!unitPrice || unitPrice <= 0){
+            addCardError(productLabel + " için fiyat tanımı bulunamadı. Bu ürün katalogda görünebilir ama fiyat hesaplaması için admin fiyat sistemi eklenmelidir.");
+            card.classList.add("has-error");
+            return;
+        }
+
         const roundedEn = roundUp10(en);
         const roundedBoy = roundUp10(boy);
         const hamM2 = (roundedEn * roundedBoy) / 10000;
@@ -2202,10 +2253,7 @@ function calculateAll(){
             uygulamaKey: uygulama,
             uygulamaText: uygulama === "pimapen" ? "Pimapen / PVC" : "Cam Balkon",
             tipKey: tip,
-            tipText:getTipText(tip),
-            en,
-            boy,
-            hesapEn: roundedEn,
+  roundedEn,
             hesapBoy: roundedBoy,
             adet,
             acilir,
