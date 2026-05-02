@@ -1250,7 +1250,10 @@ body.same-product .product-and-color-area{
             <a href="https://www.instagram.com/pliseperde_ayferdemiryurek" target="_blank">@pliseperde_ayferdemiryurek</a>
         </div>
 
-        
+        <div class="note">
+            Daha fazla bilgi veya soru sormak için bizimle iletişime geçebilirsiniz.<br>
+            <a class="call-link" href="tel:+905053559532">📞 +90 505 355 95 32</a>
+        </div>
 
         <div class="social-item">
             <a href="tel:+905327881099">📞</a>
@@ -1294,7 +1297,17 @@ const NOT_SELECTED = "Belirtilmedi";
 const DEFAULT_PRODUCT_TYPES = [
     { key:"klasik", sourceId:"U001", label:"Klasik Seri Plise", desc:"" },
     { key:"blackout", sourceId:"U002", label:"Blackout Karartmalı", desc:"" },
-    { key:"ciftli",:"Bronz", hex:"#76634b" },
+    { key:"ciftli", sourceId:"U003", label:"Çiftli Sistem", desc:"" },
+    { key:"tul_perde", sourceId:"U004", label:"Tül Perde", desc:"" }
+];
+
+let productTypes = DEFAULT_PRODUCT_TYPES.slice();
+let productsList = [];
+let activeCatalogs = [];
+let catalogDataLoaded = false;
+
+const kasaRenkleri = [
+    { name:"Bronz", hex:"#76634b" },
     { name:"Beyaz", hex:"#ffffff" },
     { name:"Krem", hex:"#e3d6c0" },
     { name:"Kahverengi", hex:"#54382b" },
@@ -1338,8 +1351,6 @@ let lastCalculatedOrderData = null;
 let orderSubmitInProgress = false;
 let selectionMode = "same";
 let globalProductType = "";
-let catalogDataLoaded = false;
-let activeCatalogs = [];
 
 async function init(){
     initTheme();
@@ -1355,7 +1366,11 @@ async function init(){
     for(let i = 1; i <= MAX_CAM; i++){
         const option = document.createElement("option");
         option.value = i;
-        option.textCont    camSelect.addEventListener("change", handleCamCountChange);
+        option.textContent = i;
+        camSelect.appendChild(option);
+    }
+
+    camSelect.addEventListener("change", handleCamCountChange);
 
     const restored = restoreState();
 
@@ -1485,43 +1500,32 @@ async function loadCatalogData(){
             throw new Error(data.message || "Katalog bilgileri alınamadı.");
         }
 
-        const catalogRows = Array.isArray(data.catalogs) ? data.catalogs : [];
-        const productRows = Array.isArray(data.products) ? data.products : [];
-        const fabricRows = Array.isArray(data.fabrics) ? data.fabrics : [];
-
-        productsList = productRows.filter(function(product){
-            return String(product.durum || "aktif").toLowerCase() !== "pasif";
-        });
-
-        fabricsList = fabricRows.filter(function(fabric){
-            return String(fabric.durum || "aktif").toLowerCase() !== "pas             return String(catalog.durum || "aktif").toLowerCase() !== "pasif";
+        productsList = Array.isArray(data.products)
+            ? data.products.filter(function(product){
+                return String(product.durum || "aktif").toLowerCase() !== "pasif";
             })
-            .map(function(catalog){
-                const productFromList = productRows.find(function(product){
-                    return String(product.urun_id || "") === String(catalog.urun_id || "");
-                });
+            : [];
 
-                return {
-                    ...catalog,
-                    urun_adi: String(catalog.urun_adi || (productFromList ? productFromList.urun_adi : "") || "Katalog").trim(),
-                    katalog_key: getCatalogProductKey({
-                        urun_id: catalog.urun_id,
-                        urun_adi: catalog.urun_adi || (productFromList ? productFromList.urun_adi : "")
-                    })
-                };
-            });
+        updateProductTypesFromAdmin(productsList);
+
+        activeCatalogs = Array.isArray(data.catalogs)
+            ? data.catalogs.filter(function(catalog){
+                return String(catalog.durum || "aktif").toLowerCase() !== "pasif";
+            })
+            : [];
 
         catalogDataLoaded = true;
     }catch(error){
         catalogDataLoaded = false;
         activeCatalogs = [];
-        console.warn("Katalog bilgileri alınamadı:", error);
+        productTypes = DEFAULT_PRODUCT_TYPES.slice();
+        console.warn("Katalog ve ürün bilgileri alınamadı:", error);
     }
 }
 
 function updateProductTypesFromAdmin(products){
-    if(!Array.isArray(products) || !products.length){
-        productTypes = [...DEFAULT_PRODUCT_TYPES];
+    if(!Array.isArray(products) || products.length === 0){
+        productTypes = DEFAULT_PRODUCT_TYPES.slice();
         return;
     }
 
@@ -1532,15 +1536,16 @@ function updateProductTypesFromAdmin(products){
         const label = String(product.urun_adi || "").trim();
         if(!label) return;
 
-        const sourceId = String(product.urun_id || "").trim();
         const key = getProductKeyFromAdminProduct(product);
         if(!key || added.has(key)) return;
 
         result.push({
             key: key,
-            sourceId: sourceId,
+            sourceId: String(product.urun_id || "").trim(),
             label: label,
-            desc: String(product.        added.add(key);
+            desc: String(product.not || "").trim()
+        });
+        added.add(key);
     });
 
     DEFAULT_PRODUCT_TYPES.forEach(function(product){
@@ -1551,20 +1556,6 @@ function updateProductTypesFromAdmin(products){
     });
 
     productTypes = result;
-}
-
-function getProductKeyFromAdminProduct(product){
-    const id = String(product.urun_id || "").trim().toUpperCase();
-    const name = normalizeText(product.urun_adi || "");
-
-    if(id === "U001" || name.includes("klasik")) return "klasik";
-    if(id === "U002" || name.includes("blackout")) return "blackout";
-    if(id === "U003" || name.includes("ciftli")) return "ciftli";
-    if(id === "U004" || name.includes("tul perde")) return "tul_perde";
-
-    const cleanId = id ? id.toLowerCase().replace(/[^a-z0-9_]/g, "_") : "";
-    const cleanName = name.replace(/[^a-z0-9_]/g, "_").replace(/_+/g, "_").replace(/^_|_$/g, "");
-    return "custom_" + (cleanId || cleanName || Date.now());
 }
 
 function normalizeText(value){
@@ -1578,27 +1569,42 @@ function normalizeText(value){
         .replaceAll("ç", "c");
 }
 
-function getCatalogProductKey(catalog){
-    const id = String(catalog.urun_id || "").trim().toUpperCase();
-    const name = normalizeText(catalog.urun_adi || "");
-
-    const dynamicProduct = productTypes.find(function(product){
-        return String(product.sourceId || "").trim().toUpperCase() === id;
-    });
-
-    if(dynamicProduct){
-        return dynamicProduct.key;
-    }
+function getProductKeyFromAdminProduct(product){
+    const id = String(product.urun_id || "").trim().toUpperCase();
+    const name = normalizeText(product.urun_adi || "");
 
     if(id === "U001" || name.includes("klasik")) return "klasik";
     if(id === "U002" || name.includes("blackout")) return "blackout";
     if(id === "U003" || name.includes("ciftli")) return "ciftli";
     if(id === "U004" || name.includes("tul perde")) return "tul_perde";
 
-    return "";
+    const cleanId = id ? id.toLowerCase().replace(/[^a-z0-9_]/g, "_") : "";
+    const cleanName = name.replace(/[^a-z0-9_]/g, "_").replace(/_+/g, "_").replace(/^_|_$/g, "");
+    return "custom_" + (cleanId || cleanName || "urun");
 }
 
-function getCatalog return driveUrl;
+function getCatalogProductKey(catalog){
+    const id = String(catalog.urun_id || "").trim().toUpperCase();
+    const name = normalizeText(catalog.urun_adi || "");
+
+    const found = productTypes.find(function(product){
+        return String(product.sourceId || "").trim().toUpperCase() === id;
+    });
+    if(found) return found.key;
+
+    if(id === "U001" || name.includes("klasik")) return "klasik";
+    if(id === "U002" || name.includes("blackout")) return "blackout";
+    if(id === "U003" || name.includes("ciftli")) return "ciftli";
+    if(id === "U004" || name.includes("tul perde")) return "tul_perde";
+
+    return "custom_" + (id.toLowerCase().replace(/[^a-z0-9_]/g, "_") || name.replace(/[^a-z0-9_]/g, "_"));
+}
+
+function getCatalogImageSource(catalog){
+    const driveUrl = String(catalog.gorsel_url || "").trim();
+    const fileName = String(catalog.dosya_adi || "").trim();
+
+    if(driveUrl) return driveUrl;
     if(fileName) return fileName.startsWith("http") ? fileName : "./" + fileName.replace(/^\.\//, "");
 
     return "";
@@ -1623,7 +1629,7 @@ function getCatalogsToShow(){
     const sourceCatalogs = activeCatalogs.length ? activeCatalogs : getFallbackCatalogs();
     const selectedProduct = selectionMode === "same" ? globalProductType : "";
 
-    let catalogs = sourceCatalogs.filter(function(catalog){
+    const catalogs = sourceCatalogs.filter(function(catalog){
         return getCatalogImageSource(catalog) || String(catalog.urun_adi || "").trim();
     });
 
@@ -2253,7 +2259,10 @@ function calculateAll(){
             uygulamaKey: uygulama,
             uygulamaText: uygulama === "pimapen" ? "Pimapen / PVC" : "Cam Balkon",
             tipKey: tip,
-  roundedEn,
+            tipText:getTipText(tip),
+            en,
+            boy,
+            hesapEn: roundedEn,
             hesapBoy: roundedBoy,
             adet,
             acilir,
@@ -2693,49 +2702,57 @@ function orderPayloadHasMissingColor(payload){
     });
 }
 
-function orderPayloadHasMissingCustomer(payload){
-    if(!payload || !payload.customer) return true;
-    return !payload.customer.name || !payload.customer.phone || !payload.customer.address;
-}
-
 async function submitSiteOrder(){
-    const status = document.getElementById("orderSaveStatus");
     const button = document.getElementById("orderSubmitBtn");
 
     if(!lastCalculatedOrderData){
-        if(status) status.textContent = "Önce sipariş hesaplamasını yapın.";
+        alert("Önce siparişi hesaplayın.");
         return;
     }
 
-    if(orderPayloadHasMissingCustomer(lastCalculatedOrderData)){
-        if(status) status.textContent = "Sipariş vermek için ad soyad, telefon ve adres bilgilerinizi doldurun.";
+    const ad = document.getElementById("name").value.trim();
+    const phoneRaw = document.getElementById("phone").value.trim();
+    const adr = document.getElementById("address").value.trim();
+    const phoneData = normalizePhone(phoneRaw);
+
+    if(!ad || !phoneRaw || !adr){
+        showOrderSaveStatus("Sipariş vermek için ad soyad, telefon ve adres bilgilerini doldurun.", true);
         return;
     }
 
-    if(orderPayloadHasMissingColor(lastCalculatedOrderData)){
-        const devam = confirm("Renk seçimi eksik görünüyor. Bu şekilde sipariş vermek istediğinize emin misiniz?");
-        if(!devam) return;
+    if(!phoneData.valid){
+        showOrderSaveStatus("Telefon numarası geçerli olmalıdır. Örnek: 05053559532 veya 5053559532", true);
+        return;
     }
+
+    const payload = JSON.parse(JSON.stringify(lastCalculatedOrderData));
+    payload.customer.name = ad;
+    payload.customer.phone = phoneData.value;
+    payload.customer.address = adr;
+
+    if(orderPayloadHasMissingColor(payload)){
+        const confirmedColor = confirm("Bazı renk/kumaş seçimleri eksik görünüyor. Yine de siparişi admin paneline göndermek istiyor musunuz?");
+        if(!confirmedColor) return;
+    }
+
+    const confirmed = confirm("Siparişiniz admin paneline gönderilecek. Onaylıyor musunuz?");
+    if(!confirmed) return;
 
     if(orderSubmitInProgress) return;
-
     orderSubmitInProgress = true;
+
     if(button){
         button.disabled = true;
-        button.textContent = "Sipariş Kaydediliyor...";
+        button.textContent = "Sipariş Gönderiliyor...";
     }
 
-    if(status){
-        status.textContent = "Siparişiniz kaydediliyor...";
-    }
+    showOrderSaveStatus("Siparişiniz gönderiliyor...", false);
 
     try{
         const response = await fetch(PRICE_API_URL, {
             method:"POST",
-            headers:{
-                "Content-Type":"text/plain;charset=utf-8"
-            },
-            body:JSON.stringify(lastCalculatedOrderData)
+            headers:{ "Content-Type":"text/plain;charset=utf-8" },
+            body: JSON.stringify(payload)
         });
 
         const data = await response.json();
@@ -2744,41 +2761,55 @@ async function submitSiteOrder(){
             throw new Error(data.message || "Sipariş kaydedilemedi.");
         }
 
-        if(status){
-            status.textContent = "Siparişiniz alındı. En kısa sürede sizinle iletişime geçeceğiz.";
-        }
-
-        if(button){
-            button.textContent = "Sipariş Alındı";
-        }
+        showOrderSaveStatus("Siparişiniz alınmıştır. En kısa sürede sizinle iletişime geçilecektir.", false);
     }catch(error){
-        if(status){
-            status.textContent = "Sipariş kaydedilemedi. Lütfen WhatsApp üzerinden bizimle iletişime geçin.";
-        }
-
+        showOrderSaveStatus("Sipariş gönderilemedi. Lütfen tekrar deneyin veya WhatsApp üzerinden iletişime geçin. Hata: " + error.message, true);
+    }finally{
+        orderSubmitInProgress = false;
         if(button){
             button.disabled = false;
             button.textContent = "Sipariş Ver";
         }
-    }finally{
-        orderSubmitInProgress = false;
     }
+}
+
+function showOrderSaveStatus(message, isError){
+    const status = document.getElementById("orderSaveStatus");
+    if(!status) return;
+
+    status.textContent = message;
+    status.style.color = isError ? "var(--danger-text)" : "var(--muted)";
+    status.style.fontWeight = isError ? "900" : "700";
 }
 
 function copyOrderText(){
     if(!lastOrderText){
-        setCopyStatus("Önce sipariş hesaplamasını yapın.");
+        alert("Önce siparişi hesaplayın.");
         return;
     }
 
-    navigator.clipboard.writeText(lastOrderText).then(function(){
-        setCopyStatus("Sipariş metni kopyalandı.");
-    }).catch(function(){
-        setCopyStatus("Kopyalama yapılamadı. WhatsApp butonunu kullanabilirsiniz.");
-    });
+    if(navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(lastOrderText).then(function(){
+            showCopyStatus("Sipariş özeti kopyalandı.");
+        }).catch(function(){
+            fallbackCopyOrderText();
+        });
+    }else{
+        fallbackCopyOrderText();
+    }
 }
 
-function setCopyStatus(message){
+function fallbackCopyOrderText(){
+    const temp = document.createElement("textarea");
+    temp.value = lastOrderText;
+    document.body.appendChild(temp);
+    temp.select();
+    document.execCommand("copy");
+    document.body.removeChild(temp);
+    showCopyStatus("Sipariş özeti kopyalandı.");
+}
+
+function showCopyStatus(message){
     const status = document.getElementById("copyStatus");
     if(!status) return;
 
@@ -2828,9 +2859,7 @@ async function openFabricCatalogMenu(){
 
     document.getElementById("imageModal").classList.add("show");
 
-    if(!catalogDataLoaded){
-        await loadCatalogData();
-    }
+    await loadCatalogData();
 
     options.innerHTML = "";
 
@@ -2869,7 +2898,6 @@ async function openFabricCatalogMenu(){
         options.appendChild(button);
     });
 }
-
 function openImageModal(title, src){
     const options = document.getElementById("modalOptions");
     options.classList.remove("show");
@@ -2925,7 +2953,13 @@ function applyCardData(card, data){
     card.querySelector(".boy").value = data.boy || "";
     card.querySelector(".adet").value = data.adet || "";
     card.querySelector(".acilir").value = data.acilir || "";
+
+    updateTipOptions(card);
     card.querySelector(".tip").value = data.tip || "askili";
+
+    if(card.querySelector(".uygulama").value === "pimapen"){
+        card.querySelector(".tip").value = "vidali";
+    }
 
     setActiveChoice(card.querySelector(".kasaSecim"), data.kasa || "");
     setActiveChoice(card.querySelector(".kumasSecim"), data.kumas || "");
@@ -2933,11 +2967,9 @@ function applyCardData(card, data){
     setActiveChoice(card.querySelector(".tulSecim"), data.tul || "");
     setActiveChoice(card.querySelector(".perdeSecim"), data.perde || "");
     setActiveChoice(card.querySelector(".tulPerdeSecim"), data.tul_perde || "");
-
-    updateTipOptions(card);
 }
 
-function getGlobalData(){
+function collectGlobalData(){
     return {
         product: globalProductType,
         kasa: getActiveValue(document.querySelector(".globalKasaSecim")),
@@ -2967,7 +2999,7 @@ function saveState(){
     const state = {
         camCount: currentCamCount,
         selectionMode,
-        global: getGlobalData(),
+        global: collectGlobalData(),
         cards: collectCardData(),
         customer:{
             name: document.getElementById("name").value,
@@ -2980,19 +3012,14 @@ function saveState(){
 }
 
 function queueSaveState(){
-    if(isRestoring) return;
-
     clearTimeout(saveTimer);
-    saveTimer = setTimeout(saveState, 250);
+    saveTimer = setTimeout(saveState, 200);
 }
 
 function bindAutoSave(){
     ["name", "phone", "address"].forEach(function(id){
-        const element = document.getElementById(id);
-        if(element){
-            element.addEventListener("input", queueSaveState);
-            element.addEventListener("change", queueSaveState);
-        }
+        const el = document.getElementById(id);
+        el.addEventListener("input", queueSaveState);
     });
 }
 
@@ -3001,65 +3028,66 @@ function restoreState(){
     if(!raw) return false;
 
     try{
-        const state = JSON.parse(raw);
         isRestoring = true;
+        const state = JSON.parse(raw);
 
-        const count = Math.min(Math.max(parseInt(state.camCount || 1, 10), 1), MAX_CAM);
-        setCamCount(count, false);
-
-        selectionMode = state.selectionMode === "individual" ? "individual" : "same";
-        document.querySelectorAll('input[name="selectionMode"]').forEach(function(input){
-            input.checked = input.value === selectionMode;
-        });
-
+        setSelectionMode(state.selectionMode || "same");
         applyGlobalData(state.global || {});
 
-        const cards = document.querySelectorAll(".cam-card");
+        const count = Number(state.camCount) || 1;
+        setCamCount(Math.min(Math.max(count, 1), MAX_CAM), false);
+
         (state.cards || []).forEach(function(data, index){
-            if(cards[index]){
-                applyCardData(cards[index], data);
+            const card = document.getElementById("cam" + (index + 1));
+            if(card){
+                applyCardData(card, data);
             }
         });
 
-        document.getElementById("name").value = state.customer?.name || "";
-        document.getElementById("phone").value = state.customer?.phone || "";
-        document.getElementById("address").value = state.customer?.address || "";
+        if(state.customer){
+            document.getElementById("name").value = state.customer.name || "";
+            document.getElementById("phone").value = state.customer.phone || "";
+            document.getElementById("address").value = state.customer.address || "";
+        }
 
         applySelectionModeUI();
         openCam(1);
-
-        isRestoring = false;
         return true;
     }catch(error){
-        isRestoring = false;
         localStorage.removeItem(ORDER_STORAGE_KEY);
         return false;
+    }finally{
+        isRestoring = false;
     }
 }
 
 function resetOrderForm(){
-    const confirmed = confirm("Tüm ölçü ve müşteri bilgileri temizlensin mi?");
+    const confirmed = confirm("Girilen tüm ölçü ve seçimler temizlensin mi?");
     if(!confirmed) return;
 
     localStorage.removeItem(ORDER_STORAGE_KEY);
     lastOrderText = "";
     lastCalculatedOrderData = null;
+    selectionMode = "same";
+    globalProductType = "";
 
     document.getElementById("name").value = "";
     document.getElementById("phone").value = "";
     document.getElementById("address").value = "";
     document.getElementById("result").innerHTML = "";
 
-    selectionMode = "same";
-    globalProductType = "";
-    document.querySelector('input[name="selectionMode"][value="same"]').checked = true;
-
     fillGlobalProductChoices();
     fillGlobalColorChoices();
+    setSelectionMode("same");
     setCamCount(1, false);
-    applySelectionModeUI();
     saveState();
 }
+
+window.addEventListener("keydown", function(event){
+    if(event.key === "Escape"){
+        closeImageModal();
+    }
+});
 
 init();
 </script>
