@@ -277,6 +277,239 @@ function showMessage(id,msg){const el=document.getElementById(id);if(el){el.inne
 function initTheme(){if(localStorage.getItem(ADMIN_THEME_KEY)==="dark")document.body.classList.add("dark");updateThemeButtons()}
 function toggleTheme(){document.body.classList.toggle("dark");localStorage.setItem(ADMIN_THEME_KEY,document.body.classList.contains("dark")?"dark":"light");updateThemeButtons()}
 function updateThemeButtons(){const label=document.body.classList.contains("dark")?"☀️ Açık Mod":"🌙 Koyu Mod";["loginThemeBtn","adminThemeBtn","settingsThemeBtn"].forEach(id=>{const b=document.getElementById(id);if(b)b.textContent=label})}
+
+/* ADMIN YÖNETİM DÜZELTMESİ - 2026-05-02
+   Bu bölüm, eski yönetim fonksiyonlarını güvenli sürümle değiştirir.
+   Düzenle butonları artık satırın tamamını taşımak yerine ID ile çalışır.
+   Ürün silinince bağlı kumaş ve katalog kayıtlarının da silineceği uyarısı verilir.
+*/
+function getProductById(id){
+  return (productsList || []).find(function(product){ return String(product.urun_id || "") === String(id || ""); });
+}
+function getFabricById(id){
+  return (fabricsList || []).find(function(fabric){ return String(fabric.kumas_id || "") === String(id || ""); });
+}
+function getCatalogById(id){
+  return (catalogsList || []).find(function(catalog){ return String(catalog.katalog_id || "") === String(id || ""); });
+}
+function countProductChildren(productId){
+  const fabricCount = (fabricsList || []).filter(function(fabric){ return String(fabric.urun_id || "") === String(productId || ""); }).length;
+  const catalogCount = (catalogsList || []).filter(function(catalog){ return String(catalog.urun_id || "") === String(productId || ""); }).length;
+  return { fabricCount: fabricCount, catalogCount: catalogCount };
+}
+function safeFocusElement(element){
+  if(!element) return;
+  try{ element.scrollIntoView({behavior:"smooth", block:"center"}); setTimeout(function(){ element.focus(); }, 220); }
+  catch(e){ try{ element.focus(); }catch(err){} }
+}
+function editProductById(id){
+  hideMessages(["productError","productSuccess"]);
+  const product = getProductById(id);
+  if(!product){ showMessage("productError","Düzenlenecek ürün bulunamadı. Listeyi yenileyip tekrar deneyin."); return; }
+  editProduct(product);
+}
+function editFabricById(id){
+  hideMessages(["fabricError","fabricSuccess"]);
+  const fabric = getFabricById(id);
+  if(!fabric){ showMessage("fabricError","Düzenlenecek kumaş bulunamadı. Listeyi yenileyip tekrar deneyin."); return; }
+  editFabric(fabric);
+}
+function editCatalogById(id){
+  hideMessages(["catalogError","catalogSuccess"]);
+  const catalog = getCatalogById(id);
+  if(!catalog){ showMessage("catalogError","Düzenlenecek katalog bulunamadı. Listeyi yenileyip tekrar deneyin."); return; }
+  editCatalog(catalog);
+}
+function renderProducts(){
+  const tbody = document.getElementById("productsTableBody");
+  if(!tbody) return;
+  tbody.innerHTML = "";
+  (productsList || []).forEach(function(product){
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${esc(product.urun_id)}</td>
+      <td>${esc(product.urun_adi)}</td>
+      <td><span class="tag">${esc(product.durum || "aktif")}</span></td>
+      <td>${esc(product.katalog_dosya || "")}</td>
+      <td>${esc(product.not || "")}</td>
+      <td>
+        <button class="btn-light" onclick="editProductById('${attr(product.urun_id)}')">Düzenle</button>
+        <button class="btn-danger" onclick="deleteProduct('${attr(product.urun_id)}')">Sil</button>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+}
+function editProduct(product){
+  if(!product) return;
+  productEditId.value = product.urun_id || "";
+  productNameInput.value = product.urun_adi || "";
+  productStatusInput.value = product.durum || "aktif";
+  productCatalogFileInput.value = product.katalog_dosya || "";
+  productNoteInput.value = product.not || "";
+  safeFocusElement(productNameInput);
+}
+function clearProductForm(){
+  productEditId.value=""; productNameInput.value=""; productStatusInput.value="aktif"; productCatalogFileInput.value=""; productNoteInput.value="";
+}
+async function saveProduct(){
+  hideMessages(["productError","productSuccess"]);
+  try{
+    const product={urun_id:productEditId.value,urun_adi:productNameInput.value,durum:productStatusInput.value,katalog_dosya:productCatalogFileInput.value,not:productNoteInput.value};
+    const d=await apiPost({action:"saveProduct",apiKey:ADMIN_API_KEY,product:product},18000);
+    if(!d.success) throw new Error(d.message||"Ürün kaydedilemedi.");
+    showMessage("productSuccess","Ürün kaydedildi.");
+    clearProductForm();
+    await loadCatalogData();
+    if(typeof loadSellerPrices === "function") await loadSellerPrices(false);
+  }catch(e){ showMessage("productError","Ürün kaydedilemedi. "+e.message); }
+}
+async function deleteProduct(id){
+  hideMessages(["productError","productSuccess"]);
+  const product = getProductById(id);
+  const counts = countProductChildren(id);
+  const productName = product ? product.urun_adi : id;
+  const message = "Bu ürünü silmek istediğinize emin misiniz?\n\n"+
+    "Ürün: "+productName+"\n"+
+    "Bağlı kumaş kaydı: "+counts.fabricCount+" adet\n"+
+    "Bağlı katalog kaydı: "+counts.catalogCount+" adet\n\n"+
+    "Devam ederseniz bu ürün, ürüne bağlı kumaşlar ve katalog kayıtları silinecek.\n"+
+    "Google Drive'daki gerçek görsel dosyaları silinmeyecek.";
+  if(!confirm(message)) return;
+  try{
+    const d=await apiPost({action:"deleteProduct",apiKey:ADMIN_API_KEY,urun_id:id},22000);
+    if(!d.success) throw new Error(d.message||"Ürün silinemedi.");
+    showMessage("productSuccess",d.message||"Ürün silindi.");
+    clearProductForm();
+    await loadCatalogData();
+    if(typeof loadSellerPrices === "function") await loadSellerPrices(false);
+  }catch(e){ showMessage("productError","Ürün silinemedi. "+e.message); }
+}
+function renderFabrics(){
+  const tbody = document.getElementById("fabricsTableBody");
+  if(!tbody) return;
+  tbody.innerHTML = "";
+  (fabricsList || []).forEach(function(fabric){
+    const tr=document.createElement("tr");
+    tr.innerHTML=`
+      <td>${esc(fabric.kumas_id)}</td>
+      <td>${esc(fabric.urun_adi)}</td>
+      <td>${esc(fabric.kumas_kodu)}</td>
+      <td>${esc(fabric.kumas_adi)}</td>
+      <td><span class="tag">${esc(fabric.durum || "aktif")}</span></td>
+      <td>${esc(fabric.not || "")}</td>
+      <td>
+        <button class="btn-light" onclick="editFabricById('${attr(fabric.kumas_id)}')">Düzenle</button>
+        <button class="btn-danger" onclick="deleteFabric('${attr(fabric.kumas_id)}')">Sil</button>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+}
+function editFabric(fabric){
+  if(!fabric) return;
+  fabricEditId.value=fabric.kumas_id||"";
+  fabricProductSelect.value=fabric.urun_id||"";
+  fabricCodeInput.value=fabric.kumas_kodu||"";
+  fabricNameInput.value=fabric.kumas_adi||"";
+  fabricStatusInput.value=fabric.durum||"aktif";
+  fabricNoteInput.value=fabric.not||"";
+  safeFocusElement(fabricProductSelect);
+}
+function clearFabricForm(){
+  fabricEditId.value=""; fabricProductSelect.value=""; fabricCodeInput.value=""; fabricNameInput.value=""; fabricStatusInput.value="aktif"; fabricNoteInput.value="";
+}
+async function saveFabric(){
+  hideMessages(["fabricError","fabricSuccess"]);
+  try{
+    const opt=fabricProductSelect.selectedOptions[0];
+    const fabric={kumas_id:fabricEditId.value,urun_id:fabricProductSelect.value,urun_adi:opt?opt.dataset.name:"",kumas_kodu:fabricCodeInput.value,kumas_adi:fabricNameInput.value,durum:fabricStatusInput.value,not:fabricNoteInput.value};
+    const d=await apiPost({action:"saveFabric",apiKey:ADMIN_API_KEY,fabric:fabric},18000);
+    if(!d.success) throw new Error(d.message||"Kumaş kaydedilemedi.");
+    showMessage("fabricSuccess","Kumaş kaydedildi.");
+    clearFabricForm();
+    await loadCatalogData();
+  }catch(e){ showMessage("fabricError","Kumaş kaydedilemedi. "+e.message); }
+}
+async function deleteFabric(id){
+  hideMessages(["fabricError","fabricSuccess"]);
+  const fabric = getFabricById(id);
+  const fabricName = fabric ? ((fabric.kumas_kodu||"")+" "+(fabric.kumas_adi||"")).trim() : id;
+  if(!confirm("Bu kumaşı silmek istediğinize emin misiniz?\n\nKumaş: "+fabricName)) return;
+  try{
+    const d=await apiPost({action:"deleteFabric",apiKey:ADMIN_API_KEY,kumas_id:id},18000);
+    if(!d.success) throw new Error(d.message||"Kumaş silinemedi.");
+    showMessage("fabricSuccess","Kumaş silindi.");
+    clearFabricForm();
+    await loadCatalogData();
+  }catch(e){ showMessage("fabricError","Kumaş silinemedi. "+e.message); }
+}
+function renderCatalogs(){
+  const tbody = document.getElementById("catalogsTableBody");
+  if(!tbody) return;
+  tbody.innerHTML = "";
+  (catalogsList || []).forEach(function(catalog){
+    const tr=document.createElement("tr");
+    const img = catalog.gorsel_url ? `<img class="image-preview" src="${attr(catalog.gorsel_url)}" alt="Katalog">` : "-";
+    tr.innerHTML=`
+      <td>${esc(catalog.katalog_id)}</td>
+      <td>${esc(catalog.urun_adi)}</td>
+      <td>${img}</td>
+      <td>${esc(catalog.dosya_adi)}</td>
+      <td><span class="tag">${esc(catalog.durum || "aktif")}</span></td>
+      <td>${esc(catalog.not || "")}</td>
+      <td>
+        <button class="btn-light" onclick="editCatalogById('${attr(catalog.katalog_id)}')">Düzenle</button>
+        <button class="btn-danger" onclick="deleteCatalog('${attr(catalog.katalog_id)}')">Sil</button>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+}
+function editCatalog(catalog){
+  if(!catalog) return;
+  catalogEditId.value=catalog.katalog_id||"";
+  catalogProductSelect.value=catalog.urun_id||"";
+  catalogFileInput.value=catalog.dosya_adi||"";
+  catalogStatusInput.value=catalog.durum||"aktif";
+  catalogNoteInput.value=catalog.not||"";
+  catalogExistingUrl.value=catalog.gorsel_url||"";
+  catalogExistingDriveId.value=catalog.drive_file_id||"";
+  catalogImageInput.value="";
+  safeFocusElement(catalogProductSelect);
+}
+function clearCatalogForm(){
+  catalogEditId.value=""; catalogProductSelect.value=""; catalogFileInput.value=""; catalogStatusInput.value="aktif"; catalogNoteInput.value=""; catalogExistingUrl.value=""; catalogExistingDriveId.value=""; catalogImageInput.value="";
+}
+function readFileAsBase64(file){
+  return new Promise(function(resolve,reject){ const reader=new FileReader(); reader.onload=function(){resolve(String(reader.result||""));}; reader.onerror=function(){reject(new Error("Görsel okunamadı."));}; reader.readAsDataURL(file); });
+}
+async function saveCatalog(){
+  hideMessages(["catalogError","catalogSuccess"]);
+  try{
+    const opt=catalogProductSelect.selectedOptions[0];
+    const file=catalogImageInput.files&&catalogImageInput.files[0]?catalogImageInput.files[0]:null;
+    const catalog={katalog_id:catalogEditId.value,urun_id:catalogProductSelect.value,urun_adi:opt?opt.dataset.name:"",dosya_adi:catalogFileInput.value,durum:catalogStatusInput.value,not:catalogNoteInput.value,gorsel_url:catalogExistingUrl.value,drive_file_id:catalogExistingDriveId.value};
+    if(file){ catalog.image_data=await readFileAsBase64(file); catalog.image_mime_type=file.type||"image/png"; catalog.image_file_name=file.name||catalogFileInput.value||"katalog.png"; if(!catalog.dosya_adi) catalog.dosya_adi=file.name; }
+    const d=await apiPost({action:"saveCatalog",apiKey:ADMIN_API_KEY,catalog:catalog},30000);
+    if(!d.success) throw new Error(d.message||"Katalog kaydedilemedi.");
+    showMessage("catalogSuccess","Katalog kaydedildi.");
+    clearCatalogForm();
+    await loadCatalogData();
+  }catch(e){ showMessage("catalogError","Katalog kaydedilemedi. "+e.message); }
+}
+async function deleteCatalog(id){
+  hideMessages(["catalogError","catalogSuccess"]);
+  const catalog = getCatalogById(id);
+  const catalogName = catalog ? ((catalog.urun_adi||"")+" - "+(catalog.dosya_adi||"")).trim() : id;
+  if(!confirm("Bu katalog kaydını silmek istediğinize emin misiniz?\n\nKatalog: "+catalogName+"\n\nGoogle Drive'daki gerçek görsel dosyası silinmeyecek.")) return;
+  try{
+    const d=await apiPost({action:"deleteCatalog",apiKey:ADMIN_API_KEY,katalog_id:id},18000);
+    if(!d.success) throw new Error(d.message||"Katalog silinemedi.");
+    showMessage("catalogSuccess","Katalog silindi.");
+    clearCatalogForm();
+    await loadCatalogData();
+  }catch(e){ showMessage("catalogError","Katalog silinemedi. "+e.message); }
+}
+
+
 passwordInput.addEventListener("keydown",e=>{if(e.key==="Enter")login()});
 initAdmin();
 </script>
