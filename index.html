@@ -1252,7 +1252,7 @@ body.same-product .product-and-color-area{
 
         <div class="social-item">
             <a href="tel:+905327881099">📞</a>
-            <a href="tel:+905327881099">Toptan Satışlar İçin Arama: +90 532 788 10 99</a>
+            <a href="tel:+905327881099">Toptan Satışlar İçin Arama: 0 532 788 10 99</a>
         </div>
 
         <div class="note">
@@ -3179,6 +3179,209 @@ window.addEventListener("keydown", function(event){
         closeImageModal();
     }
 });
+
+
+/* KATALOG MODALI - SON DÜZELTME
+   Ürün seçildiyse direkt seçili ürün kataloğunu açar.
+   Ürün seçilmediyse tüm katalogları listeler.
+   Kapatma alanı sabit kalır, görsel kendi alanında kayar.
+*/
+(function(){
+    const styleId = "prestij-catalog-modal-final-style";
+    if(!document.getElementById(styleId)){
+        const style = document.createElement("style");
+        style.id = styleId;
+        style.textContent = `
+            #imageModal.catalog-mode .modal-content{width:min(100%,1040px);max-height:92vh;display:flex;flex-direction:column;overflow:hidden;}
+            #imageModal.catalog-mode .modal-head{flex:0 0 auto;position:relative;z-index:5;background:var(--card-bg);border-bottom:1px solid var(--border);}
+            #imageModal.catalog-mode .modal-options{display:block !important;flex:0 0 auto;padding:14px 16px;border-bottom:1px solid var(--border);background:var(--card-bg);max-height:245px;overflow:auto;}
+            #imageModal.catalog-mode .modal-image-wrap{display:none;flex:1 1 auto;min-height:0;max-height:none;overflow:auto;padding:14px 16px 18px;background:var(--panel-bg);text-align:center;}
+            #imageModal.catalog-mode .modal-image-wrap.show{display:block !important;}
+            #imageModal.catalog-mode .modal-image-wrap img{max-width:100%;height:auto;border-radius:14px;display:block;margin:0 auto;background:#fff;box-shadow:0 10px 28px rgba(0,0,0,0.16);}
+            .catalog-toolbar{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px;}
+            .catalog-toolbar-left{flex:1 1 320px;min-width:240px;}
+            .catalog-badge{display:inline-flex;align-items:center;gap:6px;padding:7px 11px;border-radius:999px;background:var(--accent-soft);color:var(--accent);border:1px solid rgba(139,106,69,0.22);font-size:12px;font-weight:900;margin-bottom:8px;}
+            .catalog-toolbar-title{font-size:16px;font-weight:900;color:var(--text);margin-bottom:4px;}
+            .catalog-toolbar-desc{font-size:13px;line-height:1.45;color:var(--muted);}
+            .catalog-toolbar-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+            .catalog-switch-btn{border:none;border-radius:12px;padding:10px 14px;font-size:13px;font-weight:800;cursor:pointer;background:var(--light-button);color:var(--text);border:1px solid var(--input-border);box-shadow:var(--soft-shadow);}
+            .catalog-switch-btn:hover{background:var(--choice-active);border-color:var(--accent);color:var(--accent);}
+            .catalog-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;}
+            .catalog-card{width:100%;text-align:left;padding:12px 13px;border-radius:16px;border:1px solid var(--border);background:var(--panel-bg);color:var(--text);cursor:pointer;transition:0.2s ease;}
+            .catalog-card:hover{transform:translateY(-2px);border-color:var(--accent);box-shadow:0 8px 20px rgba(45,35,25,0.08);}
+            .catalog-card.active{border:2px solid var(--accent);background:var(--choice-active);box-shadow:0 8px 20px rgba(139,106,69,0.12);}
+            .catalog-card-title{display:block;font-size:14px;font-weight:900;color:var(--text);margin-bottom:4px;}
+            .catalog-card-meta{display:block;font-size:12px;color:var(--muted);line-height:1.35;}
+            .catalog-preview-caption{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;margin-bottom:12px;padding:12px 14px;border-radius:14px;background:var(--card-bg);border:1px solid var(--border);text-align:left;}
+            .catalog-preview-caption strong{display:block;font-size:14px;margin-bottom:4px;}
+            .catalog-preview-caption small{color:var(--muted);font-size:12px;line-height:1.45;}
+            .catalog-empty{padding:14px;border-radius:16px;background:var(--warning-bg);border:1px solid var(--warning-border);color:var(--warning-text);font-size:14px;line-height:1.5;}
+            @media(max-width:700px){#imageModal.catalog-mode .modal-options{max-height:270px;}.catalog-list{grid-template-columns:1fr;}.catalog-toolbar-actions{width:100%;}.catalog-switch-btn{width:100%;}}
+        `;
+        document.head.appendChild(style);
+    }
+
+    function htmlEscape(value){
+        if(typeof escapeHTML === "function") return escapeHTML(value);
+        return String(value || "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
+    }
+
+    function modalEls(){
+        return { modal:document.getElementById("imageModal"), title:document.getElementById("modalTitle"), options:document.getElementById("modalOptions"), wrap:document.getElementById("modalImageWrap"), image:document.getElementById("modalImage") };
+    }
+
+    function allCatalogs(){
+        const source = (typeof activeCatalogs !== "undefined" && activeCatalogs.length) ? activeCatalogs : getFallbackCatalogs();
+        return source.filter(function(catalog){ return getCatalogImageSource(catalog); });
+    }
+
+    function selectedProductKey(){
+        if(selectionMode === "same") return globalProductType || "";
+        const openCard = document.querySelector(".cam-card.open");
+        if(openCard && openCard.dataset.product) return openCard.dataset.product;
+        const first = Array.from(document.querySelectorAll(".cam-card")).find(function(card){ return card.dataset.product; });
+        return first ? first.dataset.product : "";
+    }
+
+    function selectedProductLabel(key){
+        if(!key) return "";
+        const found = productTypes.find(function(product){ return product.key === key; });
+        return found ? found.label : key;
+    }
+
+    function catalogId(catalog, index){
+        return String(catalog.katalog_id || catalog.drive_file_id || ((catalog.urun_id || "") + "_" + (catalog.dosya_adi || "")) || ("catalog_" + index));
+    }
+
+    function setActiveCard(){
+        const state = window.__prestijCatalogState;
+        document.querySelectorAll(".catalog-card").forEach(function(btn){ btn.classList.toggle("active", btn.dataset.catalogId === state.currentId); });
+    }
+
+    function showPreview(catalog){
+        const els = modalEls();
+        const src = getCatalogImageSource(catalog);
+        const title = getCatalogTitle(catalog);
+        const note = String(catalog.not || catalog.dosya_adi || "Katalog önizlemesi").trim();
+        els.image.src = src;
+        els.image.alt = title;
+        els.wrap.classList.add("show");
+        els.wrap.style.display = "block";
+        let caption = els.wrap.querySelector(".catalog-preview-caption");
+        if(!caption){
+            caption = document.createElement("div");
+            caption.className = "catalog-preview-caption";
+            els.wrap.insertBefore(caption, els.image);
+        }
+        caption.innerHTML = `<div><strong>${htmlEscape(String(catalog.urun_adi || "Katalog"))}</strong><small>${htmlEscape(note)}</small></div><div><small>Diğer kataloglara bakmak için üstteki listeden seçim yapabilirsiniz.</small></div>`;
+    }
+
+    function hidePreview(){
+        const els = modalEls();
+        els.wrap.classList.remove("show");
+        els.wrap.style.display = "none";
+        els.image.src = "";
+        els.image.alt = "";
+        const caption = els.wrap.querySelector(".catalog-preview-caption");
+        if(caption) caption.remove();
+    }
+
+    function toolbarHtml(mode, key, hasSelectedMatches){
+        const label = selectedProductLabel(key);
+        if(key){
+            return `<div class="catalog-toolbar"><div class="catalog-toolbar-left"><div class="catalog-badge">Seçili Ürün: ${htmlEscape(label)}</div><div class="catalog-toolbar-title">${mode === "selected" ? "Seçilen ürünün kataloğu açıldı" : "Tüm kataloglar gösteriliyor"}</div><div class="catalog-toolbar-desc">${mode === "selected" && hasSelectedMatches ? "Ürün seçtiğiniz için doğrudan bu ürüne ait katalog açıldı. İsterseniz tüm kataloglara da bakabilirsiniz." : "Tüm aktif kataloglar listeleniyor. Bir katalog kartına tıklayarak görüntüleyebilirsiniz."}</div></div><div class="catalog-toolbar-actions">${mode === "selected" && hasSelectedMatches ? `<button type="button" class="catalog-switch-btn" onclick="window.renderPrestijCatalogMode('all')">Tüm kataloglara bak</button>` : `<button type="button" class="catalog-switch-btn" onclick="window.renderPrestijCatalogMode('selected')">Seçili ürüne dön</button>`}</div></div>`;
+        }
+        return `<div class="catalog-toolbar"><div class="catalog-toolbar-left"><div class="catalog-badge">Ürün Seçilmedi</div><div class="catalog-toolbar-title">Tüm kataloglar listeleniyor</div><div class="catalog-toolbar-desc">Henüz ürün seçmediğiniz için bütün aktif kataloglar gösteriliyor. Görmek istediğiniz kataloğa tıklayın.</div></div></div>`;
+    }
+
+    function cardsHtml(list){
+        if(!list.length){
+            return `<div class="catalog-empty">Bu ürün için aktif katalog bulunamadı. Admin panelinden katalog ekleyebilir veya tüm kataloglara bakabilirsiniz.</div>`;
+        }
+        return `<div class="catalog-list">${list.map(function(catalog, index){
+            const id = catalogId(catalog, index);
+            const name = String(catalog.urun_adi || "Katalog").trim();
+            const meta = String(catalog.not || catalog.dosya_adi || "Katalog görselini aç").trim();
+            return `<button type="button" class="catalog-card" data-catalog-id="${htmlEscape(id)}" onclick="window.selectPrestijCatalog('${htmlEscape(id)}')"><span class="catalog-card-title">${htmlEscape(name)}</span><span class="catalog-card-meta">${htmlEscape(meta)}</span></button>`;
+        }).join("")}</div>`;
+    }
+
+    window.__prestijCatalogState = { mode:"all", selectedKey:"", all:[], selected:[], visible:[], currentId:"" };
+
+    window.renderPrestijCatalogMode = function(mode){
+        const state = window.__prestijCatalogState;
+        const els = modalEls();
+        const key = state.selectedKey;
+        const hasSelectedMatches = key && state.selected.length > 0;
+        if(mode === "selected" && !hasSelectedMatches) mode = "all";
+        if(!key) mode = "all";
+        state.mode = mode;
+        state.visible = mode === "selected" ? state.selected.slice() : state.all.slice();
+        els.title.textContent = "Kumaş Kataloğu";
+        els.options.classList.add("show");
+        els.options.innerHTML = toolbarHtml(mode, key, hasSelectedMatches) + cardsHtml(state.visible);
+        if(!state.visible.length){ hidePreview(); return; }
+        if(mode === "selected"){
+            const catalog = state.visible[0];
+            state.currentId = catalogId(catalog, 0);
+            showPreview(catalog);
+        }else{
+            state.currentId = "";
+            hidePreview();
+        }
+        setActiveCard();
+    };
+
+    window.selectPrestijCatalog = function(id){
+        const state = window.__prestijCatalogState;
+        state.currentId = id;
+        const catalog = state.visible.find(function(item, index){ return catalogId(item, index) === id; });
+        if(catalog){ showPreview(catalog); setActiveCard(); }
+    };
+
+    window.openFabricCatalogMenu = async function(){
+        const els = modalEls();
+        els.modal.classList.add("show", "catalog-mode");
+        els.title.textContent = "Kumaş Kataloğu";
+        els.options.classList.add("show");
+        els.options.innerHTML = `<div class="catalog-empty">Kataloglar yükleniyor...</div>`;
+        hidePreview();
+        await loadCatalogData();
+        const state = window.__prestijCatalogState;
+        state.all = allCatalogs();
+        state.selectedKey = selectedProductKey();
+        state.selected = state.selectedKey ? state.all.filter(function(catalog){ return getCatalogProductKey(catalog) === state.selectedKey; }) : [];
+        state.currentId = "";
+        window.renderPrestijCatalogMode(state.selectedKey && state.selected.length ? "selected" : "all");
+    };
+
+    window.openImageModal = function(title, src){
+        const els = modalEls();
+        els.modal.classList.remove("catalog-mode");
+        els.modal.classList.add("show");
+        els.title.textContent = title || "Görsel";
+        els.options.classList.remove("show");
+        els.options.innerHTML = "";
+        els.wrap.classList.add("show");
+        els.wrap.style.display = "block";
+        els.image.src = src || "";
+        els.image.alt = title || "Görsel";
+    };
+
+    window.showCatalogImage = function(title, src){ window.openImageModal(title, src); };
+
+    window.closeImageModal = function(){
+        const els = modalEls();
+        els.modal.classList.remove("show", "catalog-mode");
+        els.options.classList.remove("show");
+        els.options.innerHTML = "";
+        hidePreview();
+    };
+
+    window.modalOutsideClose = function(event){
+        if(event.target && event.target.id === "imageModal") window.closeImageModal();
+    };
+})();
 
 init();
 </script>
