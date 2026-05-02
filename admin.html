@@ -85,11 +85,68 @@ body.dark{--bg:#151618;--bg2:#202328;--card:#1e2023;--panel:#25282d;--text:#f2f0
   <div class="panel-section" id="section-raporlar"><div class="section-title"><h2>Raporlar</h2><button class="help-btn" onclick="showHelp('raporlar')">?</button></div><p class="subtitle">Seçtiğiniz tarihler için satış, m² ve imalat özetlerini tek ekranda görebilirsiniz.</p><div class="box"><h3>Rapor Oluştur</h3><div class="filter-grid"><label class="field"><span>Başlangıç Tarihi</span><input type="date" id="reportDateStart"></label><label class="field"><span>Bitiş Tarihi</span><input type="date" id="reportDateEnd"></label><label class="field"><span>Satıcı / Kaynak</span><select id="reportSellerFilter"><option value="">Tüm Siparişler</option><option value="__site">Merkez / Site Siparişleri</option></select></label></div><div class="actions"><button class="btn-main" onclick="loadReports()">Rapor Oluştur</button><button class="btn-light" onclick="downloadReportExcel()">Excel İndir</button></div><div class="message error" id="reportError"></div><div class="message success" id="reportSuccess"></div><div class="message warning" id="reportWarning"></div><div id="reportOutput" class="placeholder">Raporu görmek için tarihleri seçip Rapor Oluştur butonuna basın.</div></div></div>
 
   <div class="panel-section" id="section-yonetim">
-    <div class="section-title"><h2>Yönetim</h2><button class="help-btn" onclick="showHelp('yonetim')">?</button></div><p class="subtitle">Satıcı, ürün, kumaş ve katalog kayıtlarını buradan yönetebilirsiniz.</p>
-    <div class="box"><h3>Satıcı Yönetimi</h3><div class="form-grid"><input type="hidden" id="sellerEditId"><label class="field"><span>Satıcı Adı</span><input id="sellerNameInput" placeholder="Satıcı adı"></label><label class="field"><span>Durum</span><select id="sellerStatusInput"><option value="aktif">Aktif</option><option value="pasif">Pasif</option></select></label><label class="field wide"><span>Not</span><input id="sellerNoteInput" placeholder="Not"></label></div><div class="actions"><button class="btn-main" onclick="saveSeller()">Satıcıyı Kaydet</button><button class="btn-light" onclick="clearSellerForm()">Formu Temizle</button></div><div class="message error" id="sellerManageError"></div><div class="message success" id="sellerManageSuccess"></div><div class="table-wrap" id="sellerManageTableWrap"><table><thead><tr><th>ID</th><th>Satıcı</th><th>Durum</th><th>Not</th><th>İşlem</th></tr></thead><tbody id="sellerManageTableBody"></tbody></table></div></div>
-    <div class="box"><h3>Ürün Yönetimi</h3><div class="form-grid"><input type="hidden" id="productEditId"><label class="field"><span>Ürün Adı</span><input id="productNameInput" placeholder="Ürün adı"></label><label class="field"><span>Durum</span><select id="productStatusInput"><option value="aktif">Aktif</option><option value="pasif">Pasif</option></select></label><label class="field"><span>Katalog Dosyası</span><input id="productCatalogFileInput" placeholder="katalog.png"></label><label class="field wide"><span>Not</span><input id="productNoteInput"></label></div><div class="actions"><button class="btn-main" onclick="saveProduct()">Ürünü Kaydet</button><button class="btn-light" onclick="clearProductForm()">Formu Temizle</button></div><div class="message error" id="productError"></div><div class="message success" id="productSuccess"></div><div class="table-wrap"><table><thead><tr><th>ID</th><th>Ürün</th><th>Durum</th><th>Katalog</th><th>Not</th><th>İşlem</th></tr></thead><tbody id="productsTableBody"></tbody></table></div></div>
-    <div class="box"><h3>Kumaş Yönetimi</h3><div class="form-grid"><input type="hidden" id="fabricEditId"><label class="field"><span>Ürün</span><select id="fabricProductSelect"></select></label><label class="field"><span>Kumaş Kodu</span><input id="fabricCodeInput" placeholder="001 Lilyum"></label><label class="field"><span>Kumaş Adı</span><input id="fabricNameInput" placeholder="Açık Gri"></label><label class="field"><span>Durum</span><select id="fabricStatusInput"><option value="aktif">Aktif</option><option value="pasif">Pasif</option></select></label><label class="field wide"><span>Not</span><input id="fabricNoteInput"></label></div><div class="actions"><button class="btn-main" onclick="saveFabric()">Kumaşı Kaydet</button><button class="btn-light" onclick="clearFabricForm()">Formu Temizle</button></div><div class="message error" id="fabricError"></div><div class="message success" id="fabricSuccess"></div><div class="table-wrap"><table><thead><tr><th>ID</th><th>Ürün</th><th>Kod</th><th>Ad</th><th>Durum</th><th>Not</th><th>İşlem</th></tr></thead><tbody id="fabricsTableBody"></tbody></table></div></div>
-    <div class="box"><h3>Katalog Yönetimi</h3><div class="form-grid"><input type="hidden" id="catalogEditId"><label class="field"><span>Ürün</span><select id="catalogProductSelect"></select></label><label class="field"><span>Dosya Adı</span><input id="catalogFileInput" placeholder="lilyum.png"></label><label class="field"><span>Durum</span><select id="catalogStatusInput"><option value="aktif">Aktif</option><option value="pasif">Pasif</option></select></label><label class="field wide"><span>Not</span><input id="catalogNoteInput"></label></div><div class="actions"><button class="btn-main" onclick="saveCatalog()">Katalog Kaydet</button><button class="btn-light" onclick="clearCatalogForm()">Formu Temizle</button></div><div class="message error" id="catalogError"></div><div class="message success" id="catalogSuccess"></div><div class="table-wrap"><table><thead><tr><th>ID</th><th>Ürün</th><th>Dosya</th><th>Durum</th><th>Not</th><th>İşlem</th></tr></thead><tbody id="catalogsTableBody"></tbody></table></div></div>
+    <div class="section-title"><h2>Yönetim</h2><button class="help-btn" onclick="showHelp('yonetim')">?</button></div>
+    <p class="subtitle">Satıcı, ürün, kumaş ve katalog kayıtlarını buradan düzenleyebilirsiniz. Kayıt eklemek için ilgili alanı doldurup kaydetmeniz yeterlidir.</p>
+
+    <div class="box">
+      <div class="section-title"><h3>Satıcılar</h3><button class="help-btn" onclick="showHelp('saticilar')">?</button></div>
+      <p>Yeni satıcı ekleyebilir, mevcut satıcının adını değiştirebilir veya pasife alabilirsiniz.</p>
+      <div class="form-grid">
+        <input type="hidden" id="sellerEditId">
+        <label class="field"><span>Satıcı Adı</span><input id="sellerNameInput" placeholder="Örn: Beyza"></label>
+        <label class="field"><span>Durum</span><select id="sellerStatusInput"><option value="aktif">Aktif</option><option value="pasif">Pasif</option></select></label>
+        <label class="field wide"><span>Not</span><input id="sellerNoteInput" placeholder="İsteğe bağlı not"></label>
+      </div>
+      <div class="actions"><button class="btn-main" onclick="saveSeller()">Satıcıyı Kaydet</button><button class="btn-light" onclick="clearSellerForm()">Temizle</button></div>
+      <div class="message error" id="sellerManageError"></div><div class="message success" id="sellerManageSuccess"></div>
+      <div class="table-wrap" id="sellerManageTableWrap"><table><thead><tr><th>ID</th><th>Satıcı</th><th>Durum</th><th>Not</th><th>İşlem</th></tr></thead><tbody id="sellerManageTableBody"></tbody></table></div>
+    </div>
+
+    <div class="box">
+      <div class="section-title"><h3>Ürünler</h3><button class="help-btn" onclick="showHelp('urunler')">?</button></div>
+      <p>Sitede ve admin panelde kullanılacak ürün adlarını ve ana katalog dosyasını buradan düzenleyebilirsiniz.</p>
+      <div class="form-grid">
+        <input type="hidden" id="productEditId">
+        <label class="field"><span>Ürün Adı</span><input id="productNameInput" placeholder="Örn: Klasik Seri Plise"></label>
+        <label class="field"><span>Durum</span><select id="productStatusInput"><option value="aktif">Aktif</option><option value="pasif">Pasif</option></select></label>
+        <label class="field"><span>Katalog Dosyası</span><input id="productCatalogFileInput" placeholder="katalog.png"></label>
+        <label class="field wide"><span>Not</span><input id="productNoteInput" placeholder="İsteğe bağlı not"></label>
+      </div>
+      <div class="actions"><button class="btn-main" onclick="saveProduct()">Ürünü Kaydet</button><button class="btn-light" onclick="clearProductForm()">Temizle</button></div>
+      <div class="message error" id="productError"></div><div class="message success" id="productSuccess"></div>
+      <div class="table-wrap"><table><thead><tr><th>ID</th><th>Ürün</th><th>Durum</th><th>Katalog</th><th>Not</th><th>İşlem</th></tr></thead><tbody id="productsTableBody"></tbody></table></div>
+    </div>
+
+    <div class="box">
+      <div class="section-title"><h3>Kumaşlar</h3><button class="help-btn" onclick="showHelp('kumaslar')">?</button></div>
+      <p>Ürünlere bağlı kumaş/kod seçeneklerini buradan ekleyebilir veya düzenleyebilirsiniz.</p>
+      <div class="form-grid">
+        <input type="hidden" id="fabricEditId">
+        <label class="field"><span>Ürün</span><select id="fabricProductSelect"></select></label>
+        <label class="field"><span>Kumaş Kodu</span><input id="fabricCodeInput" placeholder="Örn: 001 Lilyum"></label>
+        <label class="field"><span>Kumaş Adı</span><input id="fabricNameInput" placeholder="Örn: Açık Gri"></label>
+        <label class="field"><span>Durum</span><select id="fabricStatusInput"><option value="aktif">Aktif</option><option value="pasif">Pasif</option></select></label>
+        <label class="field wide"><span>Not</span><input id="fabricNoteInput" placeholder="İsteğe bağlı not"></label>
+      </div>
+      <div class="actions"><button class="btn-main" onclick="saveFabric()">Kumaşı Kaydet</button><button class="btn-light" onclick="clearFabricForm()">Temizle</button></div>
+      <div class="message error" id="fabricError"></div><div class="message success" id="fabricSuccess"></div>
+      <div class="table-wrap"><table><thead><tr><th>ID</th><th>Ürün</th><th>Kod</th><th>Ad</th><th>Durum</th><th>Not</th><th>İşlem</th></tr></thead><tbody id="fabricsTableBody"></tbody></table></div>
+    </div>
+
+    <div class="box">
+      <div class="section-title"><h3>Kataloglar</h3><button class="help-btn" onclick="showHelp('kataloglar')">?</button></div>
+      <p>Katalog görselinin dosya adını buradan kaydedebilirsiniz. Deneme ortamında görseller GitHub’a yüklenir, buraya sadece dosya adı yazılır.</p>
+      <div class="form-grid">
+        <input type="hidden" id="catalogEditId">
+        <label class="field"><span>Ürün</span><select id="catalogProductSelect"></select></label>
+        <label class="field"><span>Dosya Adı</span><input id="catalogFileInput" placeholder="lilyum.png"></label>
+        <label class="field"><span>Durum</span><select id="catalogStatusInput"><option value="aktif">Aktif</option><option value="pasif">Pasif</option></select></label>
+        <label class="field wide"><span>Not</span><input id="catalogNoteInput" placeholder="İsteğe bağlı not"></label>
+      </div>
+      <div class="actions"><button class="btn-main" onclick="saveCatalog()">Katalog Kaydet</button><button class="btn-light" onclick="clearCatalogForm()">Temizle</button></div>
+      <div class="message error" id="catalogError"></div><div class="message success" id="catalogSuccess"></div>
+      <div class="table-wrap"><table><thead><tr><th>ID</th><th>Ürün</th><th>Dosya</th><th>Durum</th><th>Not</th><th>İşlem</th></tr></thead><tbody id="catalogsTableBody"></tbody></table></div>
+    </div>
   </div>
 
   <div class="panel-section" id="section-yedekleme"><div class="section-title"><h2>Yedekleme</h2><button class="help-btn" onclick="showHelp('yedekleme')">?</button></div><p class="subtitle">Sipariş, fiş, satıcı ve katalog verilerini bilgisayarınıza indirebilirsiniz.</p><div class="box"><h3>Verileri Dışa Aktar</h3><div class="actions"><button class="btn-main" onclick="downloadBackupExcel()">Excel Yedeği İndir</button><button class="btn-light" onclick="downloadBackupJson()">JSON Yedeği İndir</button></div><div class="message error" id="backupError"></div><div class="message success" id="backupSuccess"></div><div class="message warning" id="backupWarning"></div><div class="placeholder">Excel yedeği kolay inceleme içindir. JSON yedeği tüm verileri daha düzenli saklar.</div></div></div>
@@ -114,7 +171,11 @@ const HELP_CONTENT={
   imalat:{title:"İmalat fişleri nasıl kullanılır?",body:`<p>Üretim için gerekli fişleri buradan yönetirsiniz.</p><ol><li>Fişi açın ve ölçüleri kontrol edin.</li><li>Pile, ip veya not alanlarını elle düzenleyin.</li><li>Fişi Güncelle ile kaydedin.</li><li>Excel veya PDF olarak indirin.</li></ol>`},
   muhasebe:{title:"Muhasebe nasıl kullanılır?",body:`<p>Satıcı hesapları gerçek ölçü m² üzerinden takip edilir.</p><ol><li>Satıcı ve tarih seçin.</li><li>Açık veya kapanan hesapları filtreleyin.</li><li>Ödemesi yapılan siparişleri seçip hesabı kapatın.</li><li>Yanlışlık olursa hesabı tekrar açın.</li></ol>`},
   raporlar:{title:"Raporlar nasıl kullanılır?",body:`<p>Seçilen tarih aralığında genel durumu tek ekranda gösterir.</p><ol><li>Tarih ve satıcı/kaynak seçin.</li><li>Rapor Oluştur butonuna basın.</li><li>Satış, ürün m² ve imalat özetini kontrol edin.</li><li>Excel olarak indirebilirsiniz.</li></ol>`},
-  yonetim:{title:"Yönetim nasıl kullanılır?",body:`<p>Satıcı, ürün, kumaş ve katalog kayıtlarını buradan yönetirsiniz.</p><ol><li>Yeni kayıt ekleyebilir veya mevcut kaydı düzenleyebilirsiniz.</li><li>Pasif durumdaki kayıtlar ileride seçimlerden kaldırılabilir.</li><li>Deneme ortamında katalog görselleri GitHub'a yüklenir, buraya sadece dosya adı yazılır.</li></ol>`},
+  yonetim:{title:"Yönetim nasıl kullanılır?",body:`<p>Bu bölümde sistemin temel kayıtlarını yönetirsiniz.</p><ol><li>Satıcıları, ürünleri, kumaşları ve katalogları ayrı kutularda düzenleyin.</li><li>Yeni kayıt eklemek için ilgili formu doldurup kaydedin.</li><li>Mevcut kaydı düzenlemek için tablodaki Düzenle butonuna basın.</li><li>Pasif yapılan kayıtlar silinmeden saklanır.</li></ol>`},
+  saticilar:{title:"Satıcılar nasıl kullanılır?",body:`<p>Satıcı ekleme ve düzenleme alanıdır.</p><ol><li>Satıcı adını yazıp Satıcıyı Kaydet butonuna basın.</li><li>Mevcut satıcıyı değiştirmek için Düzenle butonuna basın.</li><li>Satıcıyla sipariş varsa silmek yerine pasife almak daha güvenlidir.</li><li>Yeni satıcı eklenince fiyat satırları otomatik hazırlanır; fiyatları Ayarlar bölümünden doldurabilirsiniz.</li></ol>`},
+  urunler:{title:"Ürünler nasıl kullanılır?",body:`<p>Ürün adlarını ve ana katalog dosyasını buradan yönetirsiniz.</p><ol><li>Ürün adı yazın.</li><li>Varsa katalog görsel dosya adını yazın. Örnek: katalog.png</li><li>Ürün kullanılmayacaksa pasif yapabilirsiniz.</li><li>Deneme ortamında görsel dosyasını ayrıca GitHub'a yüklemeniz gerekir.</li></ol>`},
+  kumaslar:{title:"Kumaşlar nasıl kullanılır?",body:`<p>Ürünlere bağlı kumaş/kod seçeneklerini buradan yönetirsiniz.</p><ol><li>Önce ürün seçin.</li><li>Kumaş kodunu ve adını yazın.</li><li>Örnek: Kod 001 Lilyum, ad Açık Gri.</li><li>İleride index tarafı bu kayıtları kullanarak kumaş seçimlerini otomatik gösterecek.</li></ol>`},
+  kataloglar:{title:"Kataloglar nasıl kullanılır?",body:`<p>Katalog görsellerinin dosya adlarını buradan yönetirsiniz.</p><ol><li>Önce ürün seçin.</li><li>Dosya adını yazın. Örnek: lilyum.png</li><li>Deneme ortamında görsel dosyası GitHub reposuna yüklenmelidir.</li><li>Gerçek siteye geçince görsel yükleme doğrudan panelden yapılabilecek.</li></ol>`},
   yedekleme:{title:"Yedekleme nasıl kullanılır?",body:`<p>Verilerinizi düzenli olarak bilgisayarınıza indirebilirsiniz.</p><ol><li>Excel yedeği hızlı kontrol içindir.</li><li>JSON yedeği tüm kayıtları daha düzenli saklar.</li><li>Önemli değişikliklerden önce yedek almak iyi olur.</li></ol>`},
   ayarlar:{title:"Ayarlar nasıl kullanılır?",body:`<p>Fiyatları ve panel şifresini buradan yönetirsiniz.</p><ol><li>Müşteri fiyatları site tarafında kullanılır.</li><li>Satıcı fiyatları sadece muhasebe hesabında kullanılır.</li><li>Değişikliklerden sonra Kaydet butonuna basın.</li></ol>`}
 };
