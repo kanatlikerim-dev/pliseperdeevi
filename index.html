@@ -1230,6 +1230,11 @@ body.same-product .product-and-color-area{
 
     <div class="social">
         <div class="social-item">
+            <a href="tel:+905327881099">📞</a>
+            <a href="tel:+905327881099">Toptan Satışlar İçin: 0 532 788 10 99</a>
+        </div>
+
+        <div class="social-item">
             <a href="https://wa.me/905053559532" target="_blank">
                 <img src="wplogo.png" alt="WhatsApp">
             </a>
@@ -1492,11 +1497,27 @@ async function loadCatalogData(){
             throw new Error(data.message || "Katalog bilgileri alınamadı.");
         }
 
-        activeCatalogs = Array.isArray(data.catalogs)
-            ? data.catalogs.filter(function(catalog){
+        const catalogRows = Array.isArray(data.catalogs) ? data.catalogs : [];
+        const productRows = Array.isArray(data.products) ? data.products : [];
+
+        activeCatalogs = catalogRows
+            .filter(function(catalog){
                 return String(catalog.durum || "aktif").toLowerCase() !== "pasif";
             })
-            : [];
+            .map(function(catalog){
+                const productFromList = productRows.find(function(product){
+                    return String(product.urun_id || "") === String(catalog.urun_id || "");
+                });
+
+                return {
+                    ...catalog,
+                    urun_adi: String(catalog.urun_adi || (productFromList ? productFromList.urun_adi : "") || "Katalog").trim(),
+                    katalog_key: getCatalogProductKey({
+                        urun_id: catalog.urun_id,
+                        urun_adi: catalog.urun_adi || (productFromList ? productFromList.urun_adi : "")
+                    })
+                };
+            });
 
         catalogDataLoaded = true;
     }catch(error){
@@ -1559,17 +1580,22 @@ function getCatalogsToShow(){
     const selectedProduct = selectionMode === "same" ? globalProductType : "";
 
     let catalogs = sourceCatalogs.filter(function(catalog){
-        return getCatalogImageSource(catalog);
+        return getCatalogImageSource(catalog) || String(catalog.urun_adi || "").trim();
     });
 
     if(selectedProduct){
-        const productCatalogs = catalogs.filter(function(catalog){
-            return getCatalogProductKey(catalog) === selectedProduct;
+        const selected = [];
+        const others = [];
+
+        catalogs.forEach(function(catalog){
+            if(getCatalogProductKey(catalog) === selectedProduct){
+                selected.push(catalog);
+            }else{
+                others.push(catalog);
+            }
         });
 
-        if(productCatalogs.length){
-            return productCatalogs;
-        }
+        return selected.concat(others);
     }
 
     return catalogs;
@@ -2738,7 +2764,7 @@ function openMeasureMenu(){
     document.getElementById("imageModal").classList.add("show");
 }
 
-function openFabricCatalogMenu(){
+async function openFabricCatalogMenu(){
     document.getElementById("modalTitle").textContent = "Kumaş Kataloğu";
     document.getElementById("modalImage").src = "";
     document.getElementById("modalImage").alt = "";
@@ -2746,6 +2772,18 @@ function openFabricCatalogMenu(){
 
     const options = document.getElementById("modalOptions");
     options.classList.add("show");
+    options.innerHTML = `
+        <div class="warning-box" style="grid-column:1/-1;margin:0;">
+            Kataloglar yükleniyor...
+        </div>
+    `;
+
+    document.getElementById("imageModal").classList.add("show");
+
+    if(!catalogDataLoaded){
+        await loadCatalogData();
+    }
+
     options.innerHTML = "";
 
     const catalogs = getCatalogsToShow();
@@ -2757,7 +2795,6 @@ function openFabricCatalogMenu(){
                 Lütfen admin panelinden aktif bir katalog görseli ekleyin.
             </div>
         `;
-        document.getElementById("imageModal").classList.add("show");
         return;
     }
 
@@ -2765,7 +2802,7 @@ function openFabricCatalogMenu(){
         const src = getCatalogImageSource(catalog);
         const title = getCatalogTitle(catalog);
         const productName = String(catalog.urun_adi || "Katalog").trim();
-        const note = String(catalog.not || "").trim();
+        const note = String(catalog.not || catalog.dosya_adi || "").trim();
 
         const button = document.createElement("button");
         button.type = "button";
@@ -2775,12 +2812,14 @@ function openFabricCatalogMenu(){
             <span class="measure-option-small">${escapeHTML(note || "Katalog görselini aç")}</span>
         `;
         button.onclick = function(){
-            openImageModal(title, src);
+            if(src){
+                openImageModal(title, src);
+            }else{
+                alert("Bu katalog için görsel linki bulunamadı. Admin panelinden katalog görselini tekrar yükleyin.");
+            }
         };
         options.appendChild(button);
     });
-
-    document.getElementById("imageModal").classList.add("show");
 }
 
 function openImageModal(title, src){
