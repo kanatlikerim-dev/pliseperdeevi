@@ -1326,8 +1326,8 @@ const kasaRenkleri = [
 ];
 
 const kasaTipleri = [
-    { name:"Kasa", hex:"#f4efe7", file:"kasa.png" },
-    { name:"Slim Kasa", hex:"#c9b79c", file:"slimkasa.png" }
+    { name:"Kasa", file:"kasa.png" },
+    { name:"Slim Kasa", file:"slimkasa.png" }
 ];
 
 const klasikKumaslar = [
@@ -1717,15 +1717,20 @@ function fillKasaTipiChoices(container){
 
     kasaTipleri.forEach(function(tip){
         const div = document.createElement("div");
-        div.className = "choice color-choice";
+        div.className = "choice";
         div.dataset.value = tip.name;
-        div.innerHTML = `<span class="color-dot" style="background:${tip.hex}"></span><span>${tip.name}</span>`;
+        div.textContent = tip.name;
         div.onclick = function(){
             setActiveChoice(container, tip.name);
             queueSaveState();
         };
         container.appendChild(div);
     });
+
+    // Hiç seçim yapılmamışsa varsayılan olarak Kasa kabul edilir ve ekranda da seçili görünür.
+    if(!getActiveValue(container)){
+        setActiveChoice(container, "Kasa");
+    }
 }
 
 function fillColorChoices(container){
@@ -1769,13 +1774,11 @@ function fillFabricChoices(container, fabrics){
 
     container.innerHTML = "";
 
-    fabrics.forEach(function(name, index){
+    fabrics.forEach(function(name){
         const div = document.createElement("div");
-        div.className = "choice fabric-choice";
+        div.className = "choice";
         div.dataset.value = name;
-        div.title = name;
-        div.setAttribute("aria-label", name);
-        div.innerHTML = `<span class="color-dot" style="background:${getFabricSwatchColor(name, index)}"></span>`;
+        div.textContent = name;
         div.onclick = function(){
             setActiveChoice(container, name);
             queueSaveState();
@@ -2985,7 +2988,7 @@ function applyCardData(card, data){
         card.querySelector(".tip").value = "vidali";
     }
 
-    setActiveChoice(card.querySelector(".kasaTipiSecim"), data.kasaTipi || "");
+    setActiveChoice(card.querySelector(".kasaTipiSecim"), data.kasaTipi || "Kasa");
     setActiveChoice(card.querySelector(".kasaSecim"), data.kasa || "");
     setActiveChoice(card.querySelector(".kumasSecim"), data.kumas || "");
     setActiveChoice(card.querySelector(".blackoutSecim"), data.blackout || "");
@@ -3011,7 +3014,7 @@ function applyGlobalData(data){
     if(!data) return;
 
     setGlobalProduct(data.product || "");
-    setActiveChoice(document.querySelector(".globalKasaTipiSecim"), data.kasaTipi || "");
+    setActiveChoice(document.querySelector(".globalKasaTipiSecim"), data.kasaTipi || "Kasa");
     setActiveChoice(document.querySelector(".globalKasaSecim"), data.kasa || "");
     setActiveChoice(document.querySelector(".globalKumasSecim"), data.kumas || "");
     setActiveChoice(document.querySelector(".globalBlackoutSecim"), data.blackout || "");
