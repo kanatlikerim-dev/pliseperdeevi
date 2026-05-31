@@ -1033,74 +1033,83 @@ async function deleteCatalog(id){
 
 
 /* EXCEL FİŞİ - AYAK / VİDA KOPYASI GÜVENLİ SÜRÜM
-   Bu bölüm sayfanın en sonunda tanımlanır ve eski Excel indirme fonksiyonunu güvenli şekilde ezer.
-   PDF ve Yazdır fonksiyonlarına dokunmaz.
+   Giriş sistemine, PDF'e ve Yazdır'a dokunmaz. Sadece Excel İndir fonksiyonunu değiştirir.
 */
-function plfExcelColumnName(col){
-  let name = "";
-  let n = Number(col || 1);
+function plfXlsxCol(n){
+  let s = "";
+  n = Number(n || 1);
   while(n > 0){
-    const rem = (n - 1) % 26;
-    name = String.fromCharCode(65 + rem) + name;
+    const r = (n - 1) % 26;
+    s = String.fromCharCode(65 + r) + s;
     n = Math.floor((n - 1) / 26);
   }
-  return name;
+  return s;
 }
-function plfExcelAddress(row,col){
-  return plfExcelColumnName(col) + String(row);
+function plfXlsxAddr(row,col){
+  return plfXlsxCol(col) + String(row);
 }
-function plfMergeExcelByRC(ws,r1,c1,r2,c2,value,opts){
-  mergeExcelCells(ws, plfExcelAddress(r1,c1) + ":" + plfExcelAddress(r2,c2), value, opts || {});
+function plfXlsxMerge(ws,r1,c1,r2,c2,value,style){
+  const range = plfXlsxAddr(r1,c1) + ":" + plfXlsxAddr(r2,c2);
+  ws.mergeCells(range);
+  ws.getCell(r1,c1).value = value;
+  for(let r = r1; r <= r2; r++){
+    for(let c = c1; c <= c2; c++){
+      applyExcelCellStyle(ws.getCell(r,c), style || {});
+    }
+  }
 }
-function plfDrawExcelSlipBlock(ws,startCol,h,rows,mode){
+function plfXlsxStyleRow(ws,row,c1,c2,style){
+  for(let c = c1; c <= c2; c++){
+    applyExcelCellStyle(ws.getCell(row,c), style || {});
+  }
+}
+function plfXlsxDrawBlock(ws,startCol,header,rows,isRightBlock){
   const RED = "FFFF0000";
   const BLACK = "FF000000";
   const BLUE = "FF0099CC";
-  const isHardware = mode === "hardware";
 
-  plfMergeExcelByRC(ws,1,startCol+1,1,startCol+5,slipTemplateFirmName(h),{size:14,color:BLACK});
-  plfMergeExcelByRC(ws,2,startCol+1,2,startCol+5,h.musteri_ad || "",{size:14,color:BLACK});
-  plfMergeExcelByRC(ws,3,startCol+1,3,startCol+5,h.tarih || "",{size:14,color:BLACK});
-  plfMergeExcelByRC(ws,4,startCol+1,4,startCol+3,h.kasa_cesidi || "",{size:14,color:BLUE});
-  plfMergeExcelByRC(ws,4,startCol+4,4,startCol+5,slipTemplateSystemShort(h),{size:14,color:BLUE});
-  plfMergeExcelByRC(ws,5,startCol+1,5,startCol+5,h.urun_adi || "",{size:14,color:BLACK});
+  plfXlsxMerge(ws,1,startCol+1,1,startCol+5,slipTemplateFirmName(header),{size:14,color:BLACK});
+  plfXlsxMerge(ws,2,startCol+1,2,startCol+5,header.musteri_ad || "",{size:14,color:BLACK});
+  plfXlsxMerge(ws,3,startCol+1,3,startCol+5,header.tarih || "",{size:14,color:BLACK});
+  plfXlsxMerge(ws,4,startCol+1,4,startCol+3,header.kasa_cesidi || "",{size:14,color:BLUE});
+  plfXlsxMerge(ws,4,startCol+4,4,startCol+5,slipTemplateSystemShort(header),{size:14,color:BLUE});
+  plfXlsxMerge(ws,5,startCol+1,5,startCol+5,header.urun_adi || "",{size:14,color:BLACK});
 
   const labels = ["FİRMA","MÜŞTERİ","TARİH","KASA ÇEŞİDİ","ÜRÜN ADI"];
   labels.forEach(function(label,index){
-    const cell = ws.getCell(index + 1, startCol);
+    const cell = ws.getCell(index + 1,startCol);
     cell.value = label;
     applyExcelCellStyle(cell,{size:14,color:RED,align:"left"});
   });
 
-  const headers = isHardware ? ["ADET","EN","BOY","","",""] : ["ADET","EN","BOY","PİLE","İP","m²"];
-  headers.forEach(function(title,index){
+  const heads = isRightBlock ? ["ADET","EN","BOY","","",""] : ["ADET","EN","BOY","PİLE","İP","m²"];
+  heads.forEach(function(title,index){
     const cell = ws.getCell(6,startCol + index);
     cell.value = title;
     applyExcelCellStyle(cell,{size:14,color:RED});
   });
 
-  rows.forEach(function(row,index){
+  rows.forEach(function(item,index){
     const rowNo = 7 + index;
-    ws.getCell(rowNo,startCol).value = row.adet || row.sira;
-    ws.getCell(rowNo,startCol+1).value = row.en === "" ? "" : Number(row.en || 0);
-    ws.getCell(rowNo,startCol+2).value = row.boy === "" ? "" : Number(row.boy || 0);
+    ws.getCell(rowNo,startCol).value = item.adet || item.sira;
+    ws.getCell(rowNo,startCol+1).value = item.en === "" ? "" : Number(item.en || 0);
+    ws.getCell(rowNo,startCol+2).value = item.boy === "" ? "" : Number(item.boy || 0);
 
-    if(isHardware){
+    if(isRightBlock){
       ws.getCell(rowNo,startCol+3).value = "";
       ws.getCell(rowNo,startCol+4).value = "";
       ws.getCell(rowNo,startCol+5).value = "";
     }else{
-      ws.getCell(rowNo,startCol+3).value = row.pile === "" ? "" : Number(row.pile || 0);
-      ws.getCell(rowNo,startCol+4).value = row.ip === "" ? "" : Number(row.ip || 0);
-      ws.getCell(rowNo,startCol+5).value = row.m2 === "" ? "" : Number(row.m2 || 0);
+      ws.getCell(rowNo,startCol+3).value = item.pile === "" ? "" : Number(item.pile || 0);
+      ws.getCell(rowNo,startCol+4).value = item.ip === "" ? "" : Number(item.ip || 0);
+      ws.getCell(rowNo,startCol+5).value = item.m2 === "" ? "" : Number(item.m2 || 0);
     }
 
-    for(let c = startCol; c <= startCol + 5; c++){
-      applyExcelCellStyle(ws.getCell(rowNo,c),{size:14,bold:c===startCol});
-    }
+    plfXlsxStyleRow(ws,rowNo,startCol,startCol+5,{size:14,color:BLACK});
+    applyExcelCellStyle(ws.getCell(rowNo,startCol),{size:14,color:BLACK});
     ws.getCell(rowNo,startCol+1).numFmt = "0.00";
     ws.getCell(rowNo,startCol+2).numFmt = "0.00";
-    if(!isHardware){
+    if(!isRightBlock){
       ws.getCell(rowNo,startCol+3).numFmt = "0";
       ws.getCell(rowNo,startCol+4).numFmt = "0";
       ws.getCell(rowNo,startCol+5).numFmt = "0.00";
@@ -1109,70 +1118,51 @@ function plfDrawExcelSlipBlock(ws,startCol,h,rows,mode){
 
   const totalRow = 7 + rows.length;
   ws.getCell(totalRow,startCol).value = "TOPLAM";
-  ws.getCell(totalRow,startCol+1).value = Number(h.toplam_adet || 0);
-
-  if(!isHardware){
-    ws.getCell(totalRow,startCol+5).value = Number(h.toplam_m2 || 0);
+  ws.getCell(totalRow,startCol+1).value = Number(header.toplam_adet || 0);
+  if(!isRightBlock){
+    ws.getCell(totalRow,startCol+5).value = Number(header.toplam_m2 || 0);
     ws.getCell(totalRow,startCol+5).numFmt = "0.00";
   }
-
-  for(let c = startCol; c <= startCol + 5; c++){
-    applyExcelCellStyle(ws.getCell(totalRow,c),{size:14,color:(c===startCol || (!isHardware && c===startCol+5)) ? RED : BLACK});
-  }
+  plfXlsxStyleRow(ws,totalRow,startCol,startCol+5,{size:14,color:BLACK});
   applyExcelCellStyle(ws.getCell(totalRow,startCol),{size:14,color:RED,align:"left"});
+  if(!isRightBlock) applyExcelCellStyle(ws.getCell(totalRow,startCol+5),{size:14,color:RED});
 
-  if(isHardware){
-    const toplamAdet = Number(h.toplam_adet || 0);
+  if(isRightBlock){
     const ayakRow = totalRow + 1;
     const vidaRow = totalRow + 2;
-
+    const totalQty = Number(header.toplam_adet || 0);
     ws.getCell(ayakRow,startCol).value = "AYAK";
-    ws.getCell(ayakRow,startCol+1).value = toplamAdet * 4;
+    ws.getCell(ayakRow,startCol+1).value = totalQty * 4;
     ws.getCell(vidaRow,startCol).value = "VİDA";
-    ws.getCell(vidaRow,startCol+1).value = toplamAdet * 8 + 4;
-
-    for(let r = ayakRow; r <= vidaRow; r++){
-      for(let c = startCol; c <= startCol + 5; c++){
-        applyExcelCellStyle(ws.getCell(r,c),{size:14,color:BLACK,align:c===startCol?"left":"center"});
-      }
-    }
+    ws.getCell(vidaRow,startCol+1).value = totalQty * 8 + 4;
+    plfXlsxStyleRow(ws,ayakRow,startCol,startCol+5,{size:14,color:BLACK,align:"center"});
+    plfXlsxStyleRow(ws,vidaRow,startCol,startCol+5,{size:14,color:BLACK,align:"center"});
+    applyExcelCellStyle(ws.getCell(ayakRow,startCol),{size:14,color:BLACK,align:"left"});
+    applyExcelCellStyle(ws.getCell(vidaRow,startCol),{size:14,color:BLACK,align:"left"});
     return vidaRow;
   }
 
   const noteRow = totalRow + 1;
-  const noteEndRow = noteRow + 1;
+  const noteEnd = noteRow + 1;
   ws.getCell(noteRow,startCol).value = "NOT";
   applyExcelCellStyle(ws.getCell(noteRow,startCol),{size:14,color:RED,align:"left"});
-  plfMergeExcelByRC(ws,noteRow,startCol+1,noteEndRow,startCol+5,slipTemplateNote(h),{size:14,color:BLACK});
-  applyExcelCellStyle(ws.getCell(noteEndRow,startCol),{size:12,bold:false});
-  ws.getCell(noteRow,startCol+1).alignment = {horizontal:"center", vertical:"middle", wrapText:true};
-  return noteEndRow;
+  plfXlsxMerge(ws,noteRow,startCol+1,noteEnd,startCol+5,slipTemplateNote(header),{size:14,color:BLACK});
+  applyExcelCellStyle(ws.getCell(noteEnd,startCol),{size:12,bold:false});
+  return noteEnd;
 }
 async function downloadSlipExcel(code){
   try{
     const current = collectCurrentSlip();
-    const h = current.h;
+    const header = current.h;
     const rows = slipTemplateRows(current.details);
-
-    if(!window.ExcelJS){
-      throw new Error("Excel şablon kütüphanesi yüklenemedi. Sayfayı yenileyip tekrar deneyin.");
-    }
+    if(!window.ExcelJS) throw new Error("Excel şablon kütüphanesi yüklenemedi. Sayfayı yenileyip tekrar deneyin.");
 
     const workbook = new ExcelJS.Workbook();
     workbook.creator = "Prestij Life";
     workbook.created = new Date();
-
-    const ws = workbook.addWorksheet("Sayfa1", {
-      pageSetup:{
-        paperSize: 9,
-        orientation: "landscape",
-        fitToPage: true,
-        fitToWidth: 1,
-        fitToHeight: 1,
-        margins:{left:0.15,right:0.15,top:0.15,bottom:0.15,header:0.10,footer:0.10}
-      }
+    const ws = workbook.addWorksheet("Sayfa1",{
+      pageSetup:{paperSize:9,orientation:"landscape",fitToPage:true,fitToWidth:1,fitToHeight:1,margins:{left:0.15,right:0.15,top:0.15,bottom:0.15,header:0.10,footer:0.10}}
     });
-
     ws.views = [{showGridLines:true}];
     ws.properties.defaultRowHeight = 18;
     ws.columns = [
@@ -1180,18 +1170,16 @@ async function downloadSlipExcel(code){
       {width:3.8},
       {width:9.8},{width:8.8},{width:9.8},{width:8.8},{width:8.8},{width:8.8}
     ];
-
     for(let r = 1; r <= 80; r++) ws.getRow(r).height = 18;
     ws.getRow(6).height = 22;
 
-    const leftEndRow = plfDrawExcelSlipBlock(ws,1,h,rows,"detail");
-    const rightEndRow = plfDrawExcelSlipBlock(ws,8,h,rows,"hardware");
-    const endRow = Math.max(leftEndRow,rightEndRow);
-
+    const leftEnd = plfXlsxDrawBlock(ws,1,header,rows,false);
+    const rightEnd = plfXlsxDrawBlock(ws,8,header,rows,true);
+    const endRow = Math.max(leftEnd,rightEnd);
     ws.pageSetup.printArea = "A1:M" + endRow;
 
     const buffer = await workbook.xlsx.writeBuffer();
-    downloadExcelBlob(buffer, makeSafeFileName(code || h.fis_kodu || "imalat-fisi") + ".xlsx");
+    downloadExcelBlob(buffer,makeSafeFileName(code || header.fis_kodu || "imalat-fisi") + ".xlsx");
   }catch(e){
     showMessage("slipsError","Excel indirilemedi. " + e.message);
   }
