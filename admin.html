@@ -481,49 +481,49 @@ function writePdfCell(doc,x,y,w,h,text,opt){
 function drawSlipPdfPage(doc,h,details){
   const red = [220,0,0];
   const blue = [0,145,200];
-  const startX = 10;
+  const totalW = 150;
+  const startX = (210 - totalW) / 2;
   let y = 10;
-  const totalW = 190;
-  const colW = [31,31,32,32,32,32];
+  const colW = [25,25,25,25,25,25];
   const x = [startX];
   for(let i=0;i<colW.length-1;i++) x.push(x[i] + colW[i]);
-  const topH = 10;
-  const rowH = 9;
-  const headerH = 16;
-  writePdfCell(doc,x[0],y,colW[0]+colW[1],topH,"FIRMA",{bold:true,size:14,color:red,align:"left"});
-  writePdfCell(doc,x[2],y,colW[2]+colW[3]+colW[4]+colW[5],topH,slipTemplateFirmName(h),{bold:true,size:14}); y += topH;
-  writePdfCell(doc,x[0],y,colW[0]+colW[1],topH,"MUSTERI",{bold:true,size:14,color:red,align:"left"});
-  writePdfCell(doc,x[2],y,colW[2]+colW[3]+colW[4]+colW[5],topH,h.musteri_ad || "",{bold:true,size:14}); y += topH;
-  writePdfCell(doc,x[0],y,colW[0]+colW[1],topH,"TARIH",{bold:true,size:14,color:red,align:"left"});
-  writePdfCell(doc,x[2],y,colW[2]+colW[3]+colW[4]+colW[5],topH,h.tarih || "",{bold:true,size:13}); y += topH;
-  writePdfCell(doc,x[0],y,colW[0]+colW[1],topH,"KASA CESIDI",{bold:true,size:13,color:red,align:"left"});
-  writePdfCell(doc,x[2],y,colW[2]+colW[3],topH,h.kasa_cesidi || "",{bold:true,size:13,color:blue});
-  writePdfCell(doc,x[4],y,colW[4]+colW[5],topH,slipTemplateSystemShort(h),{bold:true,size:13,color:blue}); y += topH;
-  writePdfCell(doc,x[0],y,colW[0]+colW[1],topH,"URUN ADI",{bold:true,size:13,color:red,align:"left"});
-  writePdfCell(doc,x[2],y,colW[2]+colW[3]+colW[4]+colW[5],topH,h.urun_adi || "",{bold:true,size:12}); y += topH;
+  const topH = 8;
+  const rowH = 7;
+  const headerH = 12;
+  writePdfCell(doc,x[0],y,colW[0]+colW[1],topH,"FIRMA",{bold:true,size:11,color:red,align:"left"});
+  writePdfCell(doc,x[2],y,colW[2]+colW[3]+colW[4]+colW[5],topH,slipTemplateFirmName(h),{bold:true,size:11}); y += topH;
+  writePdfCell(doc,x[0],y,colW[0]+colW[1],topH,"MUSTERI",{bold:true,size:11,color:red,align:"left"});
+  writePdfCell(doc,x[2],y,colW[2]+colW[3]+colW[4]+colW[5],topH,h.musteri_ad || "",{bold:true,size:11}); y += topH;
+  writePdfCell(doc,x[0],y,colW[0]+colW[1],topH,"TARIH",{bold:true,size:11,color:red,align:"left"});
+  writePdfCell(doc,x[2],y,colW[2]+colW[3]+colW[4]+colW[5],topH,h.tarih || "",{bold:true,size:11}); y += topH;
+  writePdfCell(doc,x[0],y,colW[0]+colW[1],topH,"KASA CESIDI",{bold:true,size:10,color:red,align:"left"});
+  writePdfCell(doc,x[2],y,colW[2]+colW[3],topH,h.kasa_cesidi || "",{bold:true,size:10,color:blue});
+  writePdfCell(doc,x[4],y,colW[4]+colW[5],topH,slipTemplateSystemShort(h),{bold:true,size:10,color:blue}); y += topH;
+  writePdfCell(doc,x[0],y,colW[0]+colW[1],topH,"URUN ADI",{bold:true,size:10,color:red,align:"left"});
+  writePdfCell(doc,x[2],y,colW[2]+colW[3]+colW[4]+colW[5],topH,h.urun_adi || "",{bold:true,size:9}); y += topH;
   ["ADET","EN","BOY","PILE","IP","m2"].forEach(function(label,i){
-    writePdfCell(doc,x[i],y,colW[i],headerH,label,{bold:true,size:14,color:red});
+    writePdfCell(doc,x[i],y,colW[i],headerH,label,{bold:true,size:11,color:red});
   });
   y += headerH;
   const rows = slipTemplateRows(details);
   rows.forEach(function(r){
-    writePdfCell(doc,x[0],y,colW[0],rowH,r.adet || r.sira,{bold:true,size:12});
+    writePdfCell(doc,x[0],y,colW[0],rowH,r.adet || r.sira,{bold:true,size:9});
     writePdfCell(doc,x[1],y,colW[1],rowH,slipFormatDecimal(r.en),{size:12});
     writePdfCell(doc,x[2],y,colW[2],rowH,slipFormatDecimal(r.boy),{size:12});
     writePdfCell(doc,x[3],y,colW[3],rowH,slipFormatPlain(r.pile),{size:12});
     writePdfCell(doc,x[4],y,colW[4],rowH,slipFormatPlain(r.ip),{size:12});
-    writePdfCell(doc,x[5],y,colW[5],rowH,r.m2 === "" ? "" : slipFormatDecimal(r.m2),{size:12});
+    writePdfCell(doc,x[5],y,colW[5],rowH,r.m2 === "" ? "" : slipFormatDecimal(r.m2),{size:9});
     y += rowH;
   });
-  writePdfCell(doc,x[0],y,colW[0],rowH,"TOPLAM",{bold:true,size:12,color:red,align:"left"});
+  writePdfCell(doc,x[0],y,colW[0],rowH,"TOPLAM",{bold:true,size:9,color:red,align:"left"});
   writePdfCell(doc,x[1],y,colW[1],rowH,h.toplam_adet || "",{size:12});
   writePdfCell(doc,x[2],y,colW[2],rowH,"",{size:12});
   writePdfCell(doc,x[3],y,colW[3],rowH,"",{size:12});
   writePdfCell(doc,x[4],y,colW[4],rowH,"",{size:12});
-  writePdfCell(doc,x[5],y,colW[5],rowH,slipFormatDecimal(h.toplam_m2 || 0),{bold:true,size:12,color:red});
+  writePdfCell(doc,x[5],y,colW[5],rowH,slipFormatDecimal(h.toplam_m2 || 0),{bold:true,size:9,color:red});
   y += rowH;
-  writePdfCell(doc,x[0],y,colW[0],rowH,"NOT",{bold:true,size:13,color:red,align:"left"});
-  writePdfCell(doc,x[1],y,totalW-colW[0],rowH,slipTemplateNote(h),{bold:true,size:13});
+  writePdfCell(doc,x[0],y,colW[0],rowH,"NOT",{bold:true,size:10,color:red,align:"left"});
+  writePdfCell(doc,x[1],y,totalW-colW[0],rowH,slipTemplateNote(h),{bold:true,size:10});
 }
 function downloadSlipPdf(code){
   try{
@@ -631,12 +631,12 @@ async function downloadSlipExcel(code){
     ws.views = [{showGridLines:true}];
     ws.properties.defaultRowHeight = 20;
     ws.columns = [
-      {width:17.5},
-      {width:12},
-      {width:12},
-      {width:12},
-      {width:12},
-      {width:12}
+      {width:8.5},
+      {width:8.5},
+      {width:8.5},
+      {width:8.5},
+      {width:8.5},
+      {width:8.5}
     ];
 
     const RED = "FFFF0000";
