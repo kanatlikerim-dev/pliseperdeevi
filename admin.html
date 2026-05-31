@@ -472,19 +472,20 @@ function writePdfCell(doc,x,y,w,h,text,opt){
   doc.setFontSize(opt.size || 12);
   doc.setTextColor(color[0], color[1], color[2]);
   const align = opt.align || "center";
-  const valignOffset = h / 2 + ((opt.size || 12) * 0.35);
+  const fontMm = (opt.size || 12) * 0.3528;
+  const valignOffset = h / 2 + fontMm / 3;
   let tx = x + w / 2;
   if(align === "left") tx = x + 2;
   if(align === "right") tx = x + w - 2;
-  doc.text(pdfSafeText(text), tx, y + valignOffset, {align:align, maxWidth:w - 4});
+  doc.text(pdfSafeText(text), tx, y + valignOffset, {align:align, maxWidth:w - 3});
 }
 function drawSlipPdfPage(doc,h,details){
   const red = [220,0,0];
   const blue = [0,145,200];
-  const totalW = 150;
+  const totalW = 154;
   const startX = (210 - totalW) / 2;
   let y = 10;
-  const colW = [25,25,25,25,25,25];
+  const colW = [26,25,27,25,25,26];
   const x = [startX];
   for(let i=0;i<colW.length-1;i++) x.push(x[i] + colW[i]);
   const topH = 8;
@@ -631,12 +632,12 @@ async function downloadSlipExcel(code){
     ws.views = [{showGridLines:true}];
     ws.properties.defaultRowHeight = 20;
     ws.columns = [
-      {width:8.5},
-      {width:8.5},
-      {width:8.5},
-      {width:8.5},
-      {width:8.5},
-      {width:8.5}
+      {width:9.8},
+      {width:8.8},
+      {width:9.8},
+      {width:8.8},
+      {width:8.8},
+      {width:8.8}
     ];
 
     const RED = "FFFF0000";
