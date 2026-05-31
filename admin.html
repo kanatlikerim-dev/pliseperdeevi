@@ -340,56 +340,12 @@ function clearCatalogForm(){catalogEditId.value="";catalogProductSelect.value=""
 function readFileAsBase64(file){return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result||""));reader.onerror=()=>reject(new Error("Görsel okunamadı."));reader.readAsDataURL(file)})}
 async function saveCatalog(){hideMessages(["catalogError","catalogSuccess"]);try{const opt=catalogProductSelect.selectedOptions[0];const file=catalogImageInput.files&&catalogImageInput.files[0]?catalogImageInput.files[0]:null;const catalog={katalog_id:catalogEditId.value,urun_id:catalogProductSelect.value,urun_adi:opt?opt.dataset.name:"",dosya_adi:catalogFileInput.value,durum:catalogStatusInput.value,not:catalogNoteInput.value,gorsel_url:catalogExistingUrl.value,drive_file_id:catalogExistingDriveId.value};if(file){catalog.image_data=await readFileAsBase64(file);catalog.image_mime_type=file.type||"image/png";catalog.image_file_name=file.name||catalogFileInput.value||"katalog.png";if(!catalog.dosya_adi)catalog.dosya_adi=file.name}const d=await apiPost({action:"saveCatalog",apiKey:ADMIN_API_KEY,catalog},30000);if(!d.success)throw new Error(d.message);showMessage("catalogSuccess","Katalog kaydedildi.");clearCatalogForm();loadCatalogData()}catch(e){showMessage("catalogError","Katalog kaydedilemedi. "+e.message)}}
 async function deleteCatalog(id){if(!confirm("Katalog silinsin mi?"))return;try{const d=await apiPost({action:"deleteCatalog",apiKey:ADMIN_API_KEY,katalog_id:id});if(!d.success)throw new Error(d.message);showMessage("catalogSuccess","Katalog silindi.");loadCatalogData()}catch(e){showMessage("catalogError","Katalog silinemedi. "+e.message)}}
-function buildOrderSlipMap(slips){
-  const map = {};
-  (slips || []).forEach(function(slip){
-    const code = String(slip.siparis_kodu || "").trim();
-    if(!code) return;
-    if(!map[code]) map[code] = {count:0,codes:[]};
-    map[code].count++;
-    if(slip.fis_kodu) map[code].codes.push(slip.fis_kodu);
-  });
-  return map;
-}
-function getOrderSlipInfo(code){
-  return orderSlipMap[String(code || "").trim()] || {count:0,codes:[]};
-}
-function slipStatusHTML(code){
-  const info = getOrderSlipInfo(code);
-  if(info.count > 0){
-    const title = info.codes.length ? info.codes.join(", ") : "Fiş oluşturuldu";
-    return `<span class="tag" title="${attr(title)}">Fiş Oluşturuldu</span>`;
-  }
-  return `<span class="tag" style="opacity:.75">Fiş Yok</span>`;
-}
-async function getSlipsForOrder(code){
-  try{
-    const d = await apiPost({action:"listSlips",apiKey:ADMIN_API_KEY,orderCode:code},16000);
-    if(!d.success) return [];
-    return d.slips || [];
-  }catch(e){
-    return [];
-  }
-}
-async function refreshOrderSlipMap(){
-  try{
-    const d = await apiPost({action:"listSlips",apiKey:ADMIN_API_KEY},18000);
-    if(d.success){
-      orderSlipMap = buildOrderSlipMap(d.slips || []);
-      return true;
-    }
-  }catch(e){}
-  orderSlipMap = {};
-  return false;
-}
 async function loadOrders(){
   hideMessages(["ordersError","ordersSuccess","ordersWarning"]);
   try{
     const d=await apiPost({action:"listOrders",apiKey:ADMIN_API_KEY,dateStart:orderDateStart.value,dateEnd:orderDateEnd.value,source:orderSourceFilter.value,sellerId:orderSellerFilter.value,status:orderStatusFilter.value},18000);
     if(!d.success)throw new Error(d.message);
-    const slipOk = await refreshOrderSlipMap();
     renderOrders(d.orders||[]);
-    if(!slipOk) showMessage("ordersWarning","Siparişler listelendi ancak fiş durumları alınamadı.");
   }catch(e){showMessage("ordersError","Siparişler alınamadı. "+e.message)}
 }
 function renderOrders(list){
@@ -399,7 +355,7 @@ function renderOrders(list){
     const source=o.kaynak==="site"?"Merkez / Site":"Manuel";
     const seller=o.kaynak==="site"?"Merkez / Site":(o.satici_adi||"-");
     const tr=document.createElement("tr");
-    tr.innerHTML=`<td><strong>${esc(o.siparis_kodu)}</strong></td><td>${formatDate(o.tarih)}</td><td><span class="tag">${source}</span></td><td>${esc(seller)}</td><td><strong>${esc(o.musteri_ad)}</strong><small>${esc(o.telefon)}</small></td><td>${num(o.toplam_gercek_m2)} m²</td><td>${tl(o.musteri_toplam_tutar)}</td><td>${o.satici_hesap_tutar!==""?tl(o.satici_hesap_tutar):"-"}</td><td>${slipStatusHTML(o.siparis_kodu)}</td><td><span class="tag">${esc(o.durum||"Yeni")}</span></td><td><button class="btn-light" onclick="loadOrderDetail('${attr(o.siparis_kodu)}')">Detay</button></td>`;
+    tr.innerHTML=`<td><strong>${esc(o.siparis_kodu)}</strong></td><td>${formatDate(o.tarih)}</td><td><span class="tag">${source}</span></td><td>${esc(seller)}</td><td><strong>${esc(o.musteri_ad)}</strong><small>${esc(o.telefon)}</small></td><td>${num(o.toplam_gercek_m2)} m²</td><td>${tl(o.musteri_toplam_tutar)}</td><td>${o.satici_hesap_tutar!==""?tl(o.satici_hesap_tutar):"-"}</td><td><span class="tag">${esc(o.durum||"Yeni")}</span></td><td><button class="btn-light" onclick="loadOrderDetail('${attr(o.siparis_kodu)}')">Detay</button></td>`;
     ordersTableBody.appendChild(tr)
   });
   ordersTableWrap.style.display="block"
@@ -409,30 +365,8 @@ async function loadOrderDetail(code){
   try{
     const d=await apiPost({action:"getOrder",apiKey:ADMIN_API_KEY,siparis_kodu:code},16000);
     if(!d.success)throw new Error(d.message);
-    const slips = await getSlipsForOrder(code);
     renderOrderDetail(d.order,d.details||[]);
-    renderOrderSlipInfo(code,slips);
   }catch(e){orderDetailArea.innerHTML="";showMessage("ordersError",e.message)}
-}
-function renderOrderSlipInfo(code,slips){
-  const box = orderDetailArea.querySelector(".detail-box");
-  if(!box) return;
-  const list = slips || [];
-  const html = list.length ? `<div class="info-tile" style="margin-bottom:12px"><span>Fiş Durumu</span><strong>Fiş Oluşturuldu</strong><small>${esc(list.map(s=>s.fis_kodu).filter(Boolean).join(", "))}</small></div>` : `<div class="info-tile" style="margin-bottom:12px"><span>Fiş Durumu</span><strong>Fiş Yok</strong><small>Bu sipariş için henüz imalat fişi oluşturulmadı.</small></div>`;
-  const actions = list.length ? `<div class="actions" style="margin-bottom:12px"><button class="btn-light" onclick="goToOrderSlips('${attr(code)}')">Bağlı Fişleri Aç</button></div>` : "";
-  const grid = box.querySelector(".detail-grid");
-  if(grid) grid.insertAdjacentHTML("afterend", html + actions);
-}
-function goToOrderSlips(code){
-  document.querySelectorAll(".module-card").forEach(x=>x.classList.remove("active"));
-  const cards = Array.from(document.querySelectorAll(".module-card"));
-  const imalatCard = cards.find(c=>String(c.getAttribute("onclick")||"").includes("imalat"));
-  if(imalatCard) imalatCard.classList.add("active");
-  document.querySelectorAll(".panel-section").forEach(x=>x.classList.remove("active"));
-  document.getElementById("section-imalat").classList.add("active");
-  slipOrderCode.value = code;
-  loadSlips();
-  document.getElementById("section-imalat").scrollIntoView({behavior:"smooth",block:"start"});
 }
 function orderDetailM2(item){
   const en = Number(String(item.gercek_en ?? item.en ?? "").replace(",", "."));
@@ -461,23 +395,10 @@ async function updateOrderStatus(code){try{const d=await apiPost({action:"update
 async function deleteOrder(code){if(!confirm(code+" siparişi silinsin mi? Bağlı imalat fişleri de silinir."))return;try{const d=await apiPost({action:"deleteOrder",apiKey:ADMIN_API_KEY,siparis_kodu:code},16000);if(!d.success)throw new Error(d.message);showMessage("ordersSuccess","Sipariş silindi.");orderDetailArea.innerHTML="";loadOrders();loadSlips();loadAccounting()}catch(e){showMessage("ordersError","Sipariş silinemedi. "+e.message)}}
 async function createProductionSlips(code){
   try{
-    const existing = await getSlipsForOrder(code);
-    if(existing.length){
-      const codes = existing.map(s=>s.fis_kodu).filter(Boolean).join(", ");
-      const ok = confirm("Bu sipariş için daha önce imalat fişi oluşturulmuş.
-
-Fiş: "+(codes||"Mevcut fiş")+"
-
-Yine de tekrar fiş oluşturulsun mu?");
-      if(!ok) return;
-    }
     const d=await apiPost({action:"createProductionSlips",apiKey:ADMIN_API_KEY,siparis_kodu:code},16000);
     if(!d.success)throw new Error(d.message);
     showMessage("ordersSuccess","İmalat fişi oluşturuldu.");
-    await refreshOrderSlipMap();
-    loadOrders();
     loadSlips();
-    loadOrderDetail(code);
   }catch(e){showMessage("ordersError","Fiş oluşturulamadı. "+e.message)}
 }
 function clearOrderFilters(){orderDateStart.value="";orderDateEnd.value="";orderSourceFilter.value="";orderSellerFilter.value="";orderStatusFilter.value="";loadOrders()}
@@ -715,123 +636,11 @@ function downloadExcelBlob(buffer,fileName){
   a.click();
   setTimeout(function(){document.body.removeChild(a); URL.revokeObjectURL(url);},300);
 }
-function excelColumnName(col){
-  let name = "";
-  let n = Number(col || 1);
-  while(n > 0){
-    const r = (n - 1) % 26;
-    name = String.fromCharCode(65 + r) + name;
-    n = Math.floor((n - 1) / 26);
-  }
-  return name;
-}
-function excelAddress(row,col){
-  return excelColumnName(col) + String(row);
-}
-function mergeExcelByRC(ws,r1,c1,r2,c2,value,opts){
-  mergeExcelCells(ws, excelAddress(r1,c1) + ":" + excelAddress(r2,c2), value, opts || {});
-}
-function drawExcelSlipBlock(ws,startCol,h,rows,mode){
-  const RED = "FFFF0000";
-  const BLACK = "FF000000";
-  const BLUE = "FF0099CC";
-  const isHardware = mode === "hardware";
-
-  mergeExcelByRC(ws,1,startCol+1,1,startCol+5,slipTemplateFirmName(h),{size:14,color:BLACK});
-  mergeExcelByRC(ws,2,startCol+1,2,startCol+5,h.musteri_ad || "",{size:14,color:BLACK});
-  mergeExcelByRC(ws,3,startCol+1,3,startCol+5,h.tarih || "",{size:14,color:BLACK});
-  mergeExcelByRC(ws,4,startCol+1,4,startCol+3,h.kasa_cesidi || "",{size:14,color:BLUE});
-  mergeExcelByRC(ws,4,startCol+4,4,startCol+5,slipTemplateSystemShort(h),{size:14,color:BLUE});
-  mergeExcelByRC(ws,5,startCol+1,5,startCol+5,h.urun_adi || "",{size:14,color:BLACK});
-
-  const labels = ["FİRMA","MÜŞTERİ","TARİH","KASA ÇEŞİDİ","ÜRÜN ADI"];
-  labels.forEach(function(label,index){
-    const cell = ws.getCell(index+1,startCol);
-    cell.value = label;
-    applyExcelCellStyle(cell,{size:14,color:RED,align:"left"});
-  });
-
-  const headers = isHardware ? ["ADET","EN","BOY","","",""] : ["ADET","EN","BOY","PİLE","İP","m²"];
-  headers.forEach(function(title,index){
-    const cell = ws.getCell(6,startCol+index);
-    cell.value = title;
-    applyExcelCellStyle(cell,{size:14,color:RED});
-  });
-
-  rows.forEach(function(r,index){
-    const rowNo = 7 + index;
-    ws.getCell(rowNo,startCol).value = r.adet || r.sira;
-    ws.getCell(rowNo,startCol+1).value = r.en === "" ? "" : Number(r.en || 0);
-    ws.getCell(rowNo,startCol+2).value = r.boy === "" ? "" : Number(r.boy || 0);
-
-    if(!isHardware){
-      ws.getCell(rowNo,startCol+3).value = r.pile === "" ? "" : Number(r.pile || 0);
-      ws.getCell(rowNo,startCol+4).value = r.ip === "" ? "" : Number(r.ip || 0);
-      ws.getCell(rowNo,startCol+5).value = r.m2 === "" ? "" : Number(r.m2 || 0);
-    }else{
-      ws.getCell(rowNo,startCol+3).value = "";
-      ws.getCell(rowNo,startCol+4).value = "";
-      ws.getCell(rowNo,startCol+5).value = "";
-    }
-
-    for(let c = startCol; c <= startCol+5; c++){
-      applyExcelCellStyle(ws.getCell(rowNo,c),{size:14,bold:c===startCol});
-    }
-    ws.getCell(rowNo,startCol+1).numFmt = "0.00";
-    ws.getCell(rowNo,startCol+2).numFmt = "0.00";
-    if(!isHardware){
-      ws.getCell(rowNo,startCol+3).numFmt = "0";
-      ws.getCell(rowNo,startCol+4).numFmt = "0";
-      ws.getCell(rowNo,startCol+5).numFmt = "0.00";
-    }
-  });
-
-  const totalRow = 7 + rows.length;
-  ws.getCell(totalRow,startCol).value = "TOPLAM";
-  ws.getCell(totalRow,startCol+1).value = Number(h.toplam_adet || 0);
-  if(!isHardware){
-    ws.getCell(totalRow,startCol+5).value = Number(h.toplam_m2 || 0);
-    ws.getCell(totalRow,startCol+5).numFmt = "0.00";
-  }
-  for(let c = startCol; c <= startCol+5; c++){
-    applyExcelCellStyle(ws.getCell(totalRow,c),{size:14,color:(c===startCol || (!isHardware && c===startCol+5)) ? RED : BLACK});
-  }
-  applyExcelCellStyle(ws.getCell(totalRow,startCol),{size:14,color:RED,align:"left"});
-
-  if(isHardware){
-    const ayakRow = totalRow + 1;
-    const vidaRow = totalRow + 2;
-    const toplamAdet = Number(h.toplam_adet || 0);
-    const ayak = toplamAdet * 4;
-    const vida = toplamAdet * 8 + 4;
-
-    ws.getCell(ayakRow,startCol).value = "AYAK";
-    ws.getCell(ayakRow,startCol+1).value = ayak;
-    ws.getCell(vidaRow,startCol).value = "VİDA";
-    ws.getCell(vidaRow,startCol+1).value = vida;
-
-    for(let r = ayakRow; r <= vidaRow; r++){
-      for(let c = startCol; c <= startCol+5; c++){
-        applyExcelCellStyle(ws.getCell(r,c),{size:14,color:BLACK,align:c===startCol?"left":"center"});
-      }
-    }
-    return vidaRow;
-  }
-
-  const noteRow = totalRow + 1;
-  const noteEndRow = noteRow + 1;
-  ws.getCell(noteRow,startCol).value = "NOT";
-  applyExcelCellStyle(ws.getCell(noteRow,startCol),{size:14,color:RED,align:"left"});
-  mergeExcelByRC(ws,noteRow,startCol+1,noteEndRow,startCol+5,slipTemplateNote(h),{size:14,color:BLACK});
-  applyExcelCellStyle(ws.getCell(noteEndRow,startCol),{size:12,bold:false});
-  ws.getCell(noteRow,startCol+1).alignment = {horizontal:"center", vertical:"middle", wrapText:true};
-  return noteEndRow;
-}
 async function downloadSlipExcel(code){
   try{
     const current = collectCurrentSlip();
     const h = current.h;
-    const rows = slipTemplateRows(current.details);
+    const details = current.details;
 
     if(!window.ExcelJS){
       throw new Error("Excel şablon kütüphanesi yüklenemedi. Sayfayı yenileyip tekrar deneyin.");
@@ -844,30 +653,101 @@ async function downloadSlipExcel(code){
     const ws = workbook.addWorksheet("Sayfa1", {
       pageSetup:{
         paperSize: 9,
-        orientation: "landscape",
+        orientation: "portrait",
         fitToPage: true,
         fitToWidth: 1,
         fitToHeight: 1,
-        margins:{left:0.15,right:0.15,top:0.15,bottom:0.15,header:0.10,footer:0.10}
+        margins:{left:0.20,right:0.20,top:0.20,bottom:0.20,header:0.10,footer:0.10}
       }
     });
 
     ws.views = [{showGridLines:true}];
     ws.properties.defaultRowHeight = 18;
     ws.columns = [
-      {width:9.8},{width:8.8},{width:9.8},{width:8.8},{width:8.8},{width:8.8},
-      {width:3.8},
-      {width:9.8},{width:8.8},{width:9.8},{width:8.8},{width:8.8},{width:8.8}
+      {width:9.8},
+      {width:8.8},
+      {width:9.8},
+      {width:8.8},
+      {width:8.8},
+      {width:8.8}
     ];
+
+    const RED = "FFFF0000";
+    const BLACK = "FF000000";
+    const BLUE = "FF0099CC";
 
     for(let r = 1; r <= 80; r++) ws.getRow(r).height = 18;
     ws.getRow(6).height = 22;
 
-    const leftEnd = drawExcelSlipBlock(ws,1,h,rows,"detail");
-    const rightEnd = drawExcelSlipBlock(ws,8,h,rows,"hardware");
-    const endRow = Math.max(leftEnd,rightEnd);
+    mergeExcelCells(ws,"B1:F1",slipTemplateFirmName(h),{size:14,color:BLACK});
+    mergeExcelCells(ws,"B2:F2",h.musteri_ad || "",{size:14,color:BLACK});
+    mergeExcelCells(ws,"B3:F3",h.tarih || "",{size:14,color:BLACK});
+    mergeExcelCells(ws,"B4:D4",h.kasa_cesidi || "",{size:14,color:BLUE});
+    mergeExcelCells(ws,"E4:F4",slipTemplateSystemShort(h),{size:14,color:BLUE});
+    mergeExcelCells(ws,"B5:F5",h.urun_adi || "",{size:14,color:BLACK});
 
-    ws.pageSetup.printArea = "A1:M" + endRow;
+    ws.getCell("A1").value = "FİRMA";
+    ws.getCell("A2").value = "MÜŞTERİ";
+    ws.getCell("A3").value = "TARİH";
+    ws.getCell("A4").value = "KASA ÇEŞİDİ";
+    ws.getCell("A5").value = "ÜRÜN ADI";
+
+    ["A1","A2","A3","A4","A5"].forEach(function(addr){
+      applyExcelCellStyle(ws.getCell(addr),{size:14,color:RED,align:"left"});
+    });
+
+    const headers = ["ADET","EN","BOY","PİLE","İP","m²"];
+    headers.forEach(function(title, index){
+      const cell = ws.getCell(6,index+1);
+      cell.value = title;
+      applyExcelCellStyle(cell,{size:14,color:RED});
+    });
+
+    const rows = slipTemplateRows(details);
+    rows.forEach(function(r,index){
+      const rowNo = 7 + index;
+      ws.getCell(rowNo,1).value = r.adet || r.sira;
+      ws.getCell(rowNo,2).value = r.en === "" ? "" : Number(r.en || 0);
+      ws.getCell(rowNo,3).value = r.boy === "" ? "" : Number(r.boy || 0);
+      ws.getCell(rowNo,4).value = r.pile === "" ? "" : Number(r.pile || 0);
+      ws.getCell(rowNo,5).value = r.ip === "" ? "" : Number(r.ip || 0);
+      ws.getCell(rowNo,6).value = r.m2 === "" ? "" : Number(r.m2 || 0);
+
+      for(let c = 1; c <= 6; c++){
+        applyExcelCellStyle(ws.getCell(rowNo,c),{size:14,bold:c===1});
+      }
+      ws.getCell(rowNo,2).numFmt = "0.00";
+      ws.getCell(rowNo,3).numFmt = "0.00";
+      ws.getCell(rowNo,4).numFmt = "0";
+      ws.getCell(rowNo,5).numFmt = "0";
+      ws.getCell(rowNo,6).numFmt = "0.00";
+    });
+
+    const totalRow = 7 + rows.length;
+    const noteRow = totalRow + 1;
+    const noteEndRow = noteRow + 1;
+
+    ws.getCell(totalRow,1).value = "TOPLAM";
+    ws.getCell(totalRow,2).value = Number(h.toplam_adet || 0);
+    ws.getCell(totalRow,6).value = Number(h.toplam_m2 || 0);
+    ws.getCell(totalRow,6).numFmt = "0.00";
+
+    for(let c = 1; c <= 6; c++){
+      applyExcelCellStyle(ws.getCell(totalRow,c),{size:14,color:(c===1 || c===6) ? RED : BLACK});
+    }
+    applyExcelCellStyle(ws.getCell(totalRow,1),{size:14,color:RED,align:"left"});
+    applyExcelCellStyle(ws.getCell(totalRow,6),{size:14,color:RED});
+
+    ws.getCell(noteRow,1).value = "NOT";
+    applyExcelCellStyle(ws.getCell(noteRow,1),{size:14,color:RED,align:"left"});
+    mergeExcelCells(ws,"B"+noteRow+":F"+noteEndRow,slipTemplateNote(h),{size:14,color:BLACK});
+    applyExcelCellStyle(ws.getCell(noteEndRow,1),{size:12,bold:false});
+    ws.getCell(noteRow,2).alignment = {horizontal:"center", vertical:"middle", wrapText:true};
+
+    ws.getRow(totalRow).height = 19;
+    ws.getRow(noteRow).height = 20;
+    ws.getRow(noteEndRow).height = 20;
+    ws.pageSetup.printArea = "A1:F" + noteEndRow;
 
     const buffer = await workbook.xlsx.writeBuffer();
     downloadExcelBlob(buffer, makeSafeFileName(code || h.fis_kodu || "imalat-fisi") + ".xlsx");
@@ -1152,6 +1032,170 @@ async function deleteCatalog(id){
 }
 
 
+/* EXCEL FİŞİ - AYAK / VİDA KOPYASI GÜVENLİ SÜRÜM
+   Bu bölüm sayfanın en sonunda tanımlanır ve eski Excel indirme fonksiyonunu güvenli şekilde ezer.
+   PDF ve Yazdır fonksiyonlarına dokunmaz.
+*/
+function plfExcelColumnName(col){
+  let name = "";
+  let n = Number(col || 1);
+  while(n > 0){
+    const rem = (n - 1) % 26;
+    name = String.fromCharCode(65 + rem) + name;
+    n = Math.floor((n - 1) / 26);
+  }
+  return name;
+}
+function plfExcelAddress(row,col){
+  return plfExcelColumnName(col) + String(row);
+}
+function plfMergeExcelByRC(ws,r1,c1,r2,c2,value,opts){
+  mergeExcelCells(ws, plfExcelAddress(r1,c1) + ":" + plfExcelAddress(r2,c2), value, opts || {});
+}
+function plfDrawExcelSlipBlock(ws,startCol,h,rows,mode){
+  const RED = "FFFF0000";
+  const BLACK = "FF000000";
+  const BLUE = "FF0099CC";
+  const isHardware = mode === "hardware";
+
+  plfMergeExcelByRC(ws,1,startCol+1,1,startCol+5,slipTemplateFirmName(h),{size:14,color:BLACK});
+  plfMergeExcelByRC(ws,2,startCol+1,2,startCol+5,h.musteri_ad || "",{size:14,color:BLACK});
+  plfMergeExcelByRC(ws,3,startCol+1,3,startCol+5,h.tarih || "",{size:14,color:BLACK});
+  plfMergeExcelByRC(ws,4,startCol+1,4,startCol+3,h.kasa_cesidi || "",{size:14,color:BLUE});
+  plfMergeExcelByRC(ws,4,startCol+4,4,startCol+5,slipTemplateSystemShort(h),{size:14,color:BLUE});
+  plfMergeExcelByRC(ws,5,startCol+1,5,startCol+5,h.urun_adi || "",{size:14,color:BLACK});
+
+  const labels = ["FİRMA","MÜŞTERİ","TARİH","KASA ÇEŞİDİ","ÜRÜN ADI"];
+  labels.forEach(function(label,index){
+    const cell = ws.getCell(index + 1, startCol);
+    cell.value = label;
+    applyExcelCellStyle(cell,{size:14,color:RED,align:"left"});
+  });
+
+  const headers = isHardware ? ["ADET","EN","BOY","","",""] : ["ADET","EN","BOY","PİLE","İP","m²"];
+  headers.forEach(function(title,index){
+    const cell = ws.getCell(6,startCol + index);
+    cell.value = title;
+    applyExcelCellStyle(cell,{size:14,color:RED});
+  });
+
+  rows.forEach(function(row,index){
+    const rowNo = 7 + index;
+    ws.getCell(rowNo,startCol).value = row.adet || row.sira;
+    ws.getCell(rowNo,startCol+1).value = row.en === "" ? "" : Number(row.en || 0);
+    ws.getCell(rowNo,startCol+2).value = row.boy === "" ? "" : Number(row.boy || 0);
+
+    if(isHardware){
+      ws.getCell(rowNo,startCol+3).value = "";
+      ws.getCell(rowNo,startCol+4).value = "";
+      ws.getCell(rowNo,startCol+5).value = "";
+    }else{
+      ws.getCell(rowNo,startCol+3).value = row.pile === "" ? "" : Number(row.pile || 0);
+      ws.getCell(rowNo,startCol+4).value = row.ip === "" ? "" : Number(row.ip || 0);
+      ws.getCell(rowNo,startCol+5).value = row.m2 === "" ? "" : Number(row.m2 || 0);
+    }
+
+    for(let c = startCol; c <= startCol + 5; c++){
+      applyExcelCellStyle(ws.getCell(rowNo,c),{size:14,bold:c===startCol});
+    }
+    ws.getCell(rowNo,startCol+1).numFmt = "0.00";
+    ws.getCell(rowNo,startCol+2).numFmt = "0.00";
+    if(!isHardware){
+      ws.getCell(rowNo,startCol+3).numFmt = "0";
+      ws.getCell(rowNo,startCol+4).numFmt = "0";
+      ws.getCell(rowNo,startCol+5).numFmt = "0.00";
+    }
+  });
+
+  const totalRow = 7 + rows.length;
+  ws.getCell(totalRow,startCol).value = "TOPLAM";
+  ws.getCell(totalRow,startCol+1).value = Number(h.toplam_adet || 0);
+
+  if(!isHardware){
+    ws.getCell(totalRow,startCol+5).value = Number(h.toplam_m2 || 0);
+    ws.getCell(totalRow,startCol+5).numFmt = "0.00";
+  }
+
+  for(let c = startCol; c <= startCol + 5; c++){
+    applyExcelCellStyle(ws.getCell(totalRow,c),{size:14,color:(c===startCol || (!isHardware && c===startCol+5)) ? RED : BLACK});
+  }
+  applyExcelCellStyle(ws.getCell(totalRow,startCol),{size:14,color:RED,align:"left"});
+
+  if(isHardware){
+    const toplamAdet = Number(h.toplam_adet || 0);
+    const ayakRow = totalRow + 1;
+    const vidaRow = totalRow + 2;
+
+    ws.getCell(ayakRow,startCol).value = "AYAK";
+    ws.getCell(ayakRow,startCol+1).value = toplamAdet * 4;
+    ws.getCell(vidaRow,startCol).value = "VİDA";
+    ws.getCell(vidaRow,startCol+1).value = toplamAdet * 8 + 4;
+
+    for(let r = ayakRow; r <= vidaRow; r++){
+      for(let c = startCol; c <= startCol + 5; c++){
+        applyExcelCellStyle(ws.getCell(r,c),{size:14,color:BLACK,align:c===startCol?"left":"center"});
+      }
+    }
+    return vidaRow;
+  }
+
+  const noteRow = totalRow + 1;
+  const noteEndRow = noteRow + 1;
+  ws.getCell(noteRow,startCol).value = "NOT";
+  applyExcelCellStyle(ws.getCell(noteRow,startCol),{size:14,color:RED,align:"left"});
+  plfMergeExcelByRC(ws,noteRow,startCol+1,noteEndRow,startCol+5,slipTemplateNote(h),{size:14,color:BLACK});
+  applyExcelCellStyle(ws.getCell(noteEndRow,startCol),{size:12,bold:false});
+  ws.getCell(noteRow,startCol+1).alignment = {horizontal:"center", vertical:"middle", wrapText:true};
+  return noteEndRow;
+}
+async function downloadSlipExcel(code){
+  try{
+    const current = collectCurrentSlip();
+    const h = current.h;
+    const rows = slipTemplateRows(current.details);
+
+    if(!window.ExcelJS){
+      throw new Error("Excel şablon kütüphanesi yüklenemedi. Sayfayı yenileyip tekrar deneyin.");
+    }
+
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = "Prestij Life";
+    workbook.created = new Date();
+
+    const ws = workbook.addWorksheet("Sayfa1", {
+      pageSetup:{
+        paperSize: 9,
+        orientation: "landscape",
+        fitToPage: true,
+        fitToWidth: 1,
+        fitToHeight: 1,
+        margins:{left:0.15,right:0.15,top:0.15,bottom:0.15,header:0.10,footer:0.10}
+      }
+    });
+
+    ws.views = [{showGridLines:true}];
+    ws.properties.defaultRowHeight = 18;
+    ws.columns = [
+      {width:9.8},{width:8.8},{width:9.8},{width:8.8},{width:8.8},{width:8.8},
+      {width:3.8},
+      {width:9.8},{width:8.8},{width:9.8},{width:8.8},{width:8.8},{width:8.8}
+    ];
+
+    for(let r = 1; r <= 80; r++) ws.getRow(r).height = 18;
+    ws.getRow(6).height = 22;
+
+    const leftEndRow = plfDrawExcelSlipBlock(ws,1,h,rows,"detail");
+    const rightEndRow = plfDrawExcelSlipBlock(ws,8,h,rows,"hardware");
+    const endRow = Math.max(leftEndRow,rightEndRow);
+
+    ws.pageSetup.printArea = "A1:M" + endRow;
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    downloadExcelBlob(buffer, makeSafeFileName(code || h.fis_kodu || "imalat-fisi") + ".xlsx");
+  }catch(e){
+    showMessage("slipsError","Excel indirilemedi. " + e.message);
+  }
+}
 passwordInput.addEventListener("keydown",e=>{if(e.key==="Enter")login()});
 initAdmin();
 </script>
