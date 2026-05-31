@@ -187,16 +187,126 @@ function closeHelp(event){if(event&&event.target&&event.target.id!=="helpModal")
 function initAdmin(){initTheme();bindPriceProtection();if(sessionStorage.getItem(ADMIN_SESSION_KEY)==="true")showAdminPanel();addManualOrderRow();addManualSlipRow();fillStaticStatusOptions()}
 function fillStaticStatusOptions(){[orderStatusFilter].forEach(sel=>{sel.innerHTML='<option value="">Tüm Durumlar</option>'+ORDER_STATUSES.map(s=>`<option value="${attr(s)}">${esc(s)}</option>`).join("")})}
 function bindPriceProtection(){["priceKlasikAskili","priceKlasikVidali","priceBlackout","priceCiftli","priceTulPerde","priceKargo"].forEach(id=>{const el=document.getElementById(id);if(el)el.addEventListener("input",()=>{priceFormDirty=true})})}
-async function fetchWithTimeout(url,options={},timeoutMs=12000){const c=new AbortController();const t=setTimeout(()=>c.abort(),timeoutMs);try{return await fetch(url,{...options,signal:c.signal})}finally{clearTimeout(t)}}
-async function apiPost(payload,timeoutMs=14000){const r=await fetchWithTimeout(PRICE_API_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(payload)},timeoutMs);return await r.json()}
+async function fetchWithTimeout(url, options = {}, timeoutMs = 30000){
+  const controller = new AbortController();
+  const timer = setTimeout(function(){ controller.abort(); }, timeoutMs);
+
+  try{
+    return await fetch(url, {
+      ...options,
+      signal: controller.signal,
+      cache: options.cache || "no-store"
+    });
+  }catch(error){
+    if(error && error.name === "AbortError"){
+      throw new Error("İstek zaman aşımına uğradı. Apps Script geç cevap verdi.");
+    }
+    throw error;
+  }finally{
+    clearTimeout(timer);
+  }
+}
+async function apiPost(payload, timeoutMs = 30000){
+  const response = await fetchWithTimeout(PRICE_API_URL, {
+    method: "POST",
+    headers: {"Content-Type":"text/plain;charset=utf-8"},
+    body: JSON.stringify(payload)
+  }, timeoutMs);
+
+  try{
+    return await response.json();
+  }catch(error){
+    throw new Error("Sunucudan geçerli JSON cevap alınamadı. Apps Script dağıtımını kontrol edin.");
+  }
+}
 async function login(){hideMessages(["loginError"]);const p=passwordInput.value;if(!p)return showMessage("loginError","Lütfen şifrenizi girin.");loginBtn.disabled=true;loginBtn.textContent="Kontrol ediliyor...";try{const d=await apiPost({action:"login",password:p});if(!d.success)throw new Error(d.message||"Giriş yapılamadı.");sessionStorage.setItem(ADMIN_SESSION_KEY,"true");showAdminPanel()}catch(e){showMessage("loginError",e.message||"Giriş yapılamadı.")}finally{loginBtn.disabled=false;loginBtn.textContent="Giriş Yap"}}
 function logout(){sessionStorage.removeItem(ADMIN_SESSION_KEY);adminPanel.style.display="none";loginScreen.style.display="block"}
 function showAdminPanel(){loginScreen.style.display="none";adminPanel.style.display="block";loadPrices(false);loadSellerPrices(false);loadCatalogData();loadOrders();loadSlips();loadAccounting()}
 function openSection(s,card){document.querySelectorAll(".module-card").forEach(x=>x.classList.remove("active"));card.classList.add("active");document.querySelectorAll(".panel-section").forEach(x=>x.classList.remove("active"));document.getElementById("section-"+s).classList.add("active");if(s==="siparisler")loadOrders();if(s==="imalat")loadSlips();if(s==="muhasebe")loadAccounting();if(s==="yonetim"){loadSellerPrices(false);loadCatalogData()}if(s==="ayarlar"){loadPrices(false);loadSellerPrices(false)}}
 function toggleBox(id){document.getElementById(id).classList.toggle("hidden")}
-async function loadPrices(force=false){hideMessages(["priceError","priceSuccess","priceWarning"]);if(priceFormDirty&&!force)return showMessage("priceWarning","Kaydedilmemiş değişiklik var.");if(priceFormDirty&&force&&!confirm("Kaydedilmemiş değişiklikler var. Fiyatlar yeniden yüklensin mi?"))return;priceFormDirty=false;try{const r=await fetchWithTimeout(PRICE_API_URL+"?t="+Date.now(),{method:"GET",cache:"no-store"},10000);const d=await r.json();if(!d.success)throw new Error(d.message);const p=d.prices;priceKlasikAskili.value=p.klasik_askili;priceKlasikVidali.value=p.klasik_vidali;priceBlackout.value=p.blackout;priceCiftli.value=p.ciftli;priceTulPerde.value=p.tul_perde;priceKargo.value=p.kargo;pricesLoadedOnce=true}catch(e){showMessage("priceWarning","Fiyatlar alınamadı. "+e.message)}}
+async function loadPrices(force = false){
+  hideMessages(["priceError","priceSuccess","priceWarning"]);
+
+  if(priceFormDirty && !force){
+    return showMessage("priceWarning","Kaydedilmemiş değişiklik var. Yenilemeden önce kaydedin veya Fiyatları Yenile butonuna tekrar basın.");
+  }
+
+  if(priceFormDirty && force && !confirm("Kaydedilmemiş değişiklikler var. Fiyatlar yeniden yüklensin mi?")){
+    return;
+  }
+
+  try{
+    const response = await fetchWithTimeout(PRICE_API_URL + "?action=getPrices&t=" + Date.now(), {
+      method:"GET",
+      cache:"no-store"
+    }, 30000);
+
+    const data = await response.json();
+    if(!data.success) throw new Error(data.message || "Fiyatlar alınamadı.");
+
+    const p = data.prices || {};
+    priceKlasikAskili.value = p.klasik_askili;
+    priceKlasikVidali.value = p.klasik_vidali;
+    priceBlackout.value = p.blackout;
+    priceCiftli.value = p.ciftli;
+    priceTulPerde.value = p.tul_perde;
+    priceKargo.value = p.kargo;
+
+    priceFormDirty = false;
+    pricesLoadedOnce = true;
+  }catch(error){
+    showMessage("priceWarning","Fiyatlar alınamadı. " + (error.message || error));
+  }
+}
 function readPositive(id,label){const n=Number(document.getElementById(id).value);if(isNaN(n)||n<=0)throw new Error(label+" geçersiz.");return n}
-async function savePrices(){hideMessages(["priceError","priceSuccess","priceWarning"]);let prices;try{prices={klasik_askili:readPositive("priceKlasikAskili","Klasik Askılı"),klasik_vidali:readPositive("priceKlasikVidali","Klasik Vidalı"),blackout:readPositive("priceBlackout","Blackout"),ciftli:readPositive("priceCiftli","Çiftli Sistem"),tul_perde:readPositive("priceTulPerde","Tül Perde"),kargo:readPositive("priceKargo","Kargo")}}catch(e){return showMessage("priceError",e.message)}try{const d=await apiPost({action:"updatePrices",apiKey:ADMIN_API_KEY,prices});if(!d.success)throw new Error(d.message);priceFormDirty=false;showMessage("priceSuccess","Fiyatlar kaydedildi.");loadPrices(true)}catch(e){showMessage("priceError","Fiyatlar kaydedilemedi. "+e.message)}}
+async function savePrices(){
+  hideMessages(["priceError","priceSuccess","priceWarning"]);
+
+  let prices;
+  try{
+    prices = {
+      klasik_askili: readPositive("priceKlasikAskili","Klasik Askılı"),
+      klasik_vidali: readPositive("priceKlasikVidali","Klasik Vidalı"),
+      blackout: readPositive("priceBlackout","Blackout"),
+      ciftli: readPositive("priceCiftli","Çiftli Sistem"),
+      tul_perde: readPositive("priceTulPerde","Tül Perde"),
+      kargo: readPositive("priceKargo","Kargo")
+    };
+  }catch(error){
+    return showMessage("priceError", error.message || error);
+  }
+
+  const button = document.getElementById("savePricesBtn");
+  const oldText = button ? button.textContent : "Fiyatları Kaydet";
+
+  try{
+    if(button){
+      button.disabled = true;
+      button.textContent = "Fiyatlar kaydediliyor...";
+    }
+
+    const data = await apiPost({
+      action:"updatePrices",
+      apiKey:ADMIN_API_KEY,
+      prices:prices
+    }, 45000);
+
+    if(!data.success) throw new Error(data.message || "Fiyatlar kaydedilemedi.");
+
+    priceFormDirty = false;
+    showMessage("priceSuccess","Fiyatlar kaydedildi.");
+
+    await loadPrices(true);
+  }catch(error){
+    const message = String(error && error.message ? error.message : error);
+    showMessage("priceError","Fiyatlar kaydedilemedi. " + message);
+  }finally{
+    if(button){
+      button.disabled = false;
+      button.textContent = oldText || "Fiyatları Kaydet";
+    }
+  }
+}
 async function loadSellerPrices(showErrors=true){hideMessages(["sellerPriceError","sellerPriceSuccess","sellerPriceWarning","sellerManageError","sellerManageSuccess"]);try{const d=await apiPost({action:"listSellers",apiKey:ADMIN_API_KEY});if(!d.success)throw new Error(d.message);sellersList=d.sellers||[];sellerPriceRows=d.sellerPrices||[];fillSellerSelects();renderSellerPrices();renderSellerManage()}catch(e){if(showErrors)showMessage("sellerPriceError","Satıcı bilgileri alınamadı. "+e.message)}}
 function fillSellerSelects(){const selects=[orderSellerFilter,manualSeller,accSellerFilter,reportSellerFilter];selects.forEach(sel=>{if(!sel)return;const cur=sel.value;sel.innerHTML=sel.id==="manualSeller"?'<option value="">Satıcı Seç</option>':(sel.id==="reportSellerFilter"?'<option value="">Tüm Siparişler</option><option value="__site">Merkez / Site Siparişleri</option>':'<option value="">Tüm Satıcılar</option>');sellersList.filter(s=>String(s.durum||"aktif")!=="pasif"||sel.id!=="manualSeller").forEach(s=>{const o=document.createElement("option");o.value=s.satici_id||"";o.textContent=s.satici_adi||"";o.dataset.name=s.satici_adi||"";sel.appendChild(o)});sel.value=cur})}
 function renderSellerManage(){sellerManageTableBody.innerHTML="";sellersList.forEach(s=>{const tr=document.createElement("tr");tr.innerHTML=`<td>${esc(s.satici_id)}</td><td>${esc(s.satici_adi)}</td><td><span class="tag">${esc(s.durum||"aktif")}</span></td><td>${esc(s.not||"")}</td><td><button class="btn-light" onclick='editSeller(${JSON.stringify(s).replace(/'/g,"&#39;")})'>Düzenle</button><button class="btn-danger" onclick="deleteSeller('${attr(s.satici_id)}')">Sil / Pasif</button></td>`;sellerManageTableBody.appendChild(tr)})}
