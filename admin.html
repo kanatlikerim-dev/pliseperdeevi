@@ -545,7 +545,7 @@ function applyExcelCellStyle(cell, opts){
     wrapText: true
   };
   cell.font = {
-    name: "Arial",
+    name: "Aptos Narrow",
     size: opts.size || 14,
     bold: opts.bold !== false,
     color: { argb: opts.color || "FF000000" }
@@ -623,32 +623,32 @@ async function downloadSlipExcel(code){
     ws.views = [{showGridLines:true}];
     ws.properties.defaultRowHeight = 20;
     ws.columns = [
-      {width:13},
-      {width:13},
-      {width:13},
-      {width:13},
-      {width:13},
-      {width:13}
+      {width:14.5},
+      {width:12},
+      {width:12},
+      {width:12},
+      {width:12},
+      {width:12}
     ];
 
     const RED = "FFFF0000";
     const BLACK = "FF000000";
     const BLUE = "FF0099CC";
 
-    for(let r = 1; r <= 22; r++) ws.getRow(r).height = 22;
-    ws.getRow(6).height = 32;
-    for(let r = 7; r <= 19; r++) ws.getRow(r).height = 23;
-    ws.getRow(20).height = 23;
-    ws.getRow(21).height = 24;
-    ws.getRow(22).height = 24;
+    for(let r = 1; r <= 22; r++) ws.getRow(r).height = 18;
+    ws.getRow(6).height = 22;
+    for(let r = 7; r <= 19; r++) ws.getRow(r).height = 19;
+    ws.getRow(20).height = 19;
+    ws.getRow(21).height = 20;
+    ws.getRow(22).height = 20;
 
-    mergeExcelCells(ws,"B1:F1",slipTemplateFirmName(h),{size:16,color:BLACK});
-    mergeExcelCells(ws,"B2:F2",h.musteri_ad || "",{size:16,color:BLACK});
-    mergeExcelCells(ws,"B3:F3",h.tarih || "",{size:16,color:BLACK});
-    mergeExcelCells(ws,"B4:D4",h.kasa_cesidi || "",{size:16,color:BLUE});
-    mergeExcelCells(ws,"E4:F4",slipTemplateSystemShort(h),{size:16,color:BLUE});
-    mergeExcelCells(ws,"B5:D5",h.urun_adi || "",{size:16,color:BLACK});
-    mergeExcelCells(ws,"E5:F5","",{size:16,color:BLACK});
+    mergeExcelCells(ws,"B1:F1",slipTemplateFirmName(h),{size:14,color:BLACK});
+    mergeExcelCells(ws,"B2:F2",h.musteri_ad || "",{size:14,color:BLACK});
+    mergeExcelCells(ws,"B3:F3",h.tarih || "",{size:14,color:BLACK});
+    mergeExcelCells(ws,"B4:D4",h.kasa_cesidi || "",{size:14,color:BLUE});
+    mergeExcelCells(ws,"E4:F4",slipTemplateSystemShort(h),{size:14,color:BLUE});
+    mergeExcelCells(ws,"B5:D5",h.urun_adi || "",{size:14,color:BLACK});
+    mergeExcelCells(ws,"E5:F5","",{size:14,color:BLACK});
 
     ws.getCell("A1").value = "FİRMA";
     ws.getCell("A2").value = "MÜŞTERİ";
@@ -657,14 +657,14 @@ async function downloadSlipExcel(code){
     ws.getCell("A5").value = "ÜRÜN ADI";
 
     ["A1","A2","A3","A4","A5"].forEach(function(addr){
-      applyExcelCellStyle(ws.getCell(addr),{size:15,color:RED,align:"left"});
+      applyExcelCellStyle(ws.getCell(addr),{size:14,color:RED,align:"left"});
     });
 
     const headers = ["ADET","EN","BOY","PİLE","İP","m²"];
     headers.forEach(function(title, index){
       const cell = ws.getCell(6,index+1);
       cell.value = title;
-      applyExcelCellStyle(cell,{size:16,color:RED});
+      applyExcelCellStyle(cell,{size:14,color:RED});
     });
 
     const rows = slipTemplateRows(details).slice(0,13);
@@ -699,8 +699,8 @@ async function downloadSlipExcel(code){
     applyExcelCellStyle(ws.getCell("F20"),{size:14,color:RED});
 
     ws.getCell("A21").value = "NOT";
-    applyExcelCellStyle(ws.getCell("A21"),{size:15,color:RED,align:"left"});
-    mergeExcelCells(ws,"B21:F22",slipTemplateNote(h),{size:16,color:BLACK});
+    applyExcelCellStyle(ws.getCell("A21"),{size:14,color:RED,align:"left"});
+    mergeExcelCells(ws,"B21:F22",slipTemplateNote(h),{size:14,color:BLACK});
     applyExcelCellStyle(ws.getCell("A22"),{size:12,bold:false});
     ws.getCell("B21").alignment = {horizontal:"center", vertical:"middle", wrapText:true};
 
