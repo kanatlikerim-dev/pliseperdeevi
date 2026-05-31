@@ -63,7 +63,7 @@ body.dark{--bg:#151618;--bg2:#202328;--card:#1e2023;--panel:#25282d;--text:#f2f0
       </div>
       <div class="actions"><button class="btn-main" onclick="loadOrders()">Siparişleri Listele</button><button class="btn-light" onclick="clearOrderFilters()">Filtreleri Temizle</button><button class="btn-light" onclick="toggleBox('manualOrderBox')">Manuel Sipariş Ekle</button></div>
       <div class="message error" id="ordersError"></div><div class="message success" id="ordersSuccess"></div><div class="message warning" id="ordersWarning"></div>
-      <div class="table-wrap" id="ordersTableWrap" style="display:none"><table><thead><tr><th>Sipariş Kodu</th><th>Tarih</th><th>Kaynak</th><th>Satıcı</th><th>Müşteri</th><th>Gerçek m²</th><th>Müşteri Tutarı</th><th>Satıcı Hesabı</th><th>Durum</th><th>İşlem</th></tr></thead><tbody id="ordersTableBody"></tbody></table></div>
+      <div class="table-wrap" id="ordersTableWrap" style="display:none"><table><thead><tr><th>Sipariş Kodu</th><th>Tarih</th><th>Kaynak</th><th>Satıcı</th><th>Müşteri</th><th>m²</th><th>Müşteri Tutarı</th><th>Satıcı Hesabı</th><th>Fiş Durumu</th><th>Durum</th><th>İşlem</th></tr></thead><tbody id="ordersTableBody"></tbody></table></div>
       <div id="orderDetailArea"></div>
     </div>
     <div class="box hidden" id="manualOrderBox">
@@ -170,7 +170,7 @@ const ADMIN_API_KEY="prestijlife2026";
 const ORDER_STATUSES=["Yeni","Üretimde","Hazır","Teslim Edildi","İptal"];
 const MOUNT_OPTIONS=["Askılı","Vidalı","Standart"];
 const CASE_OPTIONS=["Bronz","Beyaz","Krem","Kahverengi","Antrasit","Gri"];
-let sellersList=[],sellerPriceRows=[],productsList=[],fabricsList=[],catalogsList=[],lastReportHTML="",lastBackup=null,priceFormDirty=false,pricesLoadedOnce=false;
+let sellersList=[],sellerPriceRows=[],productsList=[],fabricsList=[],catalogsList=[],orderSlipMap={},lastReportHTML="",lastBackup=null,priceFormDirty=false,pricesLoadedOnce=false;
 const HELP_CONTENT={
   siparisler:{title:"Siparişler nasıl kullanılır?",body:`<p>Bu bölümde internet sitesinden gelen siparişleri ve elle eklediğiniz siparişleri takip edersiniz.</p><ol><li>Filtreleri kullanarak listeyi daraltın.</li><li>Detay butonuyla sipariş bilgilerini açın.</li><li>Durumu değiştirerek sipariş sürecini takip edin.</li><li>İmalat Fişi Oluştur ile üretim fişi hazırlayın.</li><li>İptal olan siparişleri silebilirsiniz.</li></ol>`},
   imalat:{title:"İmalat fişleri nasıl kullanılır?",body:`<p>Üretim için gerekli fişleri buradan yönetirsiniz.</p><ol><li>Fişi açın ve ölçüleri kontrol edin.</li><li>Pile, ip veya not alanlarını elle düzenleyin.</li><li>Fişi Güncelle ile kaydedin.</li><li>Excel veya PDF olarak indirin.</li></ol>`},
@@ -340,9 +340,96 @@ function clearCatalogForm(){catalogEditId.value="";catalogProductSelect.value=""
 function readFileAsBase64(file){return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result||""));reader.onerror=()=>reject(new Error("Görsel okunamadı."));reader.readAsDataURL(file)})}
 async function saveCatalog(){hideMessages(["catalogError","catalogSuccess"]);try{const opt=catalogProductSelect.selectedOptions[0];const file=catalogImageInput.files&&catalogImageInput.files[0]?catalogImageInput.files[0]:null;const catalog={katalog_id:catalogEditId.value,urun_id:catalogProductSelect.value,urun_adi:opt?opt.dataset.name:"",dosya_adi:catalogFileInput.value,durum:catalogStatusInput.value,not:catalogNoteInput.value,gorsel_url:catalogExistingUrl.value,drive_file_id:catalogExistingDriveId.value};if(file){catalog.image_data=await readFileAsBase64(file);catalog.image_mime_type=file.type||"image/png";catalog.image_file_name=file.name||catalogFileInput.value||"katalog.png";if(!catalog.dosya_adi)catalog.dosya_adi=file.name}const d=await apiPost({action:"saveCatalog",apiKey:ADMIN_API_KEY,catalog},30000);if(!d.success)throw new Error(d.message);showMessage("catalogSuccess","Katalog kaydedildi.");clearCatalogForm();loadCatalogData()}catch(e){showMessage("catalogError","Katalog kaydedilemedi. "+e.message)}}
 async function deleteCatalog(id){if(!confirm("Katalog silinsin mi?"))return;try{const d=await apiPost({action:"deleteCatalog",apiKey:ADMIN_API_KEY,katalog_id:id});if(!d.success)throw new Error(d.message);showMessage("catalogSuccess","Katalog silindi.");loadCatalogData()}catch(e){showMessage("catalogError","Katalog silinemedi. "+e.message)}}
-async function loadOrders(){hideMessages(["ordersError","ordersSuccess","ordersWarning"]);try{const d=await apiPost({action:"listOrders",apiKey:ADMIN_API_KEY,dateStart:orderDateStart.value,dateEnd:orderDateEnd.value,source:orderSourceFilter.value,sellerId:orderSellerFilter.value,status:orderStatusFilter.value});if(!d.success)throw new Error(d.message);renderOrders(d.orders||[])}catch(e){showMessage("ordersError","Siparişler alınamadı. "+e.message)}}
-function renderOrders(list){ordersTableBody.innerHTML="";if(!list.length){ordersTableWrap.style.display="none";return showMessage("ordersWarning","Bu seçimlere uygun sipariş bulunamadı.")}list.forEach(o=>{const source=o.kaynak==="site"?"Merkez / Site":"Manuel";const seller=o.kaynak==="site"?"Merkez / Site":(o.satici_adi||"-");const tr=document.createElement("tr");tr.innerHTML=`<td><strong>${esc(o.siparis_kodu)}</strong></td><td>${formatDate(o.tarih)}</td><td><span class="tag">${source}</span></td><td>${esc(seller)}</td><td><strong>${esc(o.musteri_ad)}</strong><small>${esc(o.telefon)}</small></td><td>${num(o.toplam_gercek_m2)} m²</td><td>${tl(o.musteri_toplam_tutar)}</td><td>${o.satici_hesap_tutar!==""?tl(o.satici_hesap_tutar):"-"}</td><td><span class="tag">${esc(o.durum||"Yeni")}</span></td><td><button class="btn-light" onclick="loadOrderDetail('${attr(o.siparis_kodu)}')">Detay</button></td>`;ordersTableBody.appendChild(tr)});ordersTableWrap.style.display="block"}
-async function loadOrderDetail(code){orderDetailArea.innerHTML='<div class="placeholder">Sipariş detayı açılıyor...</div>';try{const d=await apiPost({action:"getOrder",apiKey:ADMIN_API_KEY,siparis_kodu:code});if(!d.success)throw new Error(d.message);renderOrderDetail(d.order,d.details||[])}catch(e){orderDetailArea.innerHTML="";showMessage("ordersError",e.message)}}
+function buildOrderSlipMap(slips){
+  const map = {};
+  (slips || []).forEach(function(slip){
+    const code = String(slip.siparis_kodu || "").trim();
+    if(!code) return;
+    if(!map[code]) map[code] = {count:0,codes:[]};
+    map[code].count++;
+    if(slip.fis_kodu) map[code].codes.push(slip.fis_kodu);
+  });
+  return map;
+}
+function getOrderSlipInfo(code){
+  return orderSlipMap[String(code || "").trim()] || {count:0,codes:[]};
+}
+function slipStatusHTML(code){
+  const info = getOrderSlipInfo(code);
+  if(info.count > 0){
+    const title = info.codes.length ? info.codes.join(", ") : "Fiş oluşturuldu";
+    return `<span class="tag" title="${attr(title)}">Fiş Oluşturuldu</span>`;
+  }
+  return `<span class="tag" style="opacity:.75">Fiş Yok</span>`;
+}
+async function getSlipsForOrder(code){
+  try{
+    const d = await apiPost({action:"listSlips",apiKey:ADMIN_API_KEY,orderCode:code},16000);
+    if(!d.success) return [];
+    return d.slips || [];
+  }catch(e){
+    return [];
+  }
+}
+async function refreshOrderSlipMap(){
+  try{
+    const d = await apiPost({action:"listSlips",apiKey:ADMIN_API_KEY},18000);
+    if(d.success){
+      orderSlipMap = buildOrderSlipMap(d.slips || []);
+      return true;
+    }
+  }catch(e){}
+  orderSlipMap = {};
+  return false;
+}
+async function loadOrders(){
+  hideMessages(["ordersError","ordersSuccess","ordersWarning"]);
+  try{
+    const d=await apiPost({action:"listOrders",apiKey:ADMIN_API_KEY,dateStart:orderDateStart.value,dateEnd:orderDateEnd.value,source:orderSourceFilter.value,sellerId:orderSellerFilter.value,status:orderStatusFilter.value},18000);
+    if(!d.success)throw new Error(d.message);
+    const slipOk = await refreshOrderSlipMap();
+    renderOrders(d.orders||[]);
+    if(!slipOk) showMessage("ordersWarning","Siparişler listelendi ancak fiş durumları alınamadı.");
+  }catch(e){showMessage("ordersError","Siparişler alınamadı. "+e.message)}
+}
+function renderOrders(list){
+  ordersTableBody.innerHTML="";
+  if(!list.length){ordersTableWrap.style.display="none";return showMessage("ordersWarning","Bu seçimlere uygun sipariş bulunamadı.")}
+  list.forEach(o=>{
+    const source=o.kaynak==="site"?"Merkez / Site":"Manuel";
+    const seller=o.kaynak==="site"?"Merkez / Site":(o.satici_adi||"-");
+    const tr=document.createElement("tr");
+    tr.innerHTML=`<td><strong>${esc(o.siparis_kodu)}</strong></td><td>${formatDate(o.tarih)}</td><td><span class="tag">${source}</span></td><td>${esc(seller)}</td><td><strong>${esc(o.musteri_ad)}</strong><small>${esc(o.telefon)}</small></td><td>${num(o.toplam_gercek_m2)} m²</td><td>${tl(o.musteri_toplam_tutar)}</td><td>${o.satici_hesap_tutar!==""?tl(o.satici_hesap_tutar):"-"}</td><td>${slipStatusHTML(o.siparis_kodu)}</td><td><span class="tag">${esc(o.durum||"Yeni")}</span></td><td><button class="btn-light" onclick="loadOrderDetail('${attr(o.siparis_kodu)}')">Detay</button></td>`;
+ async function loadOrderDetail(code){
+  orderDetailArea.innerHTML='<div class="placeholder">Sipariş detayı açılıyor...</div>';
+  try{
+    const d=await apiPost({action:"getOrder",apiKey:ADMIN_API_KEY,siparis_kodu:code},16000);
+    if(!d.success)throw new Error(d.message);
+    const slips = await getSlipsForOrder(code);
+    renderOrderDetail(d.order,d.details||[]);
+    renderOrderSlipInfo(code,slips);
+  }catch(e){orderDetailArea.innerHTML="";showMessage("ordersError",e.message)}
+}
+function renderOrderSlipInfo(code,slips){
+  const box = orderDetailArea.querySelector(".detail-box");
+  if(!box) return;
+  const list = slips || [];
+  const html = list.length ? `<div class="info-tile" style="margin-bottom:12px"><span>Fiş Durumu</span><strong>Fiş Oluşturuldu</strong><small>${esc(list.map(s=>s.fis_kodu).filter(Boolean).join(", "))}</small></div>` : `<div class="info-tile" style="margin-bottom:12px"><span>Fiş Durumu</span><strong>Fiş Yok</strong><small>Bu sipariş için henüz imalat fişi oluşturulmadı.</small></div>`;
+  const actions = list.length ? `<div class="actions" style="margin-bottom:12px"><button class="btn-light" onclick="goToOrderSlips('${attr(code)}')">Bağlı Fişleri Aç</button></div>` : "";
+  const grid = box.querySelector(".detail-grid");
+  if(grid) grid.insertAdjacentHTML("afterend", html + actions);
+}
+function goToOrderSlips(code){
+  document.querySelectorAll(".module-card").forEach(x=>x.classList.remove("active"));
+  const cards = Array.from(document.querySelectorAll(".module-card"));
+  const imalatCard = cards.find(c=>String(c.getAttribute("onclick")||"").includes("imalat"));
+  if(imalatCard) imalatCard.classList.add("active");
+  document.querySelectorAll(".panel-section").forEach(x=>x.classList.remove("active"));
+  document.getElementById("section-imalat").classList.add("active");
+  slipOrderCode.value = code;
+  loadSlips();
+  document.getElementById("section-imalat").scrollIntoView({behavior:"smooth",block:"start"});
+}s||[])}catch(e){orderDetailArea.innerHTML="";showMessage("ordersError",e.message)}}
 function orderDetailM2(item){
   const en = Number(String(item.gercek_en ?? item.en ?? "").replace(",", "."));
   const boy = Number(String(item.gercek_boy ?? item.boy ?? "").replace(",", "."));
@@ -368,7 +455,23 @@ function renderOrderDetail(o,details){
   orderDetailArea.innerHTML=`<div class="detail-box"><div class="detail-head"><div><h3>${esc(o.siparis_kodu)}</h3><p class="subtitle" style="margin-bottom:0">Bu kod müşteri ekranında görünmez.</p></div><div class="actions" style="min-width:420px"><button class="btn-main" onclick="createProductionSlips('${attr(o.siparis_kodu)}')">İmalat Fişi Oluştur</button><button class="btn-danger" onclick="deleteOrder('${attr(o.siparis_kodu)}')">Siparişi Sil</button></div></div><div class="form-grid"><label class="field"><span>Sipariş Durumu</span><select id="detailOrderStatus">${statusOptions}</select></label><label class="field"><span>Durum İşlemi</span><button class="btn-light" onclick="updateOrderStatus('${attr(o.siparis_kodu)}')">Durumu Kaydet</button></label></div><div class="detail-grid"><div class="info-tile"><span>Müşteri</span><strong>${esc(o.musteri_ad)}</strong></div><div class="info-tile"><span>Telefon</span><strong>${esc(o.telefon)}</strong></div><div class="info-tile"><span>Satıcı</span><strong>${o.kaynak==="site"?"Merkez / Site":esc(o.satici_adi)}</strong></div><div class="info-tile"><span>m²</span><strong>${num(displayTotalM2)} m²</strong></div><div class="info-tile"><span>Müşteri Tutarı</span><strong>${tl(o.musteri_toplam_tutar)}</strong></div><div class="info-tile"><span>Satıcı Hesabı</span><strong>${o.satici_hesap_tutar!==""?tl(o.satici_hesap_tutar):"-"}</strong></div></div><div class="info-tile" style="margin-bottom:12px"><span>Adres</span><strong>${esc(o.adres)}</strong></div><div class="table-wrap"><table><thead><tr><th>Sıra</th><th>Ürün</th><th>Kasa</th><th>Sistem</th><th>Ölçü</th><th>Adet</th><th>m²</th></tr></thead><tbody>${rows}</tbody></table></div></div>`}
 async function updateOrderStatus(code){try{const d=await apiPost({action:"updateOrderStatus",apiKey:ADMIN_API_KEY,siparis_kodu:code,status:detailOrderStatus.value});if(!d.success)throw new Error(d.message);showMessage("ordersSuccess","Sipariş durumu güncellendi.");loadOrders()}catch(e){showMessage("ordersError","Durum güncellenemedi. "+e.message)}}
 async function deleteOrder(code){if(!confirm(code+" siparişi silinsin mi? Bağlı imalat fişleri de silinir."))return;try{const d=await apiPost({action:"deleteOrder",apiKey:ADMIN_API_KEY,siparis_kodu:code},16000);if(!d.success)throw new Error(d.message);showMessage("ordersSuccess","Sipariş silindi.");orderDetailArea.innerHTML="";loadOrders();loadSlips();loadAccounting()}catch(e){showMessage("ordersError","Sipariş silinemedi. "+e.message)}}
-async function createProductionSlips(code){try{const d=await apiPost({action:"createProductionSlips",apiKey:ADMIN_API_KEY,siparis_kodu:code},16000);if(!d.success)throw new Error(d.message);showMessage("ordersSuccess","İmalat fişi oluşturuldu.");loadSlips()}catch(e){showMessage("ordersError","Fiş oluşturulamadı. "+e.message)}}
+async function createProductionSlips(code){
+  try{
+    const existing = await getSlipsForOrder(code);
+    if(existing.length){
+      const codes = existing.map(s=>s.fis_kodu).filter(Boolean).join(", ");
+      const ok = confirm("Bu sipariş için daha önce imalat fişi oluşturulmuş.\n\nFiş: "+(codes||"Mevcut fiş")+"\n\nYine de tekrar fiş oluşturulsun mu?");
+      if(!ok) return;
+    }
+    const d=await apiPost({action:"createProductionSlips",apiKey:ADMIN_API_KEY,siparis_kodu:code},16000);
+    if(!d.success)throw new Error(d.message);
+    showMessage("ordersSuccess","İmalat fişi oluşturuldu.");
+    await refreshOrderSlipMap();
+    loadOrders();
+    loadSlips();
+    loadOrderDetail(code);
+  }catch(e){showMessage("ordersError","Fiş oluşturulamadı. "+e.message)}
+}
 function clearOrderFilters(){orderDateStart.value="";orderDateEnd.value="";orderSourceFilter.value="";orderSellerFilter.value="";orderStatusFilter.value="";loadOrders()}
 function addManualOrderRow(){const products=productsList.length?productsList.map(p=>p.urun_adi):["Klasik Seri Plise","Blackout Karartmalı","Çiftli Sistem","Tül Perde"];const tr=document.createElement("tr");tr.innerHTML=`<td>${selectHTML("mo-product",products)}</td><td>${selectHTML("mo-mount",MOUNT_OPTIONS)}</td><td>${selectHTML("mo-case",CASE_OPTIONS)}</td><td><input class="table-input mo-fabric" placeholder="Kumaş"></td><td><input class="table-input mo-en" type="number"></td><td><input class="table-input mo-boy" type="number"></td><td><input class="table-input mo-adet" type="number" value="1"></td><td><input class="table-input mo-acilir" type="number" value="0"></td><td><button class="btn-danger" onclick="this.closest('tr').remove()">Sil</button></td>`;manualOrderRows.appendChild(tr)}
 function collectManualOrder(){const opt=manualSeller.selectedOptions[0];if(!manualSeller.value)throw new Error("Lütfen satıcı seçin.");const rows=[];document.querySelectorAll("#manualOrderRows tr").forEach(tr=>{const prod=tr.querySelector(".mo-product").value;rows.push({urun:prod,productLabel:prod,montaj_tipi:tr.querySelector(".mo-mount").value,kasa_rengi:tr.querySelector(".mo-case").value,kumas:tr.querySelector(".mo-fabric").value,blackout_kumas:tr.querySelector(".mo-fabric").value,tul_kumas:tr.querySelector(".mo-fabric").value,perde_kumas:"",gercek_en:Number(tr.querySelector(".mo-en").value),gercek_boy:Number(tr.querySelector(".mo-boy").value),adet:Number(tr.querySelector(".mo-adet").value),acilir_adet:Number(tr.querySelector(".mo-acilir").value||0)})});return{action:"createManualOrder",apiKey:ADMIN_API_KEY,satici_id:manualSeller.value,satici_adi:opt.dataset.name||opt.textContent,customer:{name:manualCustomer.value,phone:manualPhone.value,address:manualAddress.value},not:manualNote.value,items:rows}}
