@@ -448,6 +448,18 @@ function collectCurrentSlip(){
   h.toplam_m2 = Math.round((h.toplam_m2 + Number.EPSILON) * 100) / 100;
   return {h:h, details:details};
 }
+function slipCleanCaseText(value){
+  const text = String(value || "").trim();
+  if(!text) return "";
+  const parts = text.split("/").map(function(part){ return part.trim(); }).filter(Boolean);
+  return parts.length ? parts[parts.length - 1] : text;
+}
+function slipCleanProductText(value){
+  const text = String(value || "").trim();
+  if(!text) return "";
+  const parts = text.split("-").map(function(part){ return part.trim(); }).filter(Boolean);
+  return parts.length ? parts[parts.length - 1] : text;
+}
 function slipTemplateFirmName(h){
   const seller = String(h.satici_adi || "").trim();
   if(seller && seller !== "-" && seller.toLowerCase() !== "merkez / site") return seller.toUpperCase();
@@ -530,10 +542,10 @@ function drawSlipPdfPage(doc,h,details){
   writePdfCell(doc,x[0],y,colW[0]+colW[1],topH,"TARIH",{bold:true,size:11,color:red,align:"left"});
   writePdfCell(doc,x[2],y,colW[2]+colW[3]+colW[4]+colW[5],topH,h.tarih || "",{bold:true,size:11}); y += topH;
   writePdfCell(doc,x[0],y,colW[0]+colW[1],topH,"KASA CESIDI",{bold:true,size:10,color:red,align:"left"});
-  writePdfCell(doc,x[2],y,colW[2]+colW[3],topH,h.kasa_cesidi || "",{bold:true,size:10,color:blue});
+  writePdfCell(doc,x[2],y,colW[2]+colW[3],topH,slipCleanCaseText(h.kasa_cesidi),{bold:true,size:10,color:blue});
   writePdfCell(doc,x[4],y,colW[4]+colW[5],topH,slipTemplateSystemShort(h),{bold:true,size:10,color:blue}); y += topH;
   writePdfCell(doc,x[0],y,colW[0]+colW[1],topH,"URUN ADI",{bold:true,size:10,color:red,align:"left"});
-  writePdfCell(doc,x[2],y,colW[2]+colW[3]+colW[4]+colW[5],topH,h.urun_adi || "",{bold:true,size:9}); y += topH;
+  writePdfCell(doc,x[2],y,colW[2]+colW[3]+colW[4]+colW[5],topH,slipCleanProductText(h.urun_adi),{bold:true,size:9}); y += topH;
   ["ADET","EN","BOY","PILE","IP","m2"].forEach(function(label,i){
     writePdfCell(doc,x[i],y,colW[i],headerH,label,{bold:true,size:11,color:red});
   });
@@ -679,9 +691,9 @@ async function downloadSlipExcel(code){
     mergeExcelCells(ws,"B1:F1",slipTemplateFirmName(h),{size:14,color:BLACK});
     mergeExcelCells(ws,"B2:F2",h.musteri_ad || "",{size:14,color:BLACK});
     mergeExcelCells(ws,"B3:F3",h.tarih || "",{size:14,color:BLACK});
-    mergeExcelCells(ws,"B4:D4",h.kasa_cesidi || "",{size:14,color:BLUE});
+    mergeExcelCells(ws,"B4:D4",slipCleanCaseText(h.kasa_cesidi),{size:14,color:BLUE});
     mergeExcelCells(ws,"E4:F4",slipTemplateSystemShort(h),{size:14,color:BLUE});
-    mergeExcelCells(ws,"B5:F5",h.urun_adi || "",{size:14,color:BLACK});
+    mergeExcelCells(ws,"B5:F5",slipCleanProductText(h.urun_adi),{size:14,color:BLACK});
 
     ws.getCell("A1").value = "FİRMA";
     ws.getCell("A2").value = "MÜŞTERİ";
@@ -757,7 +769,7 @@ function buildSlipPrintHTML(h,details){
   const rowHtml = rows.map(function(r){
     return `<tr><td class="adet">${esc(r.adet || r.sira)}</td><td>${esc(slipFormatDecimal(r.en))}</td><td>${esc(slipFormatDecimal(r.boy))}</td><td>${esc(slipFormatPlain(r.pile))}</td><td>${esc(slipFormatPlain(r.ip))}</td><td>${r.m2 === "" ? "" : esc(slipFormatDecimal(r.m2))}</td></tr>`;
   }).join("");
-  return `<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8"><title>${esc(h.fis_kodu || "İmalat Fişi")}</title><style>@page{size:A4 portrait;margin:10mm}body{font-family:Arial,sans-serif;margin:0;color:#000}.wrap{width:190mm;margin:0 auto}.slip{width:100%;border-collapse:collapse;table-layout:fixed}.slip td,.slip th{border:1.5px solid #000;text-align:center;vertical-align:middle;padding:4px;font-size:20px;height:9mm}.slip .label{color:red;font-weight:900;text-align:left;font-size:22px}.slip .value{font-weight:900}.slip .blue{color:#1297c6}.slip .head{color:red;font-weight:900;font-size:24px;height:15mm}.slip .adet{font-weight:900}.slip .total-label,.slip .note-label{color:red;font-weight:900;text-align:left}.slip .total-m2{color:red;font-weight:900}.slip .note-text{font-size:24px;font-weight:900;height:18mm}.print-actions{display:flex;gap:8px;margin:10px 0}.print-actions button{padding:10px 14px;border:1px solid #333;background:#fff;font-weight:700;cursor:pointer}@media print{.print-actions{display:none}.wrap{width:190mm}}</style></head><body><div class="wrap"><div class="print-actions"><button onclick="window.print()">Yazdır</button><button onclick="window.close()">Kapat</button></div><table class="slip"><colgroup><col style="width:16.5%"><col style="width:16.5%"><col style="width:17%"><col style="width:17%"><col style="width:16.5%"><col style="width:16.5%"></colgroup><tr><td colspan="2" class="label">FİRMA</td><td colspan="4" class="value">${esc(slipTemplateFirmName(h))}</td></tr><tr><td colspan="2" class="label">MÜŞTERİ</td><td colspan="4" class="value">${esc(h.musteri_ad || "")}</td></tr><tr><td colspan="2" class="label">TARİH</td><td colspan="4" class="value">${esc(h.tarih || "")}</td></tr><tr><td colspan="2" class="label">KASA ÇEŞİDİ</td><td colspan="2" class="value blue">${esc(h.kasa_cesidi || "")}</td><td colspan="2" class="value blue">${esc(slipTemplateSystemShort(h))}</td></tr><tr><td colspan="2" class="label">ÜRÜN ADI</td><td colspan="2" class="value">${esc(h.urun_adi || "")}</td><td colspan="2" class="value"></td></tr><tr><th class="head">ADET</th><th class="head">EN</th><th class="head">BOY</th><th class="head">PİLE</th><th class="head">İP</th><th class="head">m²</th></tr>${rowHtml}<tr><td class="total-label">TOPLAM</td><td>${esc(h.toplam_adet || 0)}</td><td></td><td></td><td></td><td class="total-m2">${esc(slipFormatDecimal(h.toplam_m2 || 0))}</td></tr><tr><td class="note-label">NOT</td><td colspan="5" class="note-text">${esc(slipTemplateNote(h))}</td></tr></table></div></body></html>`;
+  return `<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8"><title>${esc(h.fis_kodu || "İmalat Fişi")}</title><style>@page{size:A4 portrait;margin:10mm}body{font-family:Arial,sans-serif;margin:0;color:#000}.wrap{width:190mm;margin:0 auto}.slip{width:100%;border-collapse:collapse;table-layout:fixed}.slip td,.slip th{border:1.5px solid #000;text-align:center;vertical-align:middle;padding:4px;font-size:20px;height:9mm}.slip .label{color:red;font-weight:900;text-align:left;font-size:22px}.slip .value{font-weight:900}.slip .blue{color:#1297c6}.slip .head{color:red;font-weight:900;font-size:24px;height:15mm}.slip .adet{font-weight:900}.slip .total-label,.slip .note-label{color:red;font-weight:900;text-align:left}.slip .total-m2{color:red;font-weight:900}.slip .note-text{font-size:24px;font-weight:900;height:18mm}.print-actions{display:flex;gap:8px;margin:10px 0}.print-actions button{padding:10px 14px;border:1px solid #333;background:#fff;font-weight:700;cursor:pointer}@media print{.print-actions{display:none}.wrap{width:190mm}}</style></head><body><div class="wrap"><div class="print-actions"><button onclick="window.print()">Yazdır</button><button onclick="window.close()">Kapat</button></div><table class="slip"><colgroup><col style="width:16.5%"><col style="width:16.5%"><col style="width:17%"><col style="width:17%"><col style="width:16.5%"><col style="width:16.5%"></colgroup><tr><td colspan="2" class="label">FİRMA</td><td colspan="4" class="value">${esc(slipTemplateFirmName(h))}</td></tr><tr><td colspan="2" class="label">MÜŞTERİ</td><td colspan="4" class="value">${esc(h.musteri_ad || "")}</td></tr><tr><td colspan="2" class="label">TARİH</td><td colspan="4" class="value">${esc(h.tarih || "")}</td></tr><tr><td colspan="2" class="label">KASA ÇEŞİDİ</td><td colspan="2" class="value blue">${esc(slipCleanCaseText(h.kasa_cesidi))}</td><td colspan="2" class="value blue">${esc(slipTemplateSystemShort(h))}</td></tr><tr><td colspan="2" class="label">ÜRÜN ADI</td><td colspan="2" class="value">${esc(slipCleanProductText(h.urun_adi))}</td><td colspan="2" class="value"></td></tr><tr><th class="head">ADET</th><th class="head">EN</th><th class="head">BOY</th><th class="head">PİLE</th><th class="head">İP</th><th class="head">m²</th></tr>${rowHtml}<tr><td class="total-label">TOPLAM</td><td>${esc(h.toplam_adet || 0)}</td><td></td><td></td><td></td><td class="total-m2">${esc(slipFormatDecimal(h.toplam_m2 || 0))}</td></tr><tr><td class="note-label">NOT</td><td colspan="5" class="note-text">${esc(slipTemplateNote(h))}</td></tr></table></div></body></html>`;
 }
 function printSlip(code){
   try{
@@ -1068,9 +1080,9 @@ function plfDrawBlock(ws,startCol,header,rows,rightBlock){
   plfMerge(ws,1,startCol+1,1,startCol+5,slipTemplateFirmName(header),{size:14,color:BLACK});
   plfMerge(ws,2,startCol+1,2,startCol+5,header.musteri_ad || "",{size:14,color:BLACK});
   plfMerge(ws,3,startCol+1,3,startCol+5,header.tarih || "",{size:14,color:BLACK});
-  plfMerge(ws,4,startCol+1,4,startCol+3,header.kasa_cesidi || "",{size:14,color:BLUE});
+  plfMerge(ws,4,startCol+1,4,startCol+3,slipCleanCaseText(header.kasa_cesidi),{size:14,color:BLUE});
   plfMerge(ws,4,startCol+4,4,startCol+5,slipTemplateSystemShort(header),{size:14,color:BLUE});
-  plfMerge(ws,5,startCol+1,5,startCol+5,header.urun_adi || "",{size:14,color:BLACK});
+  plfMerge(ws,5,startCol+1,5,startCol+5,slipCleanProductText(header.urun_adi),{size:14,color:BLACK});
 
   var labels = ["FİRMA","MÜŞTERİ","TARİH","KASA","ÜRÜN"];
   for(var i = 0; i < labels.length; i++){
