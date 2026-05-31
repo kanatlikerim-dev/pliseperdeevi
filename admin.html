@@ -63,7 +63,7 @@ body.dark{--bg:#151618;--bg2:#202328;--card:#1e2023;--panel:#25282d;--text:#f2f0
       </div>
       <div class="actions"><button class="btn-main" onclick="loadOrders()">Siparişleri Listele</button><button class="btn-light" onclick="clearOrderFilters()">Filtreleri Temizle</button><button class="btn-light" onclick="toggleBox('manualOrderBox')">Manuel Sipariş Ekle</button></div>
       <div class="message error" id="ordersError"></div><div class="message success" id="ordersSuccess"></div><div class="message warning" id="ordersWarning"></div>
-      <div class="table-wrap" id="ordersTableWrap" style="display:none"><table><thead><tr><th>Sipariş Kodu</th><th>Tarih</th><th>Kaynak</th><th>Satıcı</th><th>Müşteri</th><th>m²</th><th>Müşteri Tutarı</th><th>Satıcı Hesabı</th><th>Fiş Durumu</th><th>Durum</th><th>İşlem</th></tr></thead><tbody id="ordersTableBody"></tbody></table></div>
+      <div class="table-wrap" id="ordersTableWrap" style="display:none"><table><thead><tr><th>Sipariş Kodu</th><th>Tarih</th><th>Kaynak</th><th>Satıcı</th><th>Müşteri</th><th>m²</th><th>Müşteri Tutarı</th><th>Satıcı Hesabı</th><th>Durum</th><th>İşlem</th></tr></thead><tbody id="ordersTableBody"></tbody></table></div>
       <div id="orderDetailArea"></div>
     </div>
     <div class="box hidden" id="manualOrderBox">
@@ -170,7 +170,7 @@ const ADMIN_API_KEY="prestijlife2026";
 const ORDER_STATUSES=["Yeni","Üretimde","Hazır","Teslim Edildi","İptal"];
 const MOUNT_OPTIONS=["Askılı","Vidalı","Standart"];
 const CASE_OPTIONS=["Bronz","Beyaz","Krem","Kahverengi","Antrasit","Gri"];
-let sellersList=[],sellerPriceRows=[],productsList=[],fabricsList=[],catalogsList=[],orderSlipMap={},lastReportHTML="",lastBackup=null,priceFormDirty=false,pricesLoadedOnce=false;
+let sellersList=[],sellerPriceRows=[],productsList=[],fabricsList=[],catalogsList=[],lastReportHTML="",lastBackup=null,priceFormDirty=false,pricesLoadedOnce=false;
 const HELP_CONTENT={
   siparisler:{title:"Siparişler nasıl kullanılır?",body:`<p>Bu bölümde internet sitesinden gelen siparişleri ve elle eklediğiniz siparişleri takip edersiniz.</p><ol><li>Filtreleri kullanarak listeyi daraltın.</li><li>Detay butonuyla sipariş bilgilerini açın.</li><li>Durumu değiştirerek sipariş sürecini takip edin.</li><li>İmalat Fişi Oluştur ile üretim fişi hazırlayın.</li><li>İptal olan siparişleri silebilirsiniz.</li></ol>`},
   imalat:{title:"İmalat fişleri nasıl kullanılır?",body:`<p>Üretim için gerekli fişleri buradan yönetirsiniz.</p><ol><li>Fişi açın ve ölçüleri kontrol edin.</li><li>Pile, ip veya not alanlarını elle düzenleyin.</li><li>Fişi Güncelle ile kaydedin.</li><li>Excel veya PDF olarak indirin.</li></ol>`},
@@ -400,7 +400,11 @@ function renderOrders(list){
     const seller=o.kaynak==="site"?"Merkez / Site":(o.satici_adi||"-");
     const tr=document.createElement("tr");
     tr.innerHTML=`<td><strong>${esc(o.siparis_kodu)}</strong></td><td>${formatDate(o.tarih)}</td><td><span class="tag">${source}</span></td><td>${esc(seller)}</td><td><strong>${esc(o.musteri_ad)}</strong><small>${esc(o.telefon)}</small></td><td>${num(o.toplam_gercek_m2)} m²</td><td>${tl(o.musteri_toplam_tutar)}</td><td>${o.satici_hesap_tutar!==""?tl(o.satici_hesap_tutar):"-"}</td><td>${slipStatusHTML(o.siparis_kodu)}</td><td><span class="tag">${esc(o.durum||"Yeni")}</span></td><td><button class="btn-light" onclick="loadOrderDetail('${attr(o.siparis_kodu)}')">Detay</button></td>`;
- async function loadOrderDetail(code){
+    ordersTableBody.appendChild(tr)
+  });
+  ordersTableWrap.style.display="block"
+}
+async function loadOrderDetail(code){
   orderDetailArea.innerHTML='<div class="placeholder">Sipariş detayı açılıyor...</div>';
   try{
     const d=await apiPost({action:"getOrder",apiKey:ADMIN_API_KEY,siparis_kodu:code},16000);
@@ -429,7 +433,7 @@ function goToOrderSlips(code){
   slipOrderCode.value = code;
   loadSlips();
   document.getElementById("section-imalat").scrollIntoView({behavior:"smooth",block:"start"});
-}s||[])}catch(e){orderDetailArea.innerHTML="";showMessage("ordersError",e.message)}}
+}
 function orderDetailM2(item){
   const en = Number(String(item.gercek_en ?? item.en ?? "").replace(",", "."));
   const boy = Number(String(item.gercek_boy ?? item.boy ?? "").replace(",", "."));
@@ -460,7 +464,11 @@ async function createProductionSlips(code){
     const existing = await getSlipsForOrder(code);
     if(existing.length){
       const codes = existing.map(s=>s.fis_kodu).filter(Boolean).join(", ");
-      const ok = confirm("Bu sipariş için daha önce imalat fişi oluşturulmuş.\n\nFiş: "+(codes||"Mevcut fiş")+"\n\nYine de tekrar fiş oluşturulsun mu?");
+      const ok = confirm("Bu sipariş için daha önce imalat fişi oluşturulmuş.
+
+Fiş: "+(codes||"Mevcut fiş")+"
+
+Yine de tekrar fiş oluşturulsun mu?");
       if(!ok) return;
     }
     const d=await apiPost({action:"createProductionSlips",apiKey:ADMIN_API_KEY,siparis_kodu:code},16000);
