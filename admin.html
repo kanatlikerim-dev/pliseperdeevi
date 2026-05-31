@@ -453,6 +453,11 @@ function slipFormatPlain(value){
   if(isNaN(n)) return String(value || "");
   return String(n);
 }
+function pdfSafeText(value){
+  return String(value || "")
+    .replace(/Ğ/g,"G").replace(/Ü/g,"U").replace(/Ş/g,"S").replace(/İ/g,"I").replace(/Ö/g,"O").replace(/Ç/g,"C")
+    .replace(/ğ/g,"g").replace(/ü/g,"u").replace(/ş/g,"s").replace(/ı/g,"i").replace(/ö/g,"o").replace(/ç/g,"c");
+}
 function writePdfCell(doc,x,y,w,h,text,opt){
   opt = opt || {};
   const color = opt.color || [0,0,0];
@@ -467,7 +472,7 @@ function writePdfCell(doc,x,y,w,h,text,opt){
   let tx = x + w / 2;
   if(align === "left") tx = x + 2;
   if(align === "right") tx = x + w - 2;
-  doc.text(String(text || ""), tx, y + valignOffset, {align:align, maxWidth:w - 4});
+  doc.text(pdfSafeText(text), tx, y + valignOffset, {align:align, maxWidth:w - 4});
 }
 function drawSlipPdfPage(doc,h,details){
   const red = [220,0,0];
@@ -491,8 +496,7 @@ function drawSlipPdfPage(doc,h,details){
   writePdfCell(doc,x[2],y,colW[2]+colW[3],topH,h.kasa_cesidi || "",{bold:true,size:13,color:blue});
   writePdfCell(doc,x[4],y,colW[4]+colW[5],topH,slipTemplateSystemShort(h),{bold:true,size:13,color:blue}); y += topH;
   writePdfCell(doc,x[0],y,colW[0]+colW[1],topH,"URUN ADI",{bold:true,size:13,color:red,align:"left"});
-  writePdfCell(doc,x[2],y,colW[2]+colW[3],topH,h.urun_adi || "",{bold:true,size:13});
-  writePdfCell(doc,x[4],y,colW[4]+colW[5],topH,"",{bold:true,size:13}); y += topH;
+  writePdfCell(doc,x[2],y,colW[2]+colW[3]+colW[4]+colW[5],topH,h.urun_adi || "",{bold:true,size:12}); y += topH;
   ["ADET","EN","BOY","PILE","IP","m2"].forEach(function(label,i){
     writePdfCell(doc,x[i],y,colW[i],headerH,label,{bold:true,size:14,color:red});
   });
@@ -623,7 +627,7 @@ async function downloadSlipExcel(code){
     ws.views = [{showGridLines:true}];
     ws.properties.defaultRowHeight = 20;
     ws.columns = [
-      {width:14.5},
+      {width:17.5},
       {width:12},
       {width:12},
       {width:12},
@@ -647,8 +651,7 @@ async function downloadSlipExcel(code){
     mergeExcelCells(ws,"B3:F3",h.tarih || "",{size:14,color:BLACK});
     mergeExcelCells(ws,"B4:D4",h.kasa_cesidi || "",{size:14,color:BLUE});
     mergeExcelCells(ws,"E4:F4",slipTemplateSystemShort(h),{size:14,color:BLUE});
-    mergeExcelCells(ws,"B5:D5",h.urun_adi || "",{size:14,color:BLACK});
-    mergeExcelCells(ws,"E5:F5","",{size:14,color:BLACK});
+    mergeExcelCells(ws,"B5:F5",h.urun_adi || "",{size:14,color:BLACK});
 
     ws.getCell("A1").value = "FİRMA";
     ws.getCell("A2").value = "MÜŞTERİ";
