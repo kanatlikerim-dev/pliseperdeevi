@@ -9,6 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 :root{--bg:#f6f3ee;--bg2:#efe8dd;--card:#fff;--panel:#fbf8f4;--text:#1f1f1f;--muted:#6f6a64;--border:#e8e2da;--input:#ded5ca;--accent:#8b6a45;--accent-dark:#745537;--soft:#efe4d6;--danger:#b73333;--danger-bg:#fff0f0;--success:#176b3a;--success-bg:#ecfff3;--warning:#7a5318;--warning-bg:#fff8e8;--shadow:0 18px 55px rgba(45,35,25,.10)}
 body.dark{--bg:#151618;--bg2:#202328;--card:#1e2023;--panel:#25282d;--text:#f2f0ec;--muted:#b8b2aa;--border:#343840;--input:#3d444d;--accent:#b38a5d;--accent-dark:#c49a6d;--soft:#342a20;--danger:#ff9b9b;--danger-bg:#321d1d;--success:#94e4ae;--success-bg:#17331f;--warning:#f0d6a8;--warning-bg:#2b2618;--shadow:0 18px 55px rgba(0,0,0,.38)}
@@ -209,15 +210,18 @@ async function fetchWithTimeout(url, options = {}, timeoutMs = 30000){
 async function apiPost(payload, timeoutMs = 30000){
   const response = await fetchWithTimeout(PRICE_API_URL, {
     method: "POST",
-    headers: {"Content-Type":"text/plain;charset=utf-8"},
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
     body: JSON.stringify(payload)
   }, timeoutMs);
 
+  let data;
   try{
-    return await response.json();
+    data = await response.json();
   }catch(error){
     throw new Error("Sunucudan geçerli JSON cevap alınamadı. Apps Script dağıtımını kontrol edin.");
   }
+
+  return data;
 }
 async function login(){hideMessages(["loginError"]);const p=passwordInput.value;if(!p)return showMessage("loginError","Lütfen şifrenizi girin.");loginBtn.disabled=true;loginBtn.textContent="Kontrol ediliyor...";try{const d=await apiPost({action:"login",password:p});if(!d.success)throw new Error(d.message||"Giriş yapılamadı.");sessionStorage.setItem(ADMIN_SESSION_KEY,"true");showAdminPanel()}catch(e){showMessage("loginError",e.message||"Giriş yapılamadı.")}finally{loginBtn.disabled=false;loginBtn.textContent="Giriş Yap"}}
 function logout(){sessionStorage.removeItem(ADMIN_SESSION_KEY);adminPanel.style.display="none";loginScreen.style.display="block"}
@@ -225,10 +229,10 @@ function showAdminPanel(){loginScreen.style.display="none";adminPanel.style.disp
 function openSection(s,card){document.querySelectorAll(".module-card").forEach(x=>x.classList.remove("active"));card.classList.add("active");document.querySelectorAll(".panel-section").forEach(x=>x.classList.remove("active"));document.getElementById("section-"+s).classList.add("active");if(s==="siparisler")loadOrders();if(s==="imalat")loadSlips();if(s==="muhasebe")loadAccounting();if(s==="yonetim"){loadSellerPrices(false);loadCatalogData()}if(s==="ayarlar"){loadPrices(false);loadSellerPrices(false)}}
 function toggleBox(id){document.getElementById(id).classList.toggle("hidden")}
 async function loadPrices(force = false){
-  hideMessages(["priceError","priceSuccess","priceWarning"]);
+  hideMessages(["priceError", "priceSuccess", "priceWarning"]);
 
   if(priceFormDirty && !force){
-    return showMessage("priceWarning","Kaydedilmemiş değişiklik var. Yenilemeden önce kaydedin veya Fiyatları Yenile butonuna tekrar basın.");
+    return showMessage("priceWarning", "Kaydedilmemiş değişiklik var. Yenilemeden önce kaydedin veya Fiyatları Yenile butonuna tekrar basın.");
   }
 
   if(priceFormDirty && force && !confirm("Kaydedilmemiş değişiklikler var. Fiyatlar yeniden yüklensin mi?")){
@@ -237,8 +241,8 @@ async function loadPrices(force = false){
 
   try{
     const response = await fetchWithTimeout(PRICE_API_URL + "?action=getPrices&t=" + Date.now(), {
-      method:"GET",
-      cache:"no-store"
+      method: "GET",
+      cache: "no-store"
     }, 30000);
 
     const data = await response.json();
@@ -255,22 +259,22 @@ async function loadPrices(force = false){
     priceFormDirty = false;
     pricesLoadedOnce = true;
   }catch(error){
-    showMessage("priceWarning","Fiyatlar alınamadı. " + (error.message || error));
+    showMessage("priceWarning", "Fiyatlar alınamadı. " + (error.message || error));
   }
 }
 function readPositive(id,label){const n=Number(document.getElementById(id).value);if(isNaN(n)||n<=0)throw new Error(label+" geçersiz.");return n}
 async function savePrices(){
-  hideMessages(["priceError","priceSuccess","priceWarning"]);
+  hideMessages(["priceError", "priceSuccess", "priceWarning"]);
 
   let prices;
   try{
     prices = {
-      klasik_askili: readPositive("priceKlasikAskili","Klasik Askılı"),
-      klasik_vidali: readPositive("priceKlasikVidali","Klasik Vidalı"),
-      blackout: readPositive("priceBlackout","Blackout"),
-      ciftli: readPositive("priceCiftli","Çiftli Sistem"),
-      tul_perde: readPositive("priceTulPerde","Tül Perde"),
-      kargo: readPositive("priceKargo","Kargo")
+      klasik_askili: readPositive("priceKlasikAskili", "Klasik Askılı"),
+      klasik_vidali: readPositive("priceKlasikVidali", "Klasik Vidalı"),
+      blackout: readPositive("priceBlackout", "Blackout"),
+      ciftli: readPositive("priceCiftli", "Çiftli Sistem"),
+      tul_perde: readPositive("priceTulPerde", "Tül Perde"),
+      kargo: readPositive("priceKargo", "Kargo")
     };
   }catch(error){
     return showMessage("priceError", error.message || error);
@@ -286,20 +290,20 @@ async function savePrices(){
     }
 
     const data = await apiPost({
-      action:"updatePrices",
-      apiKey:ADMIN_API_KEY,
-      prices:prices
+      action: "updatePrices",
+      apiKey: ADMIN_API_KEY,
+      prices: prices
     }, 45000);
 
     if(!data.success) throw new Error(data.message || "Fiyatlar kaydedilemedi.");
 
     priceFormDirty = false;
-    showMessage("priceSuccess","Fiyatlar kaydedildi.");
+    showMessage("priceSuccess", "Fiyatlar kaydedildi.");
 
     await loadPrices(true);
   }catch(error){
     const message = String(error && error.message ? error.message : error);
-    showMessage("priceError","Fiyatlar kaydedilemedi. " + message);
+    showMessage("priceError", "Fiyatlar kaydedilemedi. " + message);
   }finally{
     if(button){
       button.disabled = false;
@@ -338,7 +342,29 @@ async function deleteCatalog(id){if(!confirm("Katalog silinsin mi?"))return;try{
 async function loadOrders(){hideMessages(["ordersError","ordersSuccess","ordersWarning"]);try{const d=await apiPost({action:"listOrders",apiKey:ADMIN_API_KEY,dateStart:orderDateStart.value,dateEnd:orderDateEnd.value,source:orderSourceFilter.value,sellerId:orderSellerFilter.value,status:orderStatusFilter.value});if(!d.success)throw new Error(d.message);renderOrders(d.orders||[])}catch(e){showMessage("ordersError","Siparişler alınamadı. "+e.message)}}
 function renderOrders(list){ordersTableBody.innerHTML="";if(!list.length){ordersTableWrap.style.display="none";return showMessage("ordersWarning","Bu seçimlere uygun sipariş bulunamadı.")}list.forEach(o=>{const source=o.kaynak==="site"?"Merkez / Site":"Manuel";const seller=o.kaynak==="site"?"Merkez / Site":(o.satici_adi||"-");const tr=document.createElement("tr");tr.innerHTML=`<td><strong>${esc(o.siparis_kodu)}</strong></td><td>${formatDate(o.tarih)}</td><td><span class="tag">${source}</span></td><td>${esc(seller)}</td><td><strong>${esc(o.musteri_ad)}</strong><small>${esc(o.telefon)}</small></td><td>${num(o.toplam_gercek_m2)} m²</td><td>${tl(o.musteri_toplam_tutar)}</td><td>${o.satici_hesap_tutar!==""?tl(o.satici_hesap_tutar):"-"}</td><td><span class="tag">${esc(o.durum||"Yeni")}</span></td><td><button class="btn-light" onclick="loadOrderDetail('${attr(o.siparis_kodu)}')">Detay</button></td>`;ordersTableBody.appendChild(tr)});ordersTableWrap.style.display="block"}
 async function loadOrderDetail(code){orderDetailArea.innerHTML='<div class="placeholder">Sipariş detayı açılıyor...</div>';try{const d=await apiPost({action:"getOrder",apiKey:ADMIN_API_KEY,siparis_kodu:code});if(!d.success)throw new Error(d.message);renderOrderDetail(d.order,d.details||[])}catch(e){orderDetailArea.innerHTML="";showMessage("ordersError",e.message)}}
-function renderOrderDetail(o,details){const rows=details.map(x=>`<tr><td>${esc(x.satir_no)}</td><td>${esc(x.urun)}</td><td>${esc(x.kasa_rengi)}</td><td>${esc(x.montaj_tipi)}</td><td>${esc(x.gercek_en)} × ${esc(x.gercek_boy)}</td><td>${esc(x.adet)}</td><td>${num(x.gercek_m2)} m²</td><td>${num(x.satis_m2)} m²</td><td>${x.satici_m2_fiyat!==""?tl(x.satici_m2_fiyat):"-"}</td></tr>`).join("");const statusOptions=ORDER_STATUSES.map(s=>`<option value="${attr(s)}" ${String(o.durum||"Yeni")===s?"selected":""}>${esc(s)}</option>`).join("");orderDetailArea.innerHTML=`<div class="detail-box"><div class="detail-head"><div><h3>${esc(o.siparis_kodu)}</h3><p class="subtitle" style="margin-bottom:0">Bu kod müşteri ekranında görünmez.</p></div><div class="actions" style="min-width:420px"><button class="btn-main" onclick="createProductionSlips('${attr(o.siparis_kodu)}')">İmalat Fişi Oluştur</button><button class="btn-danger" onclick="deleteOrder('${attr(o.siparis_kodu)}')">Siparişi Sil</button></div></div><div class="form-grid"><label class="field"><span>Sipariş Durumu</span><select id="detailOrderStatus">${statusOptions}</select></label><label class="field"><span>Durum İşlemi</span><button class="btn-light" onclick="updateOrderStatus('${attr(o.siparis_kodu)}')">Durumu Kaydet</button></label></div><div class="detail-grid"><div class="info-tile"><span>Müşteri</span><strong>${esc(o.musteri_ad)}</strong></div><div class="info-tile"><span>Telefon</span><strong>${esc(o.telefon)}</strong></div><div class="info-tile"><span>Satıcı</span><strong>${o.kaynak==="site"?"Merkez / Site":esc(o.satici_adi)}</strong></div><div class="info-tile"><span>Gerçek m²</span><strong>${num(o.toplam_gercek_m2)} m²</strong></div><div class="info-tile"><span>Müşteri Tutarı</span><strong>${tl(o.musteri_toplam_tutar)}</strong></div><div class="info-tile"><span>Satıcı Hesabı</span><strong>${o.satici_hesap_tutar!==""?tl(o.satici_hesap_tutar):"-"}</strong></div></div><div class="info-tile" style="margin-bottom:12px"><span>Adres</span><strong>${esc(o.adres)}</strong></div><div class="table-wrap"><table><thead><tr><th>Sıra</th><th>Ürün</th><th>Kasa</th><th>Sistem</th><th>Gerçek Ölçü</th><th>Adet</th><th>Gerçek m²</th><th>Satış m²</th><th>Satıcı m²</th></tr></thead><tbody>${rows}</tbody></table></div></div>`}
+function orderDetailM2(item){
+  const en = Number(String(item.gercek_en ?? item.en ?? "").replace(",", "."));
+  const boy = Number(String(item.gercek_boy ?? item.boy ?? "").replace(",", "."));
+  const adet = Number(String(item.adet ?? 1).replace(",", "."));
+  let m2 = 0;
+
+  if(!isNaN(en) && !isNaN(boy) && !isNaN(adet) && en > 0 && boy > 0 && adet > 0){
+    m2 = (en * boy * adet) / 10000;
+  }else{
+    m2 = Number(item.gercek_m2 || item.mt2 || item.m2 || 0);
+  }
+
+  if(!m2 || isNaN(m2)) return 0;
+  if(m2 < 1) return 1;
+  return Math.round((m2 + Number.EPSILON) * 100) / 100;
+}
+function renderOrderDetail(o,details){
+  const detailM2Total = (details || []).reduce(function(total,item){ return total + orderDetailM2(item); }, 0);
+  const displayTotalM2 = detailM2Total > 0 ? detailM2Total : Number(o.toplam_gercek_m2 || 0);
+
+  const rows=details.map(x=>`<tr><td>${esc(x.satir_no)}</td><td>${esc(x.urun)}</td><td>${esc(x.kasa_rengi)}</td><td>${esc(x.montaj_tipi)}</td><td>${esc(x.gercek_en)} × ${esc(x.gercek_boy)}</td><td>${esc(x.adet)}</td><td>${num(orderDetailM2(x))} m²</td></tr>`).join("");
+  const statusOptions=ORDER_STATUSES.map(s=>`<option value="${attr(s)}" ${String(o.durum||"Yeni")===s?"selected":""}>${esc(s)}</option>`).join("");
+  orderDetailArea.innerHTML=`<div class="detail-box"><div class="detail-head"><div><h3>${esc(o.siparis_kodu)}</h3><p class="subtitle" style="margin-bottom:0">Bu kod müşteri ekranında görünmez.</p></div><div class="actions" style="min-width:420px"><button class="btn-main" onclick="createProductionSlips('${attr(o.siparis_kodu)}')">İmalat Fişi Oluştur</button><button class="btn-danger" onclick="deleteOrder('${attr(o.siparis_kodu)}')">Siparişi Sil</button></div></div><div class="form-grid"><label class="field"><span>Sipariş Durumu</span><select id="detailOrderStatus">${statusOptions}</select></label><label class="field"><span>Durum İşlemi</span><button class="btn-light" onclick="updateOrderStatus('${attr(o.siparis_kodu)}')">Durumu Kaydet</button></label></div><div class="detail-grid"><div class="info-tile"><span>Müşteri</span><strong>${esc(o.musteri_ad)}</strong></div><div class="info-tile"><span>Telefon</span><strong>${esc(o.telefon)}</strong></div><div class="info-tile"><span>Satıcı</span><strong>${o.kaynak==="site"?"Merkez / Site":esc(o.satici_adi)}</strong></div><div class="info-tile"><span>m²</span><strong>${num(displayTotalM2)} m²</strong></div><div class="info-tile"><span>Müşteri Tutarı</span><strong>${tl(o.musteri_toplam_tutar)}</strong></div><div class="info-tile"><span>Satıcı Hesabı</span><strong>${o.satici_hesap_tutar!==""?tl(o.satici_hesap_tutar):"-"}</strong></div></div><div class="info-tile" style="margin-bottom:12px"><span>Adres</span><strong>${esc(o.adres)}</strong></div><div class="table-wrap"><table><thead><tr><th>Sıra</th><th>Ürün</th><th>Kasa</th><th>Sistem</th><th>Ölçü</th><th>Adet</th><th>m²</th></tr></thead><tbody>${rows}</tbody></table></div></div>`}
 async function updateOrderStatus(code){try{const d=await apiPost({action:"updateOrderStatus",apiKey:ADMIN_API_KEY,siparis_kodu:code,status:detailOrderStatus.value});if(!d.success)throw new Error(d.message);showMessage("ordersSuccess","Sipariş durumu güncellendi.");loadOrders()}catch(e){showMessage("ordersError","Durum güncellenemedi. "+e.message)}}
 async function deleteOrder(code){if(!confirm(code+" siparişi silinsin mi? Bağlı imalat fişleri de silinir."))return;try{const d=await apiPost({action:"deleteOrder",apiKey:ADMIN_API_KEY,siparis_kodu:code},16000);if(!d.success)throw new Error(d.message);showMessage("ordersSuccess","Sipariş silindi.");orderDetailArea.innerHTML="";loadOrders();loadSlips();loadAccounting()}catch(e){showMessage("ordersError","Sipariş silinemedi. "+e.message)}}
 async function createProductionSlips(code){try{const d=await apiPost({action:"createProductionSlips",apiKey:ADMIN_API_KEY,siparis_kodu:code},16000);if(!d.success)throw new Error(d.message);showMessage("ordersSuccess","İmalat fişi oluşturuldu.");loadSlips()}catch(e){showMessage("ordersError","Fiş oluşturulamadı. "+e.message)}}
@@ -361,7 +387,74 @@ function collectCurrentSlip(){if(!document.getElementById("editSlipCode"))throw 
 function calcM2(en,boy,adet){return Math.round(((Number(en||0)*Number(boy||0)*Number(adet||1))/10000+Number.EPSILON)*100)/100}
 function downloadSlipPdf(code){try{const {h,details}=collectCurrentSlip();const jsPDF=window.jspdf&&window.jspdf.jsPDF;if(!jsPDF)throw new Error("PDF kütüphanesi yüklenemedi.");const doc=new jsPDF({orientation:"portrait",unit:"mm",format:"a4"});let y=14;doc.setFont("helvetica","bold");doc.setFontSize(18);doc.text("IMALAT FISI",105,y,{align:"center"});y+=12;function box(x,y,label,value){doc.rect(x,y,92,10);doc.setFont("helvetica","normal");doc.setFontSize(9);doc.text(label,x+2,y+6.5);doc.text(String(value||""),x+28,y+6.5,{maxWidth:62})}box(12,y,"Fis Kodu:",h.fis_kodu);box(106,y,"Siparis Kodu:",h.siparis_kodu);y+=12;box(12,y,"Firma:",h.firma_adi);box(106,y,"Tarih:",h.tarih);y+=12;box(12,y,"Musteri:",h.musteri_ad);box(106,y,"Satici:",h.satici_adi);y+=12;box(12,y,"Urun:",h.urun_adi);box(106,y,"Kasa:",h.kasa_cesidi);y+=17;const cols=[['Sira',18],['Adet',22],['En',24],['Boy',24],['Pile',24],['Ip',24],['m2',22],['Not',28]],rowH=9;let x=12;doc.setFont("helvetica","normal");doc.setFontSize(9);cols.forEach(c=>{doc.rect(x,y,c[1],rowH);doc.text(c[0],x+2,y+6);x+=c[1]});y+=rowH;details.forEach((r,i)=>{if(y>270){doc.addPage();y=14}x=12;[i+1,r.adet,r.en,r.boy,r.pile,r.ip,r.m2,r.not].forEach((v,idx)=>{doc.rect(x,y,cols[idx][1],rowH);doc.text(String(v??""),x+2,y+6,{maxWidth:cols[idx][1]-4});x+=cols[idx][1]});y+=rowH});y+=8;doc.setFontSize(11);doc.text("Toplam: "+String(h.toplam_adet||0)+" adet / "+num(h.toplam_m2||0)+" m2",198,y,{align:"right"});y+=10;doc.text("Not: "+String(h.not||""),12,y,{maxWidth:186});doc.save((code||h.fis_kodu||"imalat-fisi")+".pdf")}catch(e){showMessage("slipsError","PDF indirilemedi. "+e.message)}}
 function buildSlipExcelHTML(h,details){const rows=details.map((r,i)=>`<tr><td>${i+1}</td><td>${esc(r.adet)}</td><td>${esc(r.en)}</td><td>${esc(r.boy)}</td><td>${esc(r.pile)}</td><td>${esc(r.ip)}</td><td>${esc(r.m2)}</td><td>${esc(r.not)}</td></tr>`).join("");return `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>table{border-collapse:collapse}td,th{border:1px solid #222;padding:7px}th{font-weight:bold}</style></head><body><h2>İMALAT FİŞİ</h2><table><tr><td>Fiş Kodu</td><td>${esc(h.fis_kodu)}</td><td>Sipariş Kodu</td><td>${esc(h.siparis_kodu)}</td></tr><tr><td>Firma</td><td>${esc(h.firma_adi)}</td><td>Tarih</td><td>${esc(h.tarih)}</td></tr><tr><td>Müşteri</td><td>${esc(h.musteri_ad)}</td><td>Satıcı</td><td>${esc(h.satici_adi)}</td></tr><tr><td>Ürün</td><td>${esc(h.urun_adi)}</td><td>Kasa</td><td>${esc(h.kasa_cesidi)}</td></tr></table><br><table><thead><tr><th>Sıra</th><th>Adet</th><th>En</th><th>Boy</th><th>Pile</th><th>İp</th><th>m²</th><th>Not</th></tr></thead><tbody>${rows}</tbody></table><p><b>Toplam:</b> ${esc(h.toplam_adet)} adet / ${num(h.toplam_m2)} m²</p><p><b>Not:</b> ${esc(h.not||"")}</p></body></html>`}
-function downloadSlipExcel(code){try{const {h,details}=collectCurrentSlip();downloadHtmlAsExcel(buildSlipExcelHTML(h,details),(code||h.fis_kodu||"imalat-fisi")+".xls")}catch(e){showMessage("slipsError","Excel indirilemedi. "+e.message)}}
+function makeSafeFileName(value){
+  return String(value || "imalat-fisi")
+    .replace(/[\\/:*?"<>|]/g, "-")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+function downloadSlipExcel(code){
+  try{
+    const {h,details}=collectCurrentSlip();
+
+    if(!window.XLSX){
+      throw new Error("Excel kütüphanesi yüklenemedi. Lütfen internet bağlantısını kontrol edip sayfayı yenileyin.");
+    }
+
+    const rows = [
+      ["İMALAT FİŞİ"],
+      [],
+      ["Fiş Kodu", h.fis_kodu, "Sipariş Kodu", h.siparis_kodu],
+      ["Firma", h.firma_adi, "Tarih", h.tarih],
+      ["Müşteri", h.musteri_ad, "Satıcı", h.satici_adi],
+      ["Ürün", h.urun_adi, "Kasa", h.kasa_cesidi],
+      ["Montaj", h.montaj_tipi, "", ""],
+      [],
+      ["Sıra", "Adet", "En", "Boy", "Pile", "İp", "m²", "Not"]
+    ];
+
+    details.forEach(function(r,i){
+      rows.push([
+        i + 1,
+        Number(r.adet || 0),
+        Number(r.en || 0),
+        Number(r.boy || 0),
+        r.pile || "",
+        r.ip || "",
+        Number(r.m2 || 0),
+        r.not || ""
+      ]);
+    });
+
+    rows.push([]);
+    rows.push(["TOPLAM", Number(h.toplam_adet || 0), "", "", "", "", Number(h.toplam_m2 || 0), ""]);
+    rows.push(["NOT", h.not || ""]);
+
+    const worksheet = XLSX.utils.aoa_to_sheet(rows);
+    worksheet["!cols"] = [
+      {wch:10},
+      {wch:10},
+      {wch:12},
+      {wch:12},
+      {wch:12},
+      {wch:12},
+      {wch:12},
+      {wch:32}
+    ];
+    worksheet["!merges"] = [
+      {s:{r:0,c:0}, e:{r:0,c:7}}
+    ];
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "İmalat Fişi");
+
+    const fileName = makeSafeFileName(code || h.fis_kodu || "imalat-fisi") + ".xlsx";
+    XLSX.writeFile(workbook, fileName);
+  }catch(e){
+    showMessage("slipsError","Excel indirilemedi. "+e.message);
+  }
+}
 async function loadAccounting(){hideMessages(["accError","accSuccess","accWarning"]);try{const d=await apiPost({action:"listAccounting",apiKey:ADMIN_API_KEY,dateStart:accDateStart.value,dateEnd:accDateEnd.value,sellerId:accSellerFilter.value,accountStatus:accStatusFilter.value},18000);if(!d.success)throw new Error(d.message);renderAccounting(d.rows||[],d.summary||{})}catch(e){showMessage("accError","Muhasebe bilgileri alınamadı. "+e.message)}}
 function renderAccounting(rows,summary){accSummaryCards.innerHTML=`<div class="summary-card"><span>Sipariş</span><strong>${summary.siparis_sayisi||0}</strong></div><div class="summary-card"><span>Gerçek m²</span><strong>${num(summary.toplam_gercek_m2)} m²</strong></div><div class="summary-card"><span>Satış Tutarı</span><strong>${tl(summary.toplam_satis_tutari)}</strong></div><div class="summary-card"><span>Satıcıya Verilecek</span><strong>${tl(summary.toplam_satici_tutari)}</strong></div><div class="summary-card"><span>Prestij Farkı</span><strong>${tl(summary.toplam_fark)}</strong></div><div class="summary-card"><span>Açık Sipariş</span><strong>${summary.acik_siparis||0} adet</strong></div><div class="summary-card"><span>Açık Tutar</span><strong>${tl(summary.acik_satici_tutari)}</strong></div><div class="summary-card"><span>Kapanan Sipariş</span><strong>${summary.kapanan_siparis||0} adet</strong></div><div class="summary-card"><span>Kapanan Tutar</span><strong>${tl(summary.kapanan_satici_tutari)}</strong></div>`;accTableBody.innerHTML="";if(!rows.length){accTableWrap.style.display="none";return showMessage("accWarning","Bu seçimlere uygun muhasebe kaydı bulunamadı.")}rows.forEach(r=>{const tr=document.createElement("tr");tr.innerHTML=`<td><input type="checkbox" class="acc-check" value="${attr(r.siparis_kodu)}"></td><td><strong>${esc(r.siparis_kodu)}</strong></td><td>${formatDate(r.tarih)}</td><td>${esc(r.satici_adi)}</td><td><strong>${esc(r.musteri_ad)}</strong><small>${esc(r.telefon)}</small></td><td><span class="tag">${esc(r.bolge_kodu)}</span><small>${esc(r.fiyat_bolgesi)}</small></td><td>${num(r.toplam_gercek_m2)} m²</td><td>${tl(r.satis_tutari)}</td><td>${tl(r.satici_tutari)}</td><td>${tl(r.fark_tutar)}</td><td><span class="tag">${esc(r.hesap_durumu)}</span><small>${formatDate(r.hesap_kapanis_tarihi||"")}</small></td>`;accTableBody.appendChild(tr)});accTableWrap.style.display="block"}
 function selectedAccountingCodes(){return Array.from(document.querySelectorAll(".acc-check:checked")).map(x=>x.value)}
