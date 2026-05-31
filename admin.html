@@ -10,6 +10,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
 <style>
 :root{--bg:#f6f3ee;--bg2:#efe8dd;--card:#fff;--panel:#fbf8f4;--text:#1f1f1f;--muted:#6f6a64;--border:#e8e2da;--input:#ded5ca;--accent:#8b6a45;--accent-dark:#745537;--soft:#efe4d6;--danger:#b73333;--danger-bg:#fff0f0;--success:#176b3a;--success-bg:#ecfff3;--warning:#7a5318;--warning-bg:#fff8e8;--shadow:0 18px 55px rgba(45,35,25,.10)}
 body.dark{--bg:#151618;--bg2:#202328;--card:#1e2023;--panel:#25282d;--text:#f2f0ec;--muted:#b8b2aa;--border:#343840;--input:#3d444d;--accent:#b38a5d;--accent-dark:#c49a6d;--soft:#342a20;--danger:#ff9b9b;--danger-bg:#321d1d;--success:#94e4ae;--success-bg:#17331f;--warning:#f0d6a8;--warning-bg:#2b2618;--shadow:0 18px 55px rgba(0,0,0,.38)}
@@ -375,7 +376,7 @@ async function saveManualOrder(){hideMessages(["manualOrderError","manualOrderSu
 async function loadSlips(){hideMessages(["slipsError","slipsSuccess","slipsWarning"]);try{const d=await apiPost({action:"listSlips",apiKey:ADMIN_API_KEY,dateStart:slipDateStart.value,dateEnd:slipDateEnd.value,orderCode:slipOrderCode.value});if(!d.success)throw new Error(d.message);renderSlips(d.slips||[])}catch(e){showMessage("slipsError","Fişler alınamadı. "+e.message)}}
 function renderSlips(list){slipsTableBody.innerHTML="";if(!list.length){slipsTableWrap.style.display="none";return showMessage("slipsWarning","Bu seçimlere uygun fiş bulunamadı.")}list.forEach(s=>{const tr=document.createElement("tr");tr.innerHTML=`<td><strong>${esc(s.fis_kodu)}</strong></td><td>${esc(s.siparis_kodu)}</td><td>${formatDate(s.tarih)}</td><td>${esc(s.musteri_ad)}</td><td>${esc(s.urun_adi)}</td><td>${esc(s.kasa_cesidi)}</td><td>${esc(s.toplam_adet)} adet / ${num(s.toplam_m2)} m²</td><td><button class="btn-light" onclick="loadSlipDetail('${attr(s.fis_kodu)}')">Detay</button></td>`;slipsTableBody.appendChild(tr)});slipsTableWrap.style.display="block"}
 async function loadSlipDetail(code){slipDetailArea.innerHTML='<div class="placeholder">Fiş açılıyor...</div>';try{const d=await apiPost({action:"getSlip",apiKey:ADMIN_API_KEY,fis_kodu:code});if(!d.success)throw new Error(d.message);renderSlipDetail(d.slip,d.details||[])}catch(e){slipDetailArea.innerHTML="";showMessage("slipsError",e.message)}}
-function renderSlipDetail(s,details){const rows=details.map(r=>`<tr><td><input class="table-input sd-adet" type="number" value="${attr(r.adet)}"></td><td><input class="table-input sd-en" type="number" value="${attr(r.en)}"></td><td><input class="table-input sd-boy" type="number" value="${attr(r.boy)}"></td><td><input class="table-input sd-pile" value="${attr(r.pile)}"></td><td><input class="table-input sd-ip" value="${attr(r.ip)}"></td><td><input class="table-input sd-m2" type="number" value="${attr(r.m2)}"></td><td><input class="table-input sd-not" value="${attr(r.not)}"></td><td><button class="btn-danger" onclick="this.closest('tr').remove()">Sil</button></td></tr>`).join("");slipDetailArea.innerHTML=`<div class="detail-box"><div class="detail-head"><div><h3>${esc(s.fis_kodu)}</h3><p class="subtitle" style="margin-bottom:0">Fişi kontrol edebilir, düzenleyebilir veya indirebilirsiniz.</p></div><div class="actions" style="min-width:360px"><button class="btn-light" onclick="downloadSlipExcel('${attr(s.fis_kodu)}')">Excel İndir</button><button class="btn-light" onclick="downloadSlipPdf('${attr(s.fis_kodu)}')">PDF İndir</button><button class="btn-danger" onclick="deleteSlip('${attr(s.fis_kodu)}')">Fişi Sil</button></div></div><div class="form-grid"><input id="editSlipCode" type="hidden" value="${attr(s.fis_kodu)}"><label class="field"><span>Sipariş Kodu</span><input id="editSlipOrder" value="${attr(s.siparis_kodu)}"></label><label class="field"><span>Müşteri</span><input id="editSlipCustomer" value="${attr(s.musteri_ad)}"></label><label class="field"><span>Satıcı</span><input id="editSlipSeller" value="${attr(s.satici_adi)}"></label><label class="field"><span>Ürün</span><input id="editSlipProduct" value="${attr(s.urun_adi)}"></label><label class="field"><span>Kasa Çeşidi</span><input id="editSlipCase" value="${attr(s.kasa_cesidi)}"></label><label class="field"><span>Montaj</span><input id="editSlipMount" value="${attr(s.montaj_tipi)}"></label><label class="field wide"><span>Not</span><textarea id="editSlipNote">${esc(s.not)}</textarea></label></div><div class="actions"><button class="btn-light" onclick="addEditSlipRow()">Satır Ekle</button><button class="btn-main" onclick="updateSlip()">Fişi Güncelle</button></div><div class="table-wrap"><table><thead><tr><th>Adet</th><th>En</th><th>Boy</th><th>Pile</th><th>İp</th><th>m²</th><th>Not</th><th>Sil</th></tr></thead><tbody id="editSlipRows">${rows}</tbody></table></div></div>`}
+function renderSlipDetail(s,details){const rows=details.map(r=>`<tr><td><input class="table-input sd-adet" type="number" value="${attr(r.adet)}"></td><td><input class="table-input sd-en" type="number" value="${attr(r.en)}"></td><td><input class="table-input sd-boy" type="number" value="${attr(r.boy)}"></td><td><input class="table-input sd-pile" value="${attr(r.pile)}"></td><td><input class="table-input sd-ip" value="${attr(r.ip)}"></td><td><input class="table-input sd-m2" type="number" value="${attr(r.m2)}"></td><td><input class="table-input sd-not" value="${attr(r.not)}"></td><td><button class="btn-danger" onclick="this.closest('tr').remove()">Sil</button></td></tr>`).join("");slipDetailArea.innerHTML=`<div class="detail-box"><div class="detail-head"><div><h3>${esc(s.fis_kodu)}</h3><p class="subtitle" style="margin-bottom:0">Fişi kontrol edebilir, düzenleyebilir veya indirebilirsiniz.</p></div><div class="actions" style="min-width:360px"><button class="btn-light" onclick="downloadSlipExcel('${attr(s.fis_kodu)}')">Excel İndir</button><button class="btn-light" onclick="downloadSlipPdf('${attr(s.fis_kodu)}')">PDF İndir</button><button class="btn-light" onclick="printSlip('${attr(s.fis_kodu)}')">Yazdır</button><button class="btn-danger" onclick="deleteSlip('${attr(s.fis_kodu)}')">Fişi Sil</button></div></div><div class="form-grid"><input id="editSlipCode" type="hidden" value="${attr(s.fis_kodu)}"><label class="field"><span>Sipariş Kodu</span><input id="editSlipOrder" value="${attr(s.siparis_kodu)}"></label><label class="field"><span>Müşteri</span><input id="editSlipCustomer" value="${attr(s.musteri_ad)}"></label><label class="field"><span>Satıcı</span><input id="editSlipSeller" value="${attr(s.satici_adi)}"></label><label class="field"><span>Ürün</span><input id="editSlipProduct" value="${attr(s.urun_adi)}"></label><label class="field"><span>Kasa Çeşidi</span><input id="editSlipCase" value="${attr(s.kasa_cesidi)}"></label><label class="field"><span>Montaj</span><input id="editSlipMount" value="${attr(s.montaj_tipi)}"></label><label class="field wide"><span>Not</span><textarea id="editSlipNote">${esc(s.not)}</textarea></label></div><div class="actions"><button class="btn-light" onclick="addEditSlipRow()">Satır Ekle</button><button class="btn-main" onclick="updateSlip()">Fişi Güncelle</button></div><div class="table-wrap"><table><thead><tr><th>Adet</th><th>En</th><th>Boy</th><th>Pile</th><th>İp</th><th>m²</th><th>Not</th><th>Sil</th></tr></thead><tbody id="editSlipRows">${rows}</tbody></table></div></div>`}
 function slipRowHTML(){return `<td><input class="table-input sd-adet" type="number" value="1"></td><td><input class="table-input sd-en" type="number"></td><td><input class="table-input sd-boy" type="number"></td><td><input class="table-input sd-pile"></td><td><input class="table-input sd-ip"></td><td><input class="table-input sd-m2" type="number"></td><td><input class="table-input sd-not"></td><td><button class="btn-danger" onclick="this.closest('tr').remove()">Sil</button></td>`}
 function addEditSlipRow(){const tr=document.createElement("tr");tr.innerHTML=slipRowHTML();editSlipRows.appendChild(tr)}
 function addManualSlipRow(){const tr=document.createElement("tr");tr.innerHTML=slipRowHTML();manualSlipRows.appendChild(tr)}
@@ -383,77 +384,247 @@ function collectSlipRows(id){return Array.from(document.querySelectorAll(`#${id}
 async function updateSlip(){try{const d=await apiPost({action:"updateSlip",apiKey:ADMIN_API_KEY,fis_kodu:editSlipCode.value,header:{siparis_kodu:editSlipOrder.value,musteri_ad:editSlipCustomer.value,satici_adi:editSlipSeller.value,urun_adi:editSlipProduct.value,kasa_cesidi:editSlipCase.value,montaj_tipi:editSlipMount.value,not:editSlipNote.value},details:collectSlipRows("editSlipRows")},16000);if(!d.success)throw new Error(d.message);showMessage("slipsSuccess","Fiş güncellendi.");loadSlipDetail(editSlipCode.value);loadSlips()}catch(e){showMessage("slipsError","Fiş güncellenemedi. "+e.message)}}
 async function saveManualSlip(){hideMessages(["manualSlipError","manualSlipSuccess"]);try{const d=await apiPost({action:"saveManualSlip",apiKey:ADMIN_API_KEY,header:{siparis_kodu:manualSlipOrder.value||"MANUEL",musteri_ad:manualSlipCustomer.value,satici_adi:manualSlipSeller.value,urun_adi:manualSlipProduct.value,kasa_cesidi:manualSlipCase.value,montaj_tipi:manualSlipMount.value,not:manualSlipNote.value},details:collectSlipRows("manualSlipRows")},16000);if(!d.success)throw new Error(d.message);showMessage("manualSlipSuccess","Fiş kaydedildi: "+d.fis_kodu);loadSlips()}catch(e){showMessage("manualSlipError","Kayıt yapılamadı. "+e.message)}}
 async function deleteSlip(code){if(!confirm(code+" fişi silinsin mi?"))return;try{const d=await apiPost({action:"deleteSlip",apiKey:ADMIN_API_KEY,fis_kodu:code});if(!d.success)throw new Error(d.message);showMessage("slipsSuccess","Fiş silindi.");slipDetailArea.innerHTML="";loadSlips()}catch(e){showMessage("slipsError","Fiş silinemedi. "+e.message)}}
-function collectCurrentSlip(){if(!document.getElementById("editSlipCode"))throw new Error("Lütfen önce fiş detayını açın.");const h={fis_kodu:editSlipCode.value,siparis_kodu:editSlipOrder.value,firma_adi:"Prestij Life",tarih:new Date().toLocaleString("tr-TR"),musteri_ad:editSlipCustomer.value,satici_adi:editSlipSeller.value,urun_adi:editSlipProduct.value,kasa_cesidi:editSlipCase.value,montaj_tipi:editSlipMount.value,not:editSlipNote.value};const details=collectSlipRows("editSlipRows").map((r,i)=>({sira:i+1,adet:r.adet,en:r.en,boy:r.boy,pile:r.pile||"",ip:r.ip||"",m2:r.m2||calcM2(r.en,r.boy,r.adet),not:r.not||""}));h.toplam_adet=details.reduce((s,r)=>s+Number(r.adet||0),0);h.toplam_m2=details.reduce((s,r)=>s+Number(r.m2||0),0);return{h,details}}
-function calcM2(en,boy,adet){return Math.round(((Number(en||0)*Number(boy||0)*Number(adet||1))/10000+Number.EPSILON)*100)/100}
-function downloadSlipPdf(code){try{const {h,details}=collectCurrentSlip();const jsPDF=window.jspdf&&window.jspdf.jsPDF;if(!jsPDF)throw new Error("PDF kütüphanesi yüklenemedi.");const doc=new jsPDF({orientation:"portrait",unit:"mm",format:"a4"});let y=14;doc.setFont("helvetica","bold");doc.setFontSize(18);doc.text("IMALAT FISI",105,y,{align:"center"});y+=12;function box(x,y,label,value){doc.rect(x,y,92,10);doc.setFont("helvetica","normal");doc.setFontSize(9);doc.text(label,x+2,y+6.5);doc.text(String(value||""),x+28,y+6.5,{maxWidth:62})}box(12,y,"Fis Kodu:",h.fis_kodu);box(106,y,"Siparis Kodu:",h.siparis_kodu);y+=12;box(12,y,"Firma:",h.firma_adi);box(106,y,"Tarih:",h.tarih);y+=12;box(12,y,"Musteri:",h.musteri_ad);box(106,y,"Satici:",h.satici_adi);y+=12;box(12,y,"Urun:",h.urun_adi);box(106,y,"Kasa:",h.kasa_cesidi);y+=17;const cols=[['Sira',18],['Adet',22],['En',24],['Boy',24],['Pile',24],['Ip',24],['m2',22],['Not',28]],rowH=9;let x=12;doc.setFont("helvetica","normal");doc.setFontSize(9);cols.forEach(c=>{doc.rect(x,y,c[1],rowH);doc.text(c[0],x+2,y+6);x+=c[1]});y+=rowH;details.forEach((r,i)=>{if(y>270){doc.addPage();y=14}x=12;[i+1,r.adet,r.en,r.boy,r.pile,r.ip,r.m2,r.not].forEach((v,idx)=>{doc.rect(x,y,cols[idx][1],rowH);doc.text(String(v??""),x+2,y+6,{maxWidth:cols[idx][1]-4});x+=cols[idx][1]});y+=rowH});y+=8;doc.setFontSize(11);doc.text("Toplam: "+String(h.toplam_adet||0)+" adet / "+num(h.toplam_m2||0)+" m2",198,y,{align:"right"});y+=10;doc.text("Not: "+String(h.not||""),12,y,{maxWidth:186});doc.save((code||h.fis_kodu||"imalat-fisi")+".pdf")}catch(e){showMessage("slipsError","PDF indirilemedi. "+e.message)}}
-function buildSlipExcelHTML(h,details){const rows=details.map((r,i)=>`<tr><td>${i+1}</td><td>${esc(r.adet)}</td><td>${esc(r.en)}</td><td>${esc(r.boy)}</td><td>${esc(r.pile)}</td><td>${esc(r.ip)}</td><td>${esc(r.m2)}</td><td>${esc(r.not)}</td></tr>`).join("");return `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>table{border-collapse:collapse}td,th{border:1px solid #222;padding:7px}th{font-weight:bold}</style></head><body><h2>İMALAT FİŞİ</h2><table><tr><td>Fiş Kodu</td><td>${esc(h.fis_kodu)}</td><td>Sipariş Kodu</td><td>${esc(h.siparis_kodu)}</td></tr><tr><td>Firma</td><td>${esc(h.firma_adi)}</td><td>Tarih</td><td>${esc(h.tarih)}</td></tr><tr><td>Müşteri</td><td>${esc(h.musteri_ad)}</td><td>Satıcı</td><td>${esc(h.satici_adi)}</td></tr><tr><td>Ürün</td><td>${esc(h.urun_adi)}</td><td>Kasa</td><td>${esc(h.kasa_cesidi)}</td></tr></table><br><table><thead><tr><th>Sıra</th><th>Adet</th><th>En</th><th>Boy</th><th>Pile</th><th>İp</th><th>m²</th><th>Not</th></tr></thead><tbody>${rows}</tbody></table><p><b>Toplam:</b> ${esc(h.toplam_adet)} adet / ${num(h.toplam_m2)} m²</p><p><b>Not:</b> ${esc(h.not||"")}</p></body></html>`}
-function makeSafeFileName(value){
-  return String(value || "imalat-fisi")
-    .replace(/[\\/:*?"<>|]/g, "-")
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "");
+function slipProductionM2(en,boy,adet){
+  const raw = (Number(en || 0) * Number(boy || 0) * Number(adet || 1)) / 10000;
+  if(!raw || isNaN(raw)) return 0;
+  if(raw < 1) return 1;
+  return Math.round((raw + Number.EPSILON) * 100) / 100;
 }
-function downloadSlipExcel(code){
-  try{
-    const {h,details}=collectCurrentSlip();
-
-    if(!window.XLSX){
-      throw new Error("Excel kütüphanesi yüklenemedi. Lütfen internet bağlantısını kontrol edip sayfayı yenileyin.");
-    }
-
-    const rows = [
-      ["İMALAT FİŞİ"],
-      [],
-      ["Fiş Kodu", h.fis_kodu, "Sipariş Kodu", h.siparis_kodu],
-      ["Firma", h.firma_adi, "Tarih", h.tarih],
-      ["Müşteri", h.musteri_ad, "Satıcı", h.satici_adi],
-      ["Ürün", h.urun_adi, "Kasa", h.kasa_cesidi],
-      ["Montaj", h.montaj_tipi, "", ""],
-      [],
-      ["Sıra", "Adet", "En", "Boy", "Pile", "İp", "m²", "Not"]
-    ];
-
-    details.forEach(function(r,i){
-      rows.push([
-        i + 1,
-        Number(r.adet || 0),
-        Number(r.en || 0),
-        Number(r.boy || 0),
-        r.pile || "",
-        r.ip || "",
-        Number(r.m2 || 0),
-        r.not || ""
-      ]);
-    });
-
-    rows.push([]);
-    rows.push(["TOPLAM", Number(h.toplam_adet || 0), "", "", "", "", Number(h.toplam_m2 || 0), ""]);
-    rows.push(["NOT", h.not || ""]);
-
-    const worksheet = XLSX.utils.aoa_to_sheet(rows);
-    worksheet["!cols"] = [
-      {wch:10},
-      {wch:10},
-      {wch:12},
-      {wch:12},
-      {wch:12},
-      {wch:12},
-      {wch:12},
-      {wch:32}
-    ];
-    worksheet["!merges"] = [
-      {s:{r:0,c:0}, e:{r:0,c:7}}
-    ];
-
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "İmalat Fişi");
-
-    const fileName = makeSafeFileName(code || h.fis_kodu || "imalat-fisi") + ".xlsx";
-    XLSX.writeFile(workbook, fileName);
-  }catch(e){
-    showMessage("slipsError","Excel indirilemedi. "+e.message);
+function calcM2(en,boy,adet){
+  return slipProductionM2(en,boy,adet);
+}
+function collectCurrentSlip(){
+  if(!document.getElementById("editSlipCode")) throw new Error("Lütfen önce fiş detayını açın.");
+  const h = {
+    fis_kodu: editSlipCode.value,
+    siparis_kodu: editSlipOrder.value,
+    firma_adi: "Prestij Life",
+    tarih: new Date().toLocaleDateString("tr-TR"),
+    musteri_ad: editSlipCustomer.value,
+    satici_adi: editSlipSeller.value,
+    urun_adi: editSlipProduct.value,
+    kasa_cesidi: editSlipCase.value,
+    montaj_tipi: editSlipMount.value,
+    not: editSlipNote.value
+  };
+  const details = collectSlipRows("editSlipRows").map(function(r,i){
+    const m2 = r.m2 === "" || r.m2 === null || r.m2 === undefined ? slipProductionM2(r.en,r.boy,r.adet) : Number(r.m2 || 0);
+    return {sira:i+1, adet:r.adet, en:r.en, boy:r.boy, pile:r.pile || "", ip:r.ip || "", m2:m2, not:r.not || ""};
+  });
+  h.toplam_adet = details.reduce(function(s,r){return s + Number(r.adet || 0)},0);
+  h.toplam_m2 = details.reduce(function(s,r){return s + Number(r.m2 || 0)},0);
+  h.toplam_m2 = Math.round((h.toplam_m2 + Number.EPSILON) * 100) / 100;
+  return {h:h, details:details};
+}
+function slipTemplateFirmName(h){
+  const seller = String(h.satici_adi || "").trim();
+  if(seller && seller !== "-" && seller.toLowerCase() !== "merkez / site") return seller.toUpperCase();
+  return "PRESTİJ LİFE";
+}
+function slipTemplateNote(h){
+  const note = String(h.not || "").trim();
+  return note ? note : "GÜZEL GÜNLERDE KULLANIN...";
+}
+function slipTemplateSystemShort(h){
+  const text = String(h.montaj_tipi || "").trim().toLowerCase();
+  if(text.includes("ask")) return "ASKILI";
+  if(text.includes("vida")) return "VİDALI";
+  return String(h.montaj_tipi || "").toUpperCase();
+}
+function slipTemplateRows(details){
+  const minRows = 13;
+  const rows = (details || []).map(function(r,i){
+    return {sira:i+1, adet:Number(r.adet || 0), en:Number(r.en || 0), boy:Number(r.boy || 0), pile:r.pile || "", ip:r.ip || "", m2:Number(r.m2 || 0), not:r.not || ""};
+  });
+  while(rows.length < minRows){
+    rows.push({sira:rows.length + 1, adet:"", en:"", boy:"", pile:"", ip:"", m2:"", not:""});
   }
+  return rows;
+}
+function slipFormatDecimal(value){
+  if(value === "" || value === null || value === undefined) return "";
+  const n = Number(value || 0);
+  if(isNaN(n)) return String(value || "");
+  return n.toLocaleString("tr-TR", {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+function slipFormatPlain(value){
+  if(value === "" || value === null || value === undefined) return "";
+  const n = Number(value);
+  if(isNaN(n)) return String(value || "");
+  return String(n);
+}
+function writePdfCell(doc,x,y,w,h,text,opt){
+  opt = opt || {};
+  const color = opt.color || [0,0,0];
+  doc.setDrawColor(0,0,0);
+  doc.setLineWidth(opt.lineWidth || 0.35);
+  doc.rect(x,y,w,h);
+  doc.setFont("helvetica", opt.bold ? "bold" : "normal");
+  doc.setFontSize(opt.size || 12);
+  doc.setTextColor(color[0], color[1], color[2]);
+  const align = opt.align || "center";
+  const valignOffset = h / 2 + ((opt.size || 12) * 0.35);
+  let tx = x + w / 2;
+  if(align === "left") tx = x + 2;
+  if(align === "right") tx = x + w - 2;
+  doc.text(String(text || ""), tx, y + valignOffset, {align:align, maxWidth:w - 4});
+}
+function drawSlipPdfPage(doc,h,details){
+  const red = [220,0,0];
+  const blue = [0,145,200];
+  const startX = 10;
+  let y = 10;
+  const totalW = 190;
+  const colW = [31,31,32,32,32,32];
+  const x = [startX];
+  for(let i=0;i<colW.length-1;i++) x.push(x[i] + colW[i]);
+  const topH = 10;
+  const rowH = 9;
+  const headerH = 16;
+  writePdfCell(doc,x[0],y,colW[0]+colW[1],topH,"FIRMA",{bold:true,size:14,color:red,align:"left"});
+  writePdfCell(doc,x[2],y,colW[2]+colW[3]+colW[4]+colW[5],topH,slipTemplateFirmName(h),{bold:true,size:14}); y += topH;
+  writePdfCell(doc,x[0],y,colW[0]+colW[1],topH,"MUSTERI",{bold:true,size:14,color:red,align:"left"});
+  writePdfCell(doc,x[2],y,colW[2]+colW[3]+colW[4]+colW[5],topH,h.musteri_ad || "",{bold:true,size:14}); y += topH;
+  writePdfCell(doc,x[0],y,colW[0]+colW[1],topH,"TARIH",{bold:true,size:14,color:red,align:"left"});
+  writePdfCell(doc,x[2],y,colW[2]+colW[3]+colW[4]+colW[5],topH,h.tarih || "",{bold:true,size:13}); y += topH;
+  writePdfCell(doc,x[0],y,colW[0]+colW[1],topH,"KASA CESIDI",{bold:true,size:13,color:red,align:"left"});
+  writePdfCell(doc,x[2],y,colW[2]+colW[3],topH,h.kasa_cesidi || "",{bold:true,size:13,color:blue});
+  writePdfCell(doc,x[4],y,colW[4]+colW[5],topH,slipTemplateSystemShort(h),{bold:true,size:13,color:blue}); y += topH;
+  writePdfCell(doc,x[0],y,colW[0]+colW[1],topH,"URUN ADI",{bold:true,size:13,color:red,align:"left"});
+  writePdfCell(doc,x[2],y,colW[2]+colW[3],topH,h.urun_adi || "",{bold:true,size:13});
+  writePdfCell(doc,x[4],y,colW[4]+colW[5],topH,"",{bold:true,size:13}); y += topH;
+  ["ADET","EN","BOY","PILE","IP","m2"].forEach(function(label,i){
+    writePdfCell(doc,x[i],y,colW[i],headerH,label,{bold:true,size:14,color:red});
+  });
+  y += headerH;
+  const rows = slipTemplateRows(details);
+  rows.forEach(function(r){
+    writePdfCell(doc,x[0],y,colW[0],rowH,r.adet || r.sira,{bold:true,size:12});
+    writePdfCell(doc,x[1],y,colW[1],rowH,slipFormatDecimal(r.en),{size:12});
+    writePdfCell(doc,x[2],y,colW[2],rowH,slipFormatDecimal(r.boy),{size:12});
+    writePdfCell(doc,x[3],y,colW[3],rowH,slipFormatPlain(r.pile),{size:12});
+    writePdfCell(doc,x[4],y,colW[4],rowH,slipFormatPlain(r.ip),{size:12});
+    writePdfCell(doc,x[5],y,colW[5],rowH,r.m2 === "" ? "" : slipFormatDecimal(r.m2),{size:12});
+    y += rowH;
+  });
+  writePdfCell(doc,x[0],y,colW[0],rowH,"TOPLAM",{bold:true,size:12,color:red,align:"left"});
+  writePdfCell(doc,x[1],y,colW[1],rowH,h.toplam_adet || "",{size:12});
+  writePdfCell(doc,x[2],y,colW[2],rowH,"",{size:12});
+  writePdfCell(doc,x[3],y,colW[3],rowH,"",{size:12});
+  writePdfCell(doc,x[4],y,colW[4],rowH,"",{size:12});
+  writePdfCell(doc,x[5],y,colW[5],rowH,slipFormatDecimal(h.toplam_m2 || 0),{bold:true,size:12,color:red});
+  y += rowH;
+  writePdfCell(doc,x[0],y,colW[0],rowH,"NOT",{bold:true,size:13,color:red,align:"left"});
+  writePdfCell(doc,x[1],y,totalW-colW[0],rowH,slipTemplateNote(h),{bold:true,size:13});
+}
+function downloadSlipPdf(code){
+  try{
+    const current = collectCurrentSlip();
+    const jsPDF = window.jspdf && window.jspdf.jsPDF;
+    if(!jsPDF) throw new Error("PDF kütüphanesi yüklenemedi.");
+    const doc = new jsPDF({orientation:"portrait",unit:"mm",format:"a4"});
+    drawSlipPdfPage(doc,current.h,current.details);
+    doc.save((code || current.h.fis_kodu || "imalat-fisi") + ".pdf");
+  }catch(e){showMessage("slipsError","PDF indirilemedi. " + e.message)}
+}
+function makeSafeFileName(value){
+  let text = String(value || "imalat-fisi");
+  const bad = ["<",">",":","\"","/","|","?","*"];
+  text = text.split("").map(function(ch){return bad.includes(ch) ? "-" : ch}).join("");
+  text = text.split(" ").join("-");
+  while(text.includes("--")) text = text.split("--").join("-");
+  while(text.startsWith("-")) text = text.slice(1);
+  while(text.endsWith("-")) text = text.slice(0,-1);
+  return text || "imalat-fisi";
+}
+function applyExcelCellStyle(cell, opts){
+  opts = opts || {};
+  cell.alignment = {horizontal: opts.align || "center", vertical:"middle", wrapText:true};
+  cell.font = {name:"Arial", size:opts.size || 16, bold:opts.bold !== false, color:{argb:opts.color || "FF000000"}};
+  cell.border = {top:{style:"thin",color:{argb:"FF000000"}},left:{style:"thin",color:{argb:"FF000000"}},bottom:{style:"thin",color:{argb:"FF000000"}},right:{style:"thin",color:{argb:"FF000000"}}};
+}
+function downloadExcelBlob(buffer,fileName){
+  const blob = new Blob([buffer], {type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = fileName;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(function(){document.body.removeChild(a); URL.revokeObjectURL(url);},300);
+}
+async function downloadSlipExcel(code){
+  try{
+    const current = collectCurrentSlip();
+    const h = current.h;
+    const details = current.details;
+    if(!window.ExcelJS) throw new Error("Excel şablon kütüphanesi yüklenemedi. Sayfayı yenileyip tekrar deneyin.");
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = "Prestij Life";
+    const ws = workbook.addWorksheet("İmalat Fişi", {pageSetup:{paperSize:9, orientation:"portrait", fitToPage:true, fitToWidth:1, fitToHeight:1, margins:{left:0.25,right:0.25,top:0.25,bottom:0.25,header:0.1,footer:0.1}}});
+    ws.columns = [{width:12},{width:12},{width:12},{width:12},{width:12},{width:12}];
+    ["A1:B1","C1:F1","A2:B2","C2:F2","A3:B3","C3:F3","A4:B4","C4:D4","E4:F4","A5:B5","C5:D5","E5:F5","A6:A7","B6:B7","C6:C7","D6:D7","E6:E7","F6:F7"].forEach(function(range){ws.mergeCells(range)});
+    ws.getCell("A1").value="FİRMA"; ws.getCell("C1").value=slipTemplateFirmName(h);
+    ws.getCell("A2").value="MÜŞTERİ"; ws.getCell("C2").value=h.musteri_ad || "";
+    ws.getCell("A3").value="TARİH"; ws.getCell("C3").value=h.tarih || "";
+    ws.getCell("A4").value="KASA ÇEŞİDİ"; ws.getCell("C4").value=h.kasa_cesidi || ""; ws.getCell("E4").value=slipTemplateSystemShort(h);
+    ws.getCell("A5").value="ÜRÜN ADI"; ws.getCell("C5").value=h.urun_adi || ""; ws.getCell("E5").value="";
+    ws.getCell("A6").value="ADET"; ws.getCell("B6").value="EN"; ws.getCell("C6").value="BOY"; ws.getCell("D6").value="PİLE"; ws.getCell("E6").value="İP"; ws.getCell("F6").value="m²";
+    for(let r=1;r<=7;r++) ws.getRow(r).height = r===6 ? 24 : 22;
+    ["A1","A2","A3","A4","A5","A6","B6","C6","D6","E6","F6"].forEach(function(addr){applyExcelCellStyle(ws.getCell(addr),{color:"FFFF0000",size:18,align:addr.startsWith("A") && Number(addr.slice(1)) <= 5 ? "left" : "center"})});
+    ["C1","C2","C3","C4","E4","C5","E5"].forEach(function(addr){applyExcelCellStyle(ws.getCell(addr),{color:(addr === "C4" || addr === "E4") ? "FF0099CC" : "FF000000",size:18})});
+    const rows = slipTemplateRows(details);
+    const startRow = 8;
+    rows.forEach(function(r,index){
+      const rowNo = startRow + index;
+      ws.getRow(rowNo).height = 23;
+      ws.getCell(rowNo,1).value = r.adet || r.sira;
+      ws.getCell(rowNo,2).value = r.en === "" ? "" : Number(r.en || 0);
+      ws.getCell(rowNo,3).value = r.boy === "" ? "" : Number(r.boy || 0);
+      ws.getCell(rowNo,4).value = r.pile || "";
+      ws.getCell(rowNo,5).value = r.ip || "";
+      ws.getCell(rowNo,6).value = r.m2 === "" ? "" : Number(r.m2 || 0);
+      for(let c=1;c<=6;c++) applyExcelCellStyle(ws.getCell(rowNo,c),{bold:c===1,size:16});
+      [2,3,6].forEach(function(c){ws.getCell(rowNo,c).numFmt = "0.00"});
+    });
+    const totalRow = startRow + rows.length;
+    ws.getRow(totalRow).height = 23;
+    ws.getCell(totalRow,1).value = "TOPLAM";
+    ws.getCell(totalRow,2).value = Number(h.toplam_adet || 0);
+    ws.getCell(totalRow,6).value = Number(h.toplam_m2 || 0);
+    ws.getCell(totalRow,6).numFmt = "0.00";
+    for(let c=1;c<=6;c++) applyExcelCellStyle(ws.getCell(totalRow,c),{color:(c===1 || c===6) ? "FFFF0000" : "FF000000",size:17});
+    const noteRow = totalRow + 1;
+    ws.mergeCells(noteRow,2,noteRow+1,6);
+    ws.getCell(noteRow,1).value = "NOT";
+    ws.getCell(noteRow,2).value = slipTemplateNote(h);
+    ws.getRow(noteRow).height = 28;
+    ws.getRow(noteRow+1).height = 24;
+    applyExcelCellStyle(ws.getCell(noteRow,1),{color:"FFFF0000",size:18,align:"left"});
+    applyExcelCellStyle(ws.getCell(noteRow,2),{color:"FF000000",size:18});
+    for(let c=1;c<=6;c++) applyExcelCellStyle(ws.getCell(noteRow+1,c),{bold:false,size:12});
+    const buffer = await workbook.xlsx.writeBuffer();
+    downloadExcelBlob(buffer, makeSafeFileName(code || h.fis_kodu || "imalat-fisi") + ".xlsx");
+  }catch(e){showMessage("slipsError","Excel indirilemedi. " + e.message)}
+}
+function buildSlipPrintHTML(h,details){
+  const rows = slipTemplateRows(details);
+  const rowHtml = rows.map(function(r){
+    return `<tr><td class="adet">${esc(r.adet || r.sira)}</td><td>${esc(slipFormatDecimal(r.en))}</td><td>${esc(slipFormatDecimal(r.boy))}</td><td>${esc(slipFormatPlain(r.pile))}</td><td>${esc(slipFormatPlain(r.ip))}</td><td>${r.m2 === "" ? "" : esc(slipFormatDecimal(r.m2))}</td></tr>`;
+  }).join("");
+  return `<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8"><title>${esc(h.fis_kodu || "İmalat Fişi")}</title><style>@page{size:A4 portrait;margin:10mm}body{font-family:Arial,sans-serif;margin:0;color:#000}.wrap{width:190mm;margin:0 auto}.slip{width:100%;border-collapse:collapse;table-layout:fixed}.slip td,.slip th{border:1.5px solid #000;text-align:center;vertical-align:middle;padding:4px;font-size:20px;height:9mm}.slip .label{color:red;font-weight:900;text-align:left;font-size:22px}.slip .value{font-weight:900}.slip .blue{color:#1297c6}.slip .head{color:red;font-weight:900;font-size:24px;height:15mm}.slip .adet{font-weight:900}.slip .total-label,.slip .note-label{color:red;font-weight:900;text-align:left}.slip .total-m2{color:red;font-weight:900}.slip .note-text{font-size:24px;font-weight:900;height:18mm}.print-actions{display:flex;gap:8px;margin:10px 0}.print-actions button{padding:10px 14px;border:1px solid #333;background:#fff;font-weight:700;cursor:pointer}@media print{.print-actions{display:none}.wrap{width:190mm}}</style></head><body><div class="wrap"><div class="print-actions"><button onclick="window.print()">Yazdır</button><button onclick="window.close()">Kapat</button></div><table class="slip"><colgroup><col style="width:16.5%"><col style="width:16.5%"><col style="width:17%"><col style="width:17%"><col style="width:16.5%"><col style="width:16.5%"></colgroup><tr><td colspan="2" class="label">FİRMA</td><td colspan="4" class="value">${esc(slipTemplateFirmName(h))}</td></tr><tr><td colspan="2" class="label">MÜŞTERİ</td><td colspan="4" class="value">${esc(h.musteri_ad || "")}</td></tr><tr><td colspan="2" class="label">TARİH</td><td colspan="4" class="value">${esc(h.tarih || "")}</td></tr><tr><td colspan="2" class="label">KASA ÇEŞİDİ</td><td colspan="2" class="value blue">${esc(h.kasa_cesidi || "")}</td><td colspan="2" class="value blue">${esc(slipTemplateSystemShort(h))}</td></tr><tr><td colspan="2" class="label">ÜRÜN ADI</td><td colspan="2" class="value">${esc(h.urun_adi || "")}</td><td colspan="2" class="value"></td></tr><tr><th class="head">ADET</th><th class="head">EN</th><th class="head">BOY</th><th class="head">PİLE</th><th class="head">İP</th><th class="head">m²</th></tr>${rowHtml}<tr><td class="total-label">TOPLAM</td><td>${esc(h.toplam_adet || 0)}</td><td></td><td></td><td></td><td class="total-m2">${esc(slipFormatDecimal(h.toplam_m2 || 0))}</td></tr><tr><td class="note-label">NOT</td><td colspan="5" class="note-text">${esc(slipTemplateNote(h))}</td></tr></table></div></body></html>`;
+}
+function printSlip(code){
+  try{
+    const current = collectCurrentSlip();
+    const win = window.open("", "_blank");
+    if(!win) throw new Error("Yazdırma penceresi açılamadı. Tarayıcı pop-up iznini kontrol edin.");
+    win.document.open();
+    win.document.write(buildSlipPrintHTML(current.h,current.details));
+    win.document.close();
+    win.focus();
+    setTimeout(function(){win.print();},500);
+  }catch(e){showMessage("slipsError","Yazdırma açılamadı. " + e.message)}
 }
 async function loadAccounting(){hideMessages(["accError","accSuccess","accWarning"]);try{const d=await apiPost({action:"listAccounting",apiKey:ADMIN_API_KEY,dateStart:accDateStart.value,dateEnd:accDateEnd.value,sellerId:accSellerFilter.value,accountStatus:accStatusFilter.value},18000);if(!d.success)throw new Error(d.message);renderAccounting(d.rows||[],d.summary||{})}catch(e){showMessage("accError","Muhasebe bilgileri alınamadı. "+e.message)}}
 function renderAccounting(rows,summary){accSummaryCards.innerHTML=`<div class="summary-card"><span>Sipariş</span><strong>${summary.siparis_sayisi||0}</strong></div><div class="summary-card"><span>Gerçek m²</span><strong>${num(summary.toplam_gercek_m2)} m²</strong></div><div class="summary-card"><span>Satış Tutarı</span><strong>${tl(summary.toplam_satis_tutari)}</strong></div><div class="summary-card"><span>Satıcıya Verilecek</span><strong>${tl(summary.toplam_satici_tutari)}</strong></div><div class="summary-card"><span>Prestij Farkı</span><strong>${tl(summary.toplam_fark)}</strong></div><div class="summary-card"><span>Açık Sipariş</span><strong>${summary.acik_siparis||0} adet</strong></div><div class="summary-card"><span>Açık Tutar</span><strong>${tl(summary.acik_satici_tutari)}</strong></div><div class="summary-card"><span>Kapanan Sipariş</span><strong>${summary.kapanan_siparis||0} adet</strong></div><div class="summary-card"><span>Kapanan Tutar</span><strong>${tl(summary.kapanan_satici_tutari)}</strong></div>`;accTableBody.innerHTML="";if(!rows.length){accTableWrap.style.display="none";return showMessage("accWarning","Bu seçimlere uygun muhasebe kaydı bulunamadı.")}rows.forEach(r=>{const tr=document.createElement("tr");tr.innerHTML=`<td><input type="checkbox" class="acc-check" value="${attr(r.siparis_kodu)}"></td><td><strong>${esc(r.siparis_kodu)}</strong></td><td>${formatDate(r.tarih)}</td><td>${esc(r.satici_adi)}</td><td><strong>${esc(r.musteri_ad)}</strong><small>${esc(r.telefon)}</small></td><td><span class="tag">${esc(r.bolge_kodu)}</span><small>${esc(r.fiyat_bolgesi)}</small></td><td>${num(r.toplam_gercek_m2)} m²</td><td>${tl(r.satis_tutari)}</td><td>${tl(r.satici_tutari)}</td><td>${tl(r.fark_tutar)}</td><td><span class="tag">${esc(r.hesap_durumu)}</span><small>${formatDate(r.hesap_kapanis_tarihi||"")}</small></td>`;accTableBody.appendChild(tr)});accTableWrap.style.display="block"}
