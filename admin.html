@@ -1615,6 +1615,116 @@ function renderAccounting(rows,summary){
 plfPrepareAccountingPanel();
 passwordInput.addEventListener("keydown",e=>{if(e.key==="Enter")login()});
 initAdmin();
+/* SON SADELEŞTİRME: MOBİL AKIŞ + BASİT MUHASEBE + SİPARİŞ SATICI DÜZENLEME */
+(function(){
+  var style = document.createElement("style");
+  style.id = "prestij-admin-final-clean-mobile";
+  style.textContent = `
+    @media(max-width:900px){
+      html,body{max-width:100%!important;overflow-x:hidden!important}
+      body{padding:6px!important}
+      .container{padding:0!important;width:100%!important;max-width:100%!important;overflow:hidden!important;background:transparent!important;border:0!important;box-shadow:none!important}
+      .admin-card,.login-card{width:100%!important;max-width:100%!important;padding:10px!important;border-radius:18px!important;overflow:hidden!important}
+      .admin-header{display:block!important;margin-bottom:10px!important}.admin-title{margin-bottom:10px!important}.admin-title h1{font-size:28px!important;line-height:1.05!important}
+      .header-actions{display:grid!important;grid-template-columns:1fr 1fr!important;gap:8px!important;width:100%!important}.header-actions a,.header-actions button{width:100%!important;min-width:0!important;padding:10px 8px!important;font-size:13px!important;border-radius:13px!important}
+      .compact-admin-menu{display:flex!important;width:100%!important;max-width:100%!important;overflow-x:auto!important;gap:8px!important;padding:8px!important;margin:0 0 10px!important;border-radius:18px!important;box-sizing:border-box!important;scroll-snap-type:x mandatory!important}
+      .compact-admin-menu .module-card{flex:0 0 132px!important;width:132px!important;min-width:132px!important;max-width:132px!important;min-height:72px!important;padding:11px!important;border-radius:16px!important;scroll-snap-align:start!important}.compact-admin-menu .module-card p{display:none!important}.compact-admin-menu .module-card strong{font-size:14px!important;line-height:1.2!important}
+      .panel-section{padding:10px!important;border-radius:18px!important;overflow:hidden!important}.box,.detail-box,.settings-card{padding:12px!important;border-radius:16px!important;overflow:hidden!important;margin-top:10px!important}
+      .section-title{gap:8px!important;margin-bottom:8px!important}.section-title h2{font-size:23px!important;line-height:1.15!important}.section-title h3,.box h3{font-size:18px!important;line-height:1.2!important}.subtitle{font-size:13px!important;line-height:1.4!important;margin-bottom:10px!important}
+      .filter-grid,.form-grid,.settings-grid,.price-grid,.actions,.detail-clean-actions{display:grid!important;grid-template-columns:1fr!important;gap:8px!important;width:100%!important}.field{width:100%!important;min-width:0!important}.field span{font-size:13px!important;margin-bottom:4px!important}input,select,textarea{width:100%!important;max-width:100%!important;min-width:0!important;box-sizing:border-box!important;font-size:16px!important;padding:11px 12px!important;border-radius:13px!important;min-height:44px!important}
+      button,.btn-light,.btn-main,.btn-danger{min-width:0!important;max-width:100%!important;font-size:14px!important;padding:12px 13px!important;border-radius:13px!important}
+      .detail-grid,.summary-cards,.simple-account-summary{display:grid!important;grid-template-columns:1fr!important;gap:8px!important}.info-tile,.summary-card,.simple-account-card{padding:12px!important;border-radius:14px!important}.info-tile strong,.summary-card strong,.simple-account-card strong{font-size:16px!important;word-break:break-word!important}
+      .table-wrap{width:100%!important;max-width:100%!important;overflow:auto!important;-webkit-overflow-scrolling:touch!important;border-radius:14px!important}table{min-width:680px!important}th,td{padding:8px!important;font-size:12px!important}
+      #ordersTableWrap{display:none!important}.order-mobile-list{display:grid!important;width:100%!important;gap:9px!important}.order-mobile-card{width:100%!important;max-width:100%!important;padding:12px!important;border-radius:16px!important;box-sizing:border-box!important}.order-mobile-meta{grid-template-columns:1fr 1fr!important;gap:7px!important}.order-mobile-meta div{padding:8px!important}
+      .advanced-back-row{margin-bottom:10px!important}.advanced-back-btn{width:46px!important;min-width:46px!important;height:42px!important;font-size:22px!important;border-radius:13px!important}
+    }
+    @media(max-width:430px){.header-actions{grid-template-columns:1fr!important}.order-mobile-meta{grid-template-columns:1fr!important}.compact-admin-menu .module-card{flex-basis:126px!important;width:126px!important;min-width:126px!important}}
+  `;
+  document.head.appendChild(style);
+})();
+
+function plfSellerSelectOptions(order){
+  var currentId = String(order.satici_id || "").trim();
+  var currentName = String(order.satici_adi || "").trim();
+  var html = '<option value="">Merkez / Site</option>';
+  (sellersList || []).forEach(function(seller){
+    var id = String(seller.satici_id || seller.id || seller.kod || "").trim();
+    var name = String(seller.satici_adi || seller.ad || seller.name || "").trim();
+    if(!id && !name) return;
+    var value = id || name;
+    var selected = (currentId && value === currentId) || (!currentId && currentName && name === currentName) ? " selected" : "";
+    html += '<option value="' + attr(value) + '" data-name="' + attr(name) + '"' + selected + '>' + esc(name || value) + '</option>';
+  });
+  return html;
+}
+
+async function updateOrderSeller(orderCode){
+  try{
+    var select = document.getElementById("detailOrderSeller");
+    if(!select) return;
+    var selected = select.options[select.selectedIndex];
+    var sellerId = select.value || "";
+    var sellerName = sellerId ? (selected.getAttribute("data-name") || selected.textContent || "") : "Merkez / Site";
+    var response = await apiPost({
+      action:"updateOrderSeller",
+      apiKey:ADMIN_API_KEY,
+      siparis_kodu:orderCode,
+      satici_id:sellerId,
+      satici_adi:sellerName,
+      kaynak:sellerId ? "manual" : "site"
+    },16000);
+    if(!response || !response.success) throw new Error((response && response.message) || "Satıcı kaydedilemedi.");
+    showMessage("ordersSuccess","Satıcı bilgisi güncellendi.");
+    loadOrders();
+    loadOrderDetail(orderCode);
+  }catch(e){
+    showMessage("ordersError","Satıcı güncellenemedi. Apps Script tarafında updateOrderSeller işlemi yoksa onu da eklememiz gerekir. " + (e.message || e));
+  }
+}
+
+function renderOrderDetail(o,details){
+  var detailM2Total = (details || []).reduce(function(total,item){ return total + orderDetailM2(item); }, 0);
+  var displayTotalM2 = detailM2Total > 0 ? detailM2Total : Number(o.toplam_gercek_m2 || 0);
+  var rows=(details || []).map(function(x){
+    return `<tr><td>${esc(x.satir_no)}</td><td>${esc(x.urun)}</td><td>${esc(x.kasa_rengi)}</td><td>${esc(x.montaj_tipi)}</td><td>${esc(x.gercek_en)} × ${esc(x.gercek_boy)}</td><td>${esc(x.adet)}</td><td>${num(orderDetailM2(x))} m²</td></tr>`;
+  }).join("");
+  var statusOptions=ORDER_STATUSES.map(function(s){return `<option value="${attr(s)}" ${String(o.durum||"Yeni")===s?"selected":""}>${esc(s)}</option>`;}).join("");
+  var sourceText = o.kaynak==="site" ? "Merkez / Site" : esc(o.satici_adi || "Manuel");
+  orderDetailArea.innerHTML=`
+    <div class="detail-box">
+      <div class="detail-clean-title">
+        <div>
+          <h3>${esc(o.siparis_kodu)}</h3>
+          <p class="subtitle" style="margin-bottom:0">Sipariş bilgileri, satıcı, durum ve üretim işlemleri.</p>
+        </div>
+        <span class="tag">${esc(o.durum||"Yeni")}</span>
+      </div>
+      <div class="detail-grid">
+        <div class="info-tile"><span>Müşteri</span><strong>${esc(o.musteri_ad)}</strong></div>
+        <div class="info-tile"><span>Telefon</span><strong>${esc(o.telefon)}</strong></div>
+        <div class="info-tile"><span>Kaynak / Satıcı</span><strong>${sourceText}</strong></div>
+        <div class="info-tile"><span>m²</span><strong>${num(displayTotalM2)} m²</strong></div>
+        <div class="info-tile"><span>Alınacak</span><strong>${tl(o.musteri_toplam_tutar)}</strong></div>
+        <div class="info-tile"><span>Satıcı Hesabı</span><strong>${o.satici_hesap_tutar!==""?tl(o.satici_hesap_tutar):"-"}</strong></div>
+      </div>
+      <div class="info-tile" style="margin-bottom:12px"><span>Adres</span><strong>${esc(o.adres)}</strong></div>
+      <div class="form-grid">
+        <label class="field"><span>Satıcı / Kaynak</span><select id="detailOrderSeller">${plfSellerSelectOptions(o)}</select></label>
+        <label class="field"><span>Satıcıyı Kaydet</span><button class="btn-light" onclick="updateOrderSeller('${attr(o.siparis_kodu)}')">Satıcıyı Kaydet</button></label>
+        <label class="field"><span>Sipariş Durumu</span><select id="detailOrderStatus">${statusOptions}</select></label>
+        <label class="field"><span>Durumu Kaydet</span><button class="btn-light" onclick="updateOrderStatus('${attr(o.siparis_kodu)}')">Durumu Kaydet</button></label>
+      </div>
+      <div class="detail-clean-actions">
+        <button class="btn-main" onclick="createProductionSlips('${attr(o.siparis_kodu)}')">İmalat Fişi Oluştur</button>
+        <button class="btn-light" onclick="plfOpenRelatedSlips('${attr(o.siparis_kodu)}')">Fişlere Git</button>
+        <button class="btn-danger" onclick="deleteOrder('${attr(o.siparis_kodu)}')">Siparişi Sil</button>
+      </div>
+      <div class="detail-section-label">Ölçüler</div>
+      <div class="table-wrap mobile-stack-table"><table><thead><tr><th>Sıra</th><th>Ürün</th><th>Kasa</th><th>Sistem</th><th>Ölçü</th><th>Adet</th><th>m²</th></tr></thead><tbody>${rows}</tbody></table></div>
+    </div>`;
+}
+
+passwordInput.addEventListener("keydown",e=>{if(e.key==="Enter")login()});
 </script>
 </body>
 </html>
