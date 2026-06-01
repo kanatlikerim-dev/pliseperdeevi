@@ -2361,7 +2361,7 @@ function plfRenderNotifications(orders){
 
   count.textContent = String(newOrders.length);
   list.innerHTML = newOrders.slice(0,8).map(function(o){
-    return '<button class="notif-pill" onclick="plfOpenOrderNotification(\\''+attr(o.siparis_kodu)+'\\')"><span>Yeni</span><span class="notif-code">'+esc(o.siparis_kodu)+'</span><span class="notif-customer">'+esc(o.musteri_ad || "")+'</span></button>';
+    return `<button class="notif-pill" onclick="plfOpenOrderNotification('${attr(o.siparis_kodu)}')"><span>Yeni</span><span class="notif-code">${esc(o.siparis_kodu)}</span><span class="notif-customer">${esc(o.musteri_ad || "")}</span></button>`;
   }).join("");
   box.classList.remove("hidden");
 }
@@ -2458,7 +2458,7 @@ function renderOrders(list){
       '<td>'+num(o.toplam_gercek_m2)+' m²</td>'+
       '<td>'+tl(o.musteri_toplam_tutar)+'</td>'+
       '<td><span class="tag">'+esc(o.durum||"Yeni")+'</span></td>'+
-      '<td><button class="btn-light" onclick="loadOrderDetail(\\''+attr(o.siparis_kodu)+'\\')">Detay</button></td>';
+      '<td><button class="btn-light" onclick="loadOrderDetail(\''+attr(o.siparis_kodu)+'\')">Detay</button></td>';
     ordersTableBody.appendChild(tr);
 
     const card=document.createElement("div");
@@ -2474,7 +2474,7 @@ function renderOrders(list){
         '<div><span>m²</span><strong>'+num(o.toplam_gercek_m2)+' m²</strong></div>'+
         '<div><span>Tutar</span><strong>'+tl(o.musteri_toplam_tutar)+'</strong></div>'+
       '</div>'+
-      '<button class="btn-main" onclick="loadOrderDetail(\\''+attr(o.siparis_kodu)+'\\')">Detay Aç</button>';
+      '<button class="btn-main" onclick="loadOrderDetail(\''+attr(o.siparis_kodu)+'\')">Detay Aç</button>';
     mobileList.appendChild(card);
   });
   ordersTableWrap.style.display="block";
