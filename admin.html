@@ -2628,6 +2628,212 @@ document.addEventListener("DOMContentLoaded", function(){
   plfRemoveDuplicateThemeCard();
 });
 
+
+/* MUHASEBE MANTIK DÜZELTMESİ + AYARLAR PROFESYONEL YERLEŞİM */
+(function(){
+  if(window.__plfFinalAccountingSettingsPatch) return;
+  window.__plfFinalAccountingSettingsPatch = true;
+  var style=document.createElement("style");
+  style.id="prestij-final-accounting-settings-style";
+  style.textContent=`
+    .professional-note{padding:11px 13px;border-radius:14px;background:var(--soft);border:1px solid var(--border);color:var(--muted);font-size:13px;line-height:1.45;margin:10px 0 12px}
+    .professional-note b{color:var(--text)}
+    #section-muhasebe .simple-account-summary{display:grid!important;grid-template-columns:repeat(6,minmax(135px,1fr))!important;gap:8px!important;margin-top:2px!important}
+    #section-muhasebe .simple-account-card{padding:12px 13px!important;border-radius:15px!important;min-height:74px!important;background:var(--card);border:1px solid var(--border)}
+    #section-muhasebe .simple-account-card.main{background:linear-gradient(145deg,var(--soft),var(--card));border-color:rgba(139,106,69,.38)}
+    #section-muhasebe .simple-account-card span{font-size:10.5px!important;line-height:1.2!important;letter-spacing:.02em!important;color:var(--muted)!important;text-transform:uppercase!important;font-weight:900!important;display:block!important;margin-bottom:6px!important}
+    #section-muhasebe .simple-account-card strong{font-size:18px!important;line-height:1.15!important;display:block!important}
+    #section-muhasebe .box{overflow:hidden!important}
+    #section-muhasebe .table-wrap{overflow:auto!important}
+    #section-ayarlar .subtitle{margin-bottom:14px!important;max-width:720px!important}
+    #section-ayarlar .settings-grid{display:grid!important;grid-template-columns:minmax(380px,1fr) minmax(280px,360px)!important;gap:16px!important;align-items:start!important;margin-top:12px!important}
+    #section-ayarlar .settings-card{padding:16px!important;border-radius:18px!important;height:auto!important;min-height:auto!important;background:linear-gradient(145deg,var(--card),var(--panel))!important}
+    #section-ayarlar .settings-card h3{font-size:18px!important;margin-bottom:12px!important;line-height:1.2!important}
+    #section-ayarlar .settings-card.wide{grid-column:1/-1!important}
+    #section-ayarlar .price-grid{display:grid!important;grid-template-columns:repeat(3,minmax(135px,1fr))!important;gap:10px!important}
+    #section-ayarlar .field{margin-bottom:8px!important;gap:5px!important}
+    #section-ayarlar .field span{font-size:12px!important}
+    #section-ayarlar input,#section-ayarlar select{min-height:42px!important;padding:10px 12px!important;border-radius:12px!important;font-size:14px!important}
+    #section-ayarlar .actions{display:flex!important;flex-wrap:wrap!important;gap:10px!important;justify-content:flex-start!important;margin-top:10px!important}
+    #section-ayarlar .actions button{width:auto!important;min-width:154px!important;margin-top:0!important;height:42px!important;min-height:42px!important;padding:0 14px!important;border-radius:12px!important;font-size:14px!important}
+    #section-ayarlar #sellerPricesTableWrap{max-height:480px!important;overflow:auto!important;border-radius:16px!important}
+    #section-ayarlar #sellerPricesTableWrap table{min-width:980px!important}
+    .panel-section{overflow:hidden!important}.box{overflow:hidden!important}.table-wrap{overflow:auto!important}
+    @media(max-width:1100px){
+      #section-muhasebe .simple-account-summary{grid-template-columns:repeat(3,minmax(135px,1fr))!important}
+      #section-ayarlar .settings-grid{grid-template-columns:1fr!important}
+      #section-ayarlar .price-grid{grid-template-columns:repeat(2,minmax(135px,1fr))!important}
+    }
+    @media(max-width:700px){
+      #section-muhasebe .simple-account-summary{grid-template-columns:1fr 1fr!important}
+      #section-muhasebe .simple-account-card{min-height:68px!important;padding:11px!important}
+      #section-muhasebe .simple-account-card strong{font-size:16px!important}
+      #section-ayarlar .settings-grid{gap:10px!important}
+      #section-ayarlar .price-grid{grid-template-columns:1fr!important}
+      #section-ayarlar .actions{display:grid!important;grid-template-columns:1fr!important}
+      #section-ayarlar .actions button{width:100%!important;min-width:0!important}
+    }
+  `;
+  document.head.appendChild(style);
+})();
+
+function plfPrepareAccountingPanel(){
+  var section=document.getElementById("section-muhasebe");
+  if(!section) return;
+  var sub=section.querySelector(".subtitle");
+  if(sub) sub.textContent="Satıcı bazında müşteri satışını, Prestij Life kazancını ve satıcıya ödenecek hakedişi takip edin.";
+  var boxTitle=section.querySelector(".box h3");
+  if(boxTitle) boxTitle.textContent="Satıcı Hesap Özeti";
+  var actions=section.querySelector(".actions");
+  if(actions){
+    var btns=actions.querySelectorAll("button");
+    if(btns[0]) btns[0].textContent="Hesabı Listele";
+    if(btns[1]) btns[1].textContent="Seçilenleri Kapat";
+    if(btns[2]) btns[2].textContent="Seçilenleri Aç";
+  }
+}
+
+function plfAccountStatusText(value){
+  var text=String(value||"açık").toLowerCase();
+  return text.indexOf("kapan")>=0 ? "kapandı" : "açık";
+}
+
+function renderAccounting(rows,summary){
+  plfPrepareAccountingPanel();
+  var customerTotal=Number(summary.toplam_satis_tutari||0);
+  var prestijKazanci=Number(summary.toplam_satici_tutari||0);
+  var saticiHakedisi=Number(summary.toplam_fark||0);
+  var openSeller=0, closedSeller=0;
+  (rows||[]).forEach(function(r){
+    var amount=Number(r.fark_tutar||0);
+    if(plfAccountStatusText(r.hesap_durumu)==="kapandı") closedSeller+=amount;
+    else openSeller+=amount;
+  });
+  accSummaryCards.classList.add("simple-account-summary");
+  accSummaryCards.innerHTML=`
+    <div class="simple-account-card main"><span>Satıcının Müşteri Satışı</span><strong>${tl(customerTotal)}</strong></div>
+    <div class="simple-account-card main"><span>Prestij Life Kazancı</span><strong>${tl(prestijKazanci)}</strong></div>
+    <div class="simple-account-card main"><span>Satıcı Hakedişi</span><strong>${tl(saticiHakedisi)}</strong></div>
+    <div class="simple-account-card"><span>Açık Satıcı Hakedişi</span><strong>${tl(openSeller)}</strong></div>
+    <div class="simple-account-card"><span>Kapanan Hakediş</span><strong>${tl(closedSeller)}</strong></div>
+    <div class="simple-account-card"><span>Sipariş / m²</span><strong>${summary.siparis_sayisi||0} / ${num(summary.toplam_gercek_m2)} m²</strong></div>
+  `;
+  accTableBody.innerHTML="";
+  var note=document.getElementById("simpleAccountNote");
+  if(!note){
+    note=document.createElement("div");
+    note.id="simpleAccountNote";
+    note.className="professional-note";
+    accSummaryCards.parentNode.insertBefore(note,accSummaryCards.nextSibling);
+  }
+  note.className="professional-note";
+  note.innerHTML="<b>Satıcının Müşteri Satışı</b>: satıcının müşteriyle anlaştığı toplam satış. <b>Prestij Life Kazancı</b>: firmanın kasasına kalan tutar. <b>Satıcı Hakedişi</b>: satıcıya ödenecek tutar.";
+  if(!rows.length){accTableWrap.style.display="none";return showMessage("accWarning","Bu seçimlere uygun muhasebe kaydı bulunamadı.")}
+  var head=accTableWrap.querySelector("thead tr");
+  if(head){
+    head.innerHTML="<th>Seç</th><th>Sipariş</th><th>Tarih</th><th>Satıcı</th><th>Müşteri</th><th>m²</th><th>Müşteri Satışı</th><th>Prestij Life Kazancı</th><th>Satıcı Hakedişi</th><th>Hesap</th>";
+  }
+  rows.forEach(function(r){
+    var tr=document.createElement("tr");
+    tr.innerHTML=
+      '<td><input type="checkbox" class="acc-check" value="'+attr(r.siparis_kodu)+'"></td>'+ 
+      '<td><strong>'+esc(r.siparis_kodu)+'</strong></td>'+ 
+      '<td>'+formatDate(r.tarih)+'</td>'+ 
+      '<td>'+esc(r.satici_adi)+'</td>'+ 
+      '<td><strong>'+esc(r.musteri_ad)+'</strong><small>'+esc(r.telefon)+'</small></td>'+ 
+      '<td>'+num(r.toplam_gercek_m2)+' m²</td>'+ 
+      '<td>'+tl(r.satis_tutari)+'</td>'+ 
+      '<td>'+tl(r.satici_tutari)+'</td>'+ 
+      '<td>'+tl(r.fark_tutar)+'</td>'+ 
+      '<td><span class="tag">'+esc(r.hesap_durumu)+'</span><small>'+formatDate(r.hesap_kapanis_tarihi||"")+'</small></td>';
+    accTableBody.appendChild(tr);
+  });
+  accTableWrap.style.display="block";
+}
+
+function renderReports(data){
+  const sum={siparis:0,adet:0,m2:0,satis:0,prestij:0,satici:0};
+  const productMap={},prodMap={},rows=[],salesRows=[];
+  data.forEach(function(x){
+    const o=x.order;
+    const sellerLabel=plfSellerLabel(o).main;
+    const sale=Number(o.musteri_toplam_tutar||0);
+    const prestij=Number(o.satici_hesap_tutar||0);
+    const seller=Number(o.fark_tutar||0);
+    sum.siparis++;
+    sum.adet+=Number(o.toplam_adet||0);
+    sum.m2+=Number(o.toplam_gercek_m2||0);
+    sum.satis+=sale;
+    sum.prestij+=prestij;
+    sum.satici+=seller;
+    salesRows.push([o.siparis_kodu,formatDate(o.tarih),sellerLabel,o.musteri_ad,num(o.toplam_gercek_m2),sale,prestij,seller,o.hesap_durumu||"açık"]);
+    rows.push(`<tr><td>${esc(o.siparis_kodu)}</td><td>${formatDate(o.tarih)}</td><td>${esc(sellerLabel)}</td><td>${esc(o.musteri_ad)}</td><td>${num(o.toplam_gercek_m2)}</td><td>${tl(sale)}</td><td>${tl(prestij)}</td><td>${tl(seller)}</td><td>${esc(o.hesap_durumu||"açık")}</td></tr>`);
+    (x.details||[]).forEach(function(d){
+      const m2=Number(d.gercek_m2||0),adet=Number(d.adet||0);
+      const pk=d.urun||"Belirtilmedi";
+      if(!productMap[pk])productMap[pk]={urun:pk,adet:0,m2:0};
+      productMap[pk].adet+=adet;productMap[pk].m2+=m2;
+      const key=[d.urun||"",d.kasa_rengi||"",d.montaj_tipi||""].join("||");
+      if(!prodMap[key])prodMap[key]={urun:d.urun||"",kasa:d.kasa_rengi||"",montaj:d.montaj_tipi||"",adet:0,m2:0};
+      prodMap[key].adet+=adet;prodMap[key].m2+=m2;
+    });
+  });
+  const productRowsArr=Object.values(productMap).map(function(p){return [p.urun,p.adet,Number(num(p.m2).replace(",","."))];});
+  const productionRowsArr=Object.values(prodMap).map(function(p){return [p.urun,p.kasa,p.montaj,p.adet,Number(num(p.m2).replace(",","."))];});
+  const productRows=Object.values(productMap).map(p=>`<tr><td>${esc(p.urun)}</td><td>${num(p.adet)}</td><td>${num(p.m2)}</td></tr>`).join("");
+  const productionRows=Object.values(prodMap).map(p=>`<tr><td>${esc(p.urun)}</td><td>${esc(p.kasa)}</td><td>${esc(p.montaj)}</td><td>${num(p.adet)}</td><td>${num(p.m2)}</td></tr>`).join("");
+  const html=`<div class="summary-cards"><div class="summary-card"><span>Sipariş</span><strong>${sum.siparis}</strong></div><div class="summary-card"><span>Toplam Adet</span><strong>${sum.adet}</strong></div><div class="summary-card"><span>Gerçek m²</span><strong>${num(sum.m2)} m²</strong></div><div class="summary-card"><span>Satıcının Müşteri Satışı</span><strong>${tl(sum.satis)}</strong></div><div class="summary-card"><span>Prestij Life Kazancı</span><strong>${tl(sum.prestij)}</strong></div><div class="summary-card"><span>Satıcı Hakedişi</span><strong>${tl(sum.satici)}</strong></div></div><h3 style="margin-top:18px">1. Satış / Muhasebe Özeti</h3><div class="table-wrap"><table><thead><tr><th>Sipariş</th><th>Tarih</th><th>Kaynak / Satıcı</th><th>Müşteri</th><th>Gerçek m²</th><th>Müşteri Satışı</th><th>Prestij Life Kazancı</th><th>Satıcı Hakedişi</th><th>Hesap</th></tr></thead><tbody>${rows.join("")}</tbody></table></div><h3 style="margin-top:18px">2. Ürün m² Özeti</h3><div class="table-wrap"><table><thead><tr><th>Ürün</th><th>Toplam Adet</th><th>Toplam Gerçek m²</th></tr></thead><tbody>${productRows}</tbody></table></div><h3 style="margin-top:18px">3. İmalat Özeti</h3><p class="small-note">Bu bölüm üretim içindir; fiyat göstermez.</p><div class="table-wrap"><table><thead><tr><th>Ürün</th><th>Kasa</th><th>Sistem</th><th>Toplam Adet</th><th>Toplam Gerçek m²</th></tr></thead><tbody>${productionRows}</tbody></table></div>`;
+  plfLastReportData={sum:sum,salesRows:salesRows,productRows:productRowsArr,productionRows:productionRowsArr};
+  lastReportHTML=html;
+  reportOutput.className="";
+  reportOutput.innerHTML=html;
+  showMessage("reportSuccess","Rapor hazır.");
+}
+
+function downloadReportExcel(){
+  if(!plfLastReportData) return showMessage("reportWarning","Excel indirmek için önce rapor oluşturun.");
+  try{
+    const wb=XLSX.utils.book_new();
+    const s=plfLastReportData.sum;
+    const summary=[
+      ["Alan","Değer"],
+      ["Sipariş",s.siparis],
+      ["Toplam Adet",s.adet],
+      ["Gerçek m²",Number(num(s.m2).replace(",","."))],
+      ["Satıcının Müşteri Satışı",s.satis],
+      ["Prestij Life Kazancı",s.prestij],
+      ["Satıcı Hakedişi",s.satici]
+    ];
+    const wsSummary=XLSX.utils.aoa_to_sheet(summary);
+    wsSummary["!cols"]=[{wch:28},{wch:18}];
+    XLSX.utils.book_append_sheet(wb,wsSummary,"Özet");
+    const salesSheet=XLSX.utils.aoa_to_sheet([["Sipariş","Tarih","Kaynak / Satıcı","Müşteri","Gerçek m²","Müşteri Satışı","Prestij Life Kazancı","Satıcı Hakedişi","Hesap"]].concat(plfLastReportData.salesRows));
+    salesSheet["!cols"]=[{wch:20},{wch:18},{wch:18},{wch:22},{wch:12},{wch:16},{wch:20},{wch:16},{wch:12}];
+    XLSX.utils.book_append_sheet(wb,salesSheet,"Satış Muhasebe");
+    const productSheet=XLSX.utils.aoa_to_sheet([["Ürün","Toplam Adet","Toplam Gerçek m²"]].concat(plfLastReportData.productRows));
+    productSheet["!cols"]=[{wch:28},{wch:14},{wch:18}];
+    XLSX.utils.book_append_sheet(wb,productSheet,"Ürün m2");
+    const productionSheet=XLSX.utils.aoa_to_sheet([["Ürün","Kasa","Sistem","Toplam Adet","Toplam Gerçek m²"]].concat(plfLastReportData.productionRows));
+    productionSheet["!cols"]=[{wch:28},{wch:18},{wch:14},{wch:14},{wch:18}];
+    XLSX.utils.book_append_sheet(wb,productionSheet,"İmalat Özeti");
+    XLSX.writeFile(wb,"prestij-life-rapor.xlsx");
+    showMessage("reportSuccess","Excel raporu indirildi.");
+  }catch(e){showMessage("reportError","Excel raporu oluşturulamadı. "+(e.message||e));}
+}
+
+function plfRemoveDuplicateThemeCard(){
+  const cards=Array.from(document.querySelectorAll("#section-ayarlar .settings-card"));
+  cards.forEach(function(card){
+    const h=card.querySelector("h3");
+    if(h && String(h.textContent||"").trim().toLowerCase()==="görünüm") card.remove();
+  });
+}
+
+document.addEventListener("DOMContentLoaded",function(){
+  plfPrepareAccountingPanel();
+  plfRemoveDuplicateThemeCard();
+});
+
 </script>
 </body>
 </html>
