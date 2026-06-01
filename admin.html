@@ -20,7 +20,272 @@ body.dark{--bg:#151618;--bg2:#202328;--card:#1e2023;--panel:#25282d;--text:#f2f0
 <style>
 /* GELİŞMİŞ BÖLÜM AYRIMI - MÜŞTERİ FİYATI / SATICI FİYATI / ŞİFRE */
 .advanced-menu-grid{grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}.mini-section-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px}.mini-section-head h3{margin-bottom:4px}.mini-section-head p{margin:0;color:var(--muted);font-size:13px;line-height:1.45}.price-panel-card,.seller-price-panel-card,.password-panel-card{max-width:100%;margin-top:12px}.customer-price-grid{grid-template-columns:repeat(3,minmax(150px,1fr));gap:12px}.compact-actions{grid-template-columns:repeat(auto-fit,minmax(170px,220px));justify-content:flex-start}.seller-price-filter-grid{grid-template-columns:220px 220px 190px 130px;align-items:end}.filter-action-field button{margin-top:0}.password-form-grid{grid-template-columns:repeat(3,minmax(180px,1fr));align-items:end}#section-satici-fiyatlari table{min-width:980px}#section-satici-fiyatlari .table-input{min-width:110px}#section-panel-sifresi .password-panel-card{max-width:760px}@media(max-width:900px){.advanced-menu-grid,.customer-price-grid,.seller-price-filter-grid,.password-form-grid{grid-template-columns:1fr!important}.compact-actions{grid-template-columns:1fr!important}.mini-section-head{display:block}.mini-section-head .tag{margin-top:8px}.price-panel-card,.seller-price-panel-card,.password-panel-card{padding:14px!important}}
-</style></head>
+</style>
+<style>
+/* MUHASEBE VE RAPOR PROFESYONEL DÜZEN */
+.account-pro-summary{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(170px,1fr));
+  gap:10px;
+  margin:12px 0;
+}
+.account-pro-card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:18px;
+  padding:14px;
+  box-shadow:0 8px 22px rgba(45,35,25,.05);
+}
+.account-pro-card span{
+  display:block;
+  color:var(--muted);
+  font-size:11px;
+  font-weight:900;
+  text-transform:uppercase;
+  margin-bottom:6px;
+}
+.account-pro-card strong{
+  display:block;
+  font-size:20px;
+  line-height:1.15;
+}
+.account-pro-card small{
+  display:block;
+  color:var(--muted);
+  font-size:11.5px;
+  font-weight:700;
+  line-height:1.4;
+  margin-top:5px;
+}
+.account-pro-card.primary{
+  border-color:rgba(139,106,69,.34);
+  background:linear-gradient(145deg,var(--soft),var(--card));
+}
+.account-seller-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:10px;
+  margin:12px 0;
+}
+.account-seller-card{
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:18px;
+  padding:13px;
+}
+.account-seller-card h4{
+  margin:0 0 8px;
+  font-size:15px;
+}
+.account-seller-row{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  padding:6px 0;
+  border-bottom:1px dashed var(--border);
+  font-size:13px;
+}
+.account-seller-row:last-child{border-bottom:0}
+.account-seller-row span{color:var(--muted)}
+.report-pro-block{
+  margin-top:16px;
+}
+.report-pro-title{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin:18px 0 10px;
+}
+.report-pro-title h3{margin:0}
+@media(max-width:700px){
+  .account-pro-summary{grid-template-columns:1fr}
+  .report-pro-title{display:block}
+}
+</style>
+
+
+<style>
+/* SİPARİŞ DETAYI PROFESYONELLEŞTİRME + DURUM AKIŞI */
+.order-detail-pro{
+  padding:0!important;
+  overflow:hidden;
+}
+.order-detail-hero{
+  padding:18px;
+  border-bottom:1px solid var(--border);
+  background:linear-gradient(145deg,var(--soft),var(--card));
+}
+.order-detail-hero-top{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+}
+.order-code-copy{
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  margin-top:8px;
+  font-size:12px;
+  font-weight:900;
+  color:var(--accent);
+  cursor:pointer;
+}
+.order-detail-status{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:8px 12px;
+  border-radius:999px;
+  border:1px solid rgba(139,106,69,.30);
+  background:var(--card);
+  color:var(--accent);
+  font-size:12px;
+  font-weight:950;
+  white-space:nowrap;
+}
+.admin-status-flow{
+  display:grid;
+  grid-template-columns:repeat(6,1fr);
+  gap:7px;
+  margin-top:14px;
+}
+.admin-status-step{
+  border:1px solid var(--border);
+  background:var(--card);
+  color:var(--muted);
+  border-radius:14px;
+  padding:9px 7px;
+  font-size:10.5px;
+  font-weight:950;
+  text-align:center;
+  line-height:1.25;
+}
+.admin-status-step.done{
+  color:var(--text);
+  background:var(--panel);
+}
+.admin-status-step.active{
+  color:var(--accent);
+  background:var(--soft);
+  border-color:rgba(139,106,69,.38);
+}
+.order-detail-body{
+  padding:16px;
+}
+.order-detail-info-grid{
+  display:grid;
+  grid-template-columns:1.2fr 1fr 1fr;
+  gap:10px;
+  margin-bottom:12px;
+}
+.order-detail-info-card{
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:13px;
+}
+.order-detail-info-card span{
+  display:block;
+  color:var(--muted);
+  font-size:10.5px;
+  font-weight:950;
+  text-transform:uppercase;
+  margin-bottom:5px;
+}
+.order-detail-info-card strong{
+  display:block;
+  font-size:15px;
+  line-height:1.25;
+  word-break:break-word;
+}
+.order-detail-info-card small{
+  display:block;
+  margin-top:4px;
+  color:var(--muted);
+  font-weight:700;
+  line-height:1.35;
+}
+.order-detail-control-panel{
+  display:grid!important;
+  grid-template-columns:1fr 1fr 110px;
+  gap:10px!important;
+  align-items:end!important;
+  max-width:none!important;
+  margin:12px 0!important;
+}
+.order-detail-control-panel .field{
+  margin:0!important;
+}
+.order-detail-control-panel button{
+  width:110px!important;
+  height:42px!important;
+  padding:0 12px!important;
+  border-radius:12px!important;
+  margin:0!important;
+}
+.order-detail-actions-pro{
+  display:grid;
+  grid-template-columns:170px 150px 150px;
+  gap:10px;
+  margin:10px 0 14px;
+}
+.order-detail-actions-pro button{
+  height:42px!important;
+  padding:0 12px!important;
+  border-radius:12px!important;
+  margin:0!important;
+}
+.order-detail-section-title{
+  margin:14px 0 9px;
+  font-size:15px;
+  font-weight:950;
+}
+.order-measure-cards{
+  display:none;
+}
+.order-measure-card{
+  border:1px solid var(--border);
+  background:var(--card);
+  border-radius:16px;
+  padding:12px;
+  margin-bottom:9px;
+}
+.order-measure-card-top{
+  display:flex;
+  justify-content:space-between;
+  gap:8px;
+  margin-bottom:8px;
+}
+.order-measure-card strong{
+  display:block;
+  font-size:14px;
+}
+.order-measure-card span{
+  color:var(--muted);
+  font-size:12.5px;
+  font-weight:700;
+  line-height:1.45;
+}
+@media(max-width:950px){
+  .order-detail-info-grid{grid-template-columns:1fr 1fr}
+  .admin-status-flow{grid-template-columns:repeat(3,1fr)}
+  .order-detail-control-panel{grid-template-columns:1fr!important}
+  .order-detail-control-panel button{width:100%!important}
+  .order-detail-actions-pro{grid-template-columns:1fr}
+}
+@media(max-width:620px){
+  .order-detail-hero-top{display:block}
+  .order-detail-status{margin-top:10px}
+  .order-detail-info-grid{grid-template-columns:1fr}
+  .admin-status-flow{grid-template-columns:1fr}
+  .order-detail-body .table-wrap{display:none}
+  .order-measure-cards{display:block}
+}
+</style>
+
+</head>
 <body>
 <div class="container">
 <section class="login-card" id="loginScreen">
@@ -214,7 +479,7 @@ const ADMIN_SESSION_KEY="prestijLifeAdminSession";
 const ADMIN_THEME_KEY="prestijLifeAdminTheme";
 const PRICE_API_URL="https://script.google.com/macros/s/AKfycbzcTBOxRGOsFO0dzLS1EKrWMtn0GgxjHI-dUonwg-qehva7MSIry8w0K8Y_63voFcAz/exec";
 const ADMIN_API_KEY="prestijlife2026";
-const ORDER_STATUSES=["Yeni","Üretimde","Hazır","Teslim Edildi","İptal"];
+const ORDER_STATUSES=["Yeni","Ölçü Onaylandı","Üretimde","Hazır","Kargoya Verildi","Teslim Edildi","İptal"];
 const MOUNT_OPTIONS=["Askılı","Vidalı","Standart"];
 const CASE_OPTIONS=["Bronz","Beyaz","Krem","Kahverengi","Antrasit","Gri"];
 let sellersList=[],sellerPriceRows=[],productsList=[],fabricsList=[],catalogsList=[],lastReportHTML="",lastBackup=null,priceFormDirty=false,pricesLoadedOnce=false;
@@ -4046,6 +4311,470 @@ window.plfOpenNotificationOrder = async function(code){
     }
   }
 })();
+
+
+/* MUHASEBE VE RAPOR PROFESYONEL DÜZEN */
+let lastReportDataForExcel = null;
+let lastAccountingRows = [];
+
+function plfNumRaw(v){
+  const n = Number(v || 0);
+  return isNaN(n) ? 0 : n;
+}
+
+function plfSourceLabel(o){
+  if(!o) return "";
+  if(String(o.kaynak || "") === "site") return "Merkez / Site";
+  return o.satici_adi || "Manuel";
+}
+
+function plfAccountStatusText(v){
+  return String(v || "açık");
+}
+
+function renderAccounting(rows, summary){
+  rows = rows || [];
+  summary = summary || {};
+  lastAccountingRows = rows;
+
+  const sellerMap = {};
+  rows.forEach(function(r){
+    const name = r.satici_adi || "Satıcı";
+    if(!sellerMap[name]){
+      sellerMap[name] = { count:0, m2:0, sale:0, seller:0, prestij:0, open:0, closed:0 };
+    }
+    sellerMap[name].count++;
+    sellerMap[name].m2 += plfNumRaw(r.toplam_gercek_m2);
+    sellerMap[name].sale += plfNumRaw(r.satis_tutari);
+    sellerMap[name].seller += plfNumRaw(r.satici_tutari);
+    sellerMap[name].prestij += plfNumRaw(r.fark_tutar);
+    if(plfAccountStatusText(r.hesap_durumu) === "kapandı") sellerMap[name].closed += plfNumRaw(r.satici_tutari);
+    else sellerMap[name].open += plfNumRaw(r.satici_tutari);
+  });
+
+  const sellerCards = Object.keys(sellerMap).sort().map(function(name){
+    const s = sellerMap[name];
+    return `<div class="account-seller-card">
+      <h4>${esc(name)}</h4>
+      <div class="account-seller-row"><span>Sipariş</span><strong>${s.count}</strong></div>
+      <div class="account-seller-row"><span>Gerçek m²</span><strong>${num(s.m2)} m²</strong></div>
+      <div class="account-seller-row"><span>Satıcı Müşteri Satışı</span><strong>${tl(s.sale)}</strong></div>
+      <div class="account-seller-row"><span>Satıcı Hakedişi</span><strong>${tl(s.seller)}</strong></div>
+      <div class="account-seller-row"><span>Prestij Life Kazancı</span><strong>${tl(s.prestij)}</strong></div>
+      <div class="account-seller-row"><span>Açık Hakediş</span><strong>${tl(s.open)}</strong></div>
+    </div>`;
+  }).join("");
+
+  accSummaryCards.innerHTML = `
+    <div class="account-pro-summary">
+      <div class="account-pro-card"><span>Sipariş Sayısı</span><strong>${summary.siparis_sayisi || 0}</strong><small>Filtreye uyan kayıt</small></div>
+      <div class="account-pro-card"><span>Gerçek m²</span><strong>${num(summary.toplam_gercek_m2)} m²</strong><small>Yuvarlama değil gerçek ölçü</small></div>
+      <div class="account-pro-card"><span>Satıcının Müşteri Satışı</span><strong>${tl(summary.toplam_satis_tutari)}</strong><small>Satıcının müşteriden alacağı toplam</small></div>
+      <div class="account-pro-card primary"><span>Prestij Life Kazancı</span><strong>${tl(summary.toplam_fark)}</strong><small>Firmaya kalan tutar</small></div>
+      <div class="account-pro-card"><span>Satıcı Hakedişi</span><strong>${tl(summary.toplam_satici_tutari)}</strong><small>Satıcıya ödenecek tutar</small></div>
+      <div class="account-pro-card"><span>Açık Hakediş</span><strong>${tl(summary.acik_satici_tutari)}</strong><small>${summary.acik_siparis || 0} açık sipariş</small></div>
+      <div class="account-pro-card"><span>Kapanan Hakediş</span><strong>${tl(summary.kapanan_satici_tutari)}</strong><small>${summary.kapanan_siparis || 0} kapanan sipariş</small></div>
+    </div>
+    ${sellerCards ? `<div class="report-pro-title"><h3>Satıcı Bazlı Özet</h3><span class="tag">${Object.keys(sellerMap).length} satıcı</span></div><div class="account-seller-grid">${sellerCards}</div>` : ""}
+  `;
+
+  accTableBody.innerHTML = "";
+  if(!rows.length){
+    accTableWrap.style.display = "none";
+    return showMessage("accWarning", "Bu seçimlere uygun muhasebe kaydı bulunamadı.");
+  }
+
+  rows.forEach(function(r){
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td><input type="checkbox" class="acc-check" value="${attr(r.siparis_kodu)}"></td>
+      <td><strong>${esc(r.siparis_kodu)}</strong></td>
+      <td>${formatDate(r.tarih)}</td>
+      <td>${esc(r.satici_adi)}</td>
+      <td><strong>${esc(r.musteri_ad)}</strong><small>${esc(r.telefon)}</small></td>
+      <td><span class="tag">${esc(r.bolge_kodu)}</span><small>${esc(r.fiyat_bolgesi)}</small></td>
+      <td>${num(r.toplam_gercek_m2)} m²</td>
+      <td>${tl(r.satis_tutari)}<small>Satıcının müşteri satışı</small></td>
+      <td>${tl(r.fark_tutar)}<small>Prestij Life kazancı</small></td>
+      <td>${tl(r.satici_tutari)}<small>Satıcı hakedişi</small></td>
+      <td><span class="tag">${esc(r.hesap_durumu)}</span><small>${formatDate(r.hesap_kapanis_tarihi || "")}</small></td>`;
+    accTableBody.appendChild(tr);
+  });
+  accTableWrap.style.display = "block";
+}
+
+function renderReports(data){
+  data = data || [];
+  const sum = { siparis:0, adet:0, m2:0, satis:0, satici:0, prestij:0, openSeller:0, closedSeller:0 };
+  const sellerMap = {};
+  const productMap = {};
+  const productionMap = {};
+  const rows = [];
+
+  data.forEach(function(x){
+    const o = x.order || {};
+    const sourceName = plfSourceLabel(o);
+    const sellerName = o.kaynak === "site" ? "Merkez / Site" : (o.satici_adi || "Manuel");
+    const sale = plfNumRaw(o.musteri_toplam_tutar);
+    const seller = plfNumRaw(o.satici_hesap_tutar);
+    const prestij = plfNumRaw(o.fark_tutar);
+    const m2 = plfNumRaw(o.toplam_gercek_m2);
+    const adet = plfNumRaw(o.toplam_adet);
+
+    sum.siparis++;
+    sum.adet += adet;
+    sum.m2 += m2;
+    sum.satis += sale;
+    sum.satici += seller;
+    sum.prestij += prestij;
+    if(plfAccountStatusText(o.hesap_durumu) === "kapandı") sum.closedSeller += seller;
+    else sum.openSeller += seller;
+
+    if(!sellerMap[sellerName]) sellerMap[sellerName] = { seller:sellerName, count:0, adet:0, m2:0, sale:0, sellerAmount:0, prestij:0 };
+    sellerMap[sellerName].count++;
+    sellerMap[sellerName].adet += adet;
+    sellerMap[sellerName].m2 += m2;
+    sellerMap[sellerName].sale += sale;
+    sellerMap[sellerName].sellerAmount += seller;
+    sellerMap[sellerName].prestij += prestij;
+
+    rows.push({
+      siparis_kodu:o.siparis_kodu,
+      tarih:o.tarih,
+      kaynak:sourceName,
+      satici:sellerName,
+      musteri:o.musteri_ad,
+      m2:m2,
+      satis:sale,
+      prestij:prestij,
+      satici:seller,
+      hesap:o.hesap_durumu || "açık"
+    });
+
+    (x.details || []).forEach(function(d){
+      const dm2 = plfNumRaw(d.gercek_m2);
+      const dadet = plfNumRaw(d.adet);
+      const product = d.urun || "Belirtilmedi";
+      if(!productMap[product]) productMap[product] = { urun:product, adet:0, m2:0 };
+      productMap[product].adet += dadet;
+      productMap[product].m2 += dm2;
+
+      const key = [d.urun || "", d.kasa_rengi || "", d.montaj_tipi || ""].join("||");
+      if(!productionMap[key]) productionMap[key] = { urun:d.urun || "", kasa:d.kasa_rengi || "", montaj:d.montaj_tipi || "", adet:0, m2:0 };
+      productionMap[key].adet += dadet;
+      productionMap[key].m2 += dm2;
+    });
+  });
+
+  const sellerRows = Object.values(sellerMap);
+  const productRows = Object.values(productMap);
+  const productionRows = Object.values(productionMap);
+  lastReportDataForExcel = { summary:sum, orders:rows, sellers:sellerRows, products:productRows, production:productionRows };
+
+  const orderHtmlRows = rows.map(function(r){
+    return `<tr><td>${esc(r.siparis_kodu)}</td><td>${formatDate(r.tarih)}</td><td>${esc(r.kaynak)}</td><td>${esc(r.satici)}</td><td>${esc(r.musteri)}</td><td>${num(r.m2)}</td><td>${tl(r.satis)}</td><td>${tl(r.prestij)}</td><td>${tl(r.satici)}</td><td>${esc(r.hesap)}</td></tr>`;
+  }).join("");
+
+  const sellerHtmlRows = sellerRows.map(function(s){
+    return `<tr><td>${esc(s.seller)}</td><td>${s.count}</td><td>${num(s.adet)}</td><td>${num(s.m2)}</td><td>${tl(s.sale)}</td><td>${tl(s.prestij)}</td><td>${tl(s.sellerAmount)}</td></tr>`;
+  }).join("");
+
+  const productHtmlRows = productRows.map(function(p){
+    return `<tr><td>${esc(p.urun)}</td><td>${num(p.adet)}</td><td>${num(p.m2)}</td></tr>`;
+  }).join("");
+
+  const productionHtmlRows = productionRows.map(function(p){
+    return `<tr><td>${esc(p.urun)}</td><td>${esc(p.kasa)}</td><td>${esc(p.montaj)}</td><td>${num(p.adet)}</td><td>${num(p.m2)}</td></tr>`;
+  }).join("");
+
+  const html = `
+    <div class="account-pro-summary">
+      <div class="account-pro-card"><span>Sipariş</span><strong>${sum.siparis}</strong></div>
+      <div class="account-pro-card"><span>Toplam Adet</span><strong>${sum.adet}</strong></div>
+      <div class="account-pro-card"><span>Gerçek m²</span><strong>${num(sum.m2)} m²</strong></div>
+      <div class="account-pro-card"><span>Satıcının Müşteri Satışı</span><strong>${tl(sum.satis)}</strong></div>
+      <div class="account-pro-card primary"><span>Prestij Life Kazancı</span><strong>${tl(sum.prestij)}</strong></div>
+      <div class="account-pro-card"><span>Satıcı Hakedişi</span><strong>${tl(sum.satici)}</strong></div>
+      <div class="account-pro-card"><span>Açık Hakediş</span><strong>${tl(sum.openSeller)}</strong></div>
+      <div class="account-pro-card"><span>Kapanan Hakediş</span><strong>${tl(sum.closedSeller)}</strong></div>
+    </div>
+
+    <div class="report-pro-block">
+      <div class="report-pro-title"><h3>1. Satış / Muhasebe Özeti</h3><span class="tag">${rows.length} kayıt</span></div>
+      <div class="table-wrap"><table><thead><tr><th>Sipariş</th><th>Tarih</th><th>Kaynak</th><th>Satıcı</th><th>Müşteri</th><th>Gerçek m²</th><th>Satıcının Müşteri Satışı</th><th>Prestij Life Kazancı</th><th>Satıcı Hakedişi</th><th>Hesap</th></tr></thead><tbody>${orderHtmlRows}</tbody></table></div>
+
+      <div class="report-pro-title"><h3>2. Satıcı Bazlı Özet</h3><span class="tag">${sellerRows.length} satıcı</span></div>
+      <div class="table-wrap"><table><thead><tr><th>Satıcı</th><th>Sipariş</th><th>Adet</th><th>Gerçek m²</th><th>Satıcının Müşteri Satışı</th><th>Prestij Life Kazancı</th><th>Satıcı Hakedişi</th></tr></thead><tbody>${sellerHtmlRows}</tbody></table></div>
+
+      <div class="report-pro-title"><h3>3. Ürün m² Özeti</h3></div>
+      <div class="table-wrap"><table><thead><tr><th>Ürün</th><th>Toplam Adet</th><th>Toplam Gerçek m²</th></tr></thead><tbody>${productHtmlRows}</tbody></table></div>
+
+      <div class="report-pro-title"><h3>4. İmalat Özeti</h3><span class="tag">Fiyat yok</span></div>
+      <p class="small-note">Bu bölüm üretim içindir; fiyat göstermez.</p>
+      <div class="table-wrap"><table><thead><tr><th>Ürün</th><th>Kasa</th><th>Sistem</th><th>Toplam Adet</th><th>Toplam Gerçek m²</th></tr></thead><tbody>${productionHtmlRows}</tbody></table></div>
+    </div>
+  `;
+
+  lastReportHTML = html;
+  reportOutput.className = "";
+  reportOutput.innerHTML = html;
+  showMessage("reportSuccess", "Rapor hazır.");
+}
+
+async function downloadReportExcel(){
+  if(!lastReportDataForExcel){
+    return showMessage("reportWarning", "Excel indirmek için önce rapor oluşturun.");
+  }
+
+  if(typeof ExcelJS === "undefined"){
+    return showMessage("reportError", "ExcelJS yüklenemedi. Sayfayı yenileyip tekrar deneyin.");
+  }
+
+  const wb = new ExcelJS.Workbook();
+  wb.creator = "Prestij Life";
+  wb.created = new Date();
+
+  function addSheet(name, columns, rows){
+    const ws = wb.addWorksheet(name);
+    ws.columns = columns.map(function(c){ return { header:c.header, key:c.key, width:c.width || 18 }; });
+    rows.forEach(function(r){ ws.addRow(r); });
+
+    ws.getRow(1).font = { bold:true };
+    ws.getRow(1).alignment = { vertical:"middle", horizontal:"center" };
+    ws.getRow(1).height = 22;
+    ws.eachRow(function(row){
+      row.eachCell(function(cell){
+        cell.border = {
+          top:{style:"thin"}, left:{style:"thin"}, bottom:{style:"thin"}, right:{style:"thin"}
+        };
+        cell.alignment = { vertical:"middle", wrapText:true };
+      });
+    });
+    return ws;
+  }
+
+  const data = lastReportDataForExcel;
+  addSheet("Genel Özet", [
+    {header:"Alan", key:"alan", width:30},
+    {header:"Değer", key:"deger", width:24}
+  ], [
+    {alan:"Sipariş Sayısı", deger:data.summary.siparis},
+    {alan:"Toplam Adet", deger:data.summary.adet},
+    {alan:"Gerçek m²", deger:data.summary.m2},
+    {alan:"Satıcının Müşteri Satışı", deger:data.summary.satis},
+    {alan:"Prestij Life Kazancı", deger:data.summary.prestij},
+    {alan:"Satıcı Hakedişi", deger:data.summary.satici},
+    {alan:"Açık Hakediş", deger:data.summary.openSeller},
+    {alan:"Kapanan Hakediş", deger:data.summary.closedSeller}
+  ]);
+
+  addSheet("Siparişler", [
+    {header:"Sipariş Kodu", key:"siparis_kodu", width:22},
+    {header:"Tarih", key:"tarih", width:22},
+    {header:"Kaynak", key:"kaynak", width:18},
+    {header:"Satıcı", key:"saticiAdi", width:18},
+    {header:"Müşteri", key:"musteri", width:24},
+    {header:"Gerçek m²", key:"m2", width:14},
+    {header:"Satıcının Müşteri Satışı", key:"satis", width:24},
+    {header:"Prestij Life Kazancı", key:"prestij", width:22},
+    {header:"Satıcı Hakedişi", key:"saticiTutar", width:20},
+    {header:"Hesap", key:"hesap", width:14}
+  ], data.orders.map(function(r){
+    return {
+      siparis_kodu:r.siparis_kodu,
+      tarih:r.tarih,
+      kaynak:r.kaynak,
+      saticiAdi:r.satici,
+      musteri:r.musteri,
+      m2:r.m2,
+      satis:r.satis,
+      prestij:r.prestij,
+      saticiTutar:r.satici,
+      hesap:r.hesap
+    };
+  }));
+
+  addSheet("Satıcı Özeti", [
+    {header:"Satıcı", key:"seller", width:22},
+    {header:"Sipariş", key:"count", width:12},
+    {header:"Adet", key:"adet", width:12},
+    {header:"Gerçek m²", key:"m2", width:14},
+    {header:"Satıcının Müşteri Satışı", key:"sale", width:24},
+    {header:"Prestij Life Kazancı", key:"prestij", width:22},
+    {header:"Satıcı Hakedişi", key:"sellerAmount", width:20}
+  ], data.sellers);
+
+  addSheet("Ürün m2 Özeti", [
+    {header:"Ürün", key:"urun", width:30},
+    {header:"Toplam Adet", key:"adet", width:14},
+    {header:"Toplam Gerçek m²", key:"m2", width:18}
+  ], data.products);
+
+  addSheet("İmalat Özeti", [
+    {header:"Ürün", key:"urun", width:30},
+    {header:"Kasa", key:"kasa", width:24},
+    {header:"Sistem", key:"montaj", width:16},
+    {header:"Toplam Adet", key:"adet", width:14},
+    {header:"Toplam Gerçek m²", key:"m2", width:18}
+  ], data.production);
+
+  const buffer = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buffer], { type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "prestij-life-rapor.xlsx";
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(function(){
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, 300);
+
+  showMessage("reportSuccess", "Excel raporu indirildi.");
+}
+
+
+/* SİPARİŞ DETAYI PROFESYONELLEŞTİRME + DURUM AKIŞI */
+function plfStatusSteps(){
+  return ["Yeni","Ölçü Onaylandı","Üretimde","Hazır","Kargoya Verildi","Teslim Edildi"];
+}
+
+function plfStatusIndex(status){
+  var s = String(status || "Yeni");
+  if(s === "İptal") return -1;
+  var arr = plfStatusSteps();
+  var idx = arr.indexOf(s);
+  return idx >= 0 ? idx : 0;
+}
+
+function plfAdminStatusFlow(status){
+  var idx = plfStatusIndex(status);
+  if(idx < 0){
+    return '<div class="admin-status-flow"><div class="admin-status-step active" style="grid-column:1/-1">Sipariş İptal Edildi</div></div>';
+  }
+  return '<div class="admin-status-flow">' + plfStatusSteps().map(function(step,i){
+    var cls = i < idx ? "done" : (i === idx ? "active" : "");
+    return '<div class="admin-status-step '+cls+'">'+esc(step)+'</div>';
+  }).join("") + '</div>';
+}
+
+function plfCopyAdminOrderCode(code){
+  code = String(code || "").trim();
+  if(!code) return;
+  navigator.clipboard.writeText(code).then(function(){
+    if(typeof showGlobalToast === "function") showGlobalToast("Sipariş kodu kopyalandı.","success",1800);
+  }).catch(function(){
+    if(typeof showGlobalToast === "function") showGlobalToast("Kopyalama yapılamadı.","warning",2200);
+  });
+}
+
+function plfDetailFabricText(x){
+  return [x.kumas, x.blackout_kumas, x.tul_kumas, x.perde_kumas].filter(function(v){ return String(v || "").trim(); }).join(" / ");
+}
+
+
+document.addEventListener("click", function(e){
+  var copyBtn = e.target && e.target.closest ? e.target.closest("[data-copy-order-code]") : null;
+  if(copyBtn){
+    plfCopyAdminOrderCode(copyBtn.getAttribute("data-copy-order-code"));
+  }
+});
+
+
+document.addEventListener("click", function(e){
+  var copyBtn = e.target && e.target.closest ? e.target.closest("[data-copy-order-code]") : null;
+  if(copyBtn) return plfCopyAdminOrderCode(copyBtn.getAttribute("data-copy-order-code"));
+
+  var saveBtn = e.target && e.target.closest ? e.target.closest("[data-save-order-code]") : null;
+  if(saveBtn) return saveOrderDetailChanges(saveBtn.getAttribute("data-save-order-code"));
+
+  var createBtn = e.target && e.target.closest ? e.target.closest("[data-create-slip-code]") : null;
+  if(createBtn) return createProductionSlips(createBtn.getAttribute("data-create-slip-code"));
+
+  var slipsBtn = e.target && e.target.closest ? e.target.closest("[data-open-slips-code]") : null;
+  if(slipsBtn) return plfOpenRelatedSlips(slipsBtn.getAttribute("data-open-slips-code"));
+
+  var deleteBtn = e.target && e.target.closest ? e.target.closest("[data-delete-order-code]") : null;
+  if(deleteBtn) return deleteOrder(deleteBtn.getAttribute("data-delete-order-code"));
+});
+
+function renderOrderDetail(o,details){
+  details = details || [];
+  var detailM2Total = details.reduce(function(total,item){ return total + orderDetailM2(item); }, 0);
+  var displayTotalM2 = detailM2Total > 0 ? detailM2Total : Number(o.toplam_gercek_m2 || 0);
+  var statusOptions = ORDER_STATUSES.map(function(s){
+    return '<option value="'+attr(s)+'" '+(String(o.durum || "Yeni") === s ? "selected" : "")+'>'+esc(s)+'</option>';
+  }).join("");
+  var sourceText = o.kaynak === "site" ? "Merkez / Site" : esc(o.satici_adi || "Manuel");
+
+  var tableRows = details.map(function(x){
+    return '<tr>'+
+      '<td>'+esc(x.satir_no)+'</td>'+
+      '<td><strong>'+esc(x.urun)+'</strong><small>'+esc(plfDetailFabricText(x))+'</small></td>'+
+      '<td>'+esc(x.kasa_rengi_raw || x.kasa_rengi || "-")+'</td>'+
+      '<td>'+esc(x.montaj_tipi)+'</td>'+
+      '<td>'+esc(x.gercek_en)+' × '+esc(x.gercek_boy)+'</td>'+
+      '<td>'+esc(x.adet)+'</td>'+
+      '<td>'+num(orderDetailM2(x))+' m²</td>'+
+    '</tr>';
+  }).join("");
+
+  var measureCards = details.map(function(x,idx){
+    var fabric = plfDetailFabricText(x);
+    return '<div class="order-measure-card">'+
+      '<div class="order-measure-card-top"><strong>'+(idx+1)+'. Ölçü · '+esc(x.urun)+'</strong><span class="tag">'+esc(x.adet)+' adet</span></div>'+
+      '<span>Ölçü: '+esc(x.gercek_en)+' × '+esc(x.gercek_boy)+' cm<br>'+
+      'Sistem: '+esc(x.montaj_tipi || "-")+'<br>'+
+      'Kasa: '+esc(x.kasa_rengi_raw || x.kasa_rengi || "-")+
+      (fabric ? '<br>Kumaş: '+esc(fabric) : '')+
+      '<br>m²: '+num(orderDetailM2(x))+' m²</span>'+
+    '</div>';
+  }).join("");
+
+  orderDetailArea.innerHTML =
+    '<div class="detail-box order-detail-pro">'+
+      '<div class="order-detail-hero">'+
+        '<div class="order-detail-hero-top">'+
+          '<div>'+
+            '<span class="eyebrow">Sipariş Detayı</span>'+
+            '<h3 style="margin:0">'+esc(o.siparis_kodu)+'</h3>'+
+            '<button type="button" class="order-code-copy" data-copy-order-code="'+attr(o.siparis_kodu)+'">📋 Sipariş kodunu kopyala</button>'+
+          '</div>'+
+          '<span class="order-detail-status">'+esc(o.durum || "Yeni")+'</span>'+
+        '</div>'+
+        plfAdminStatusFlow(o.durum || "Yeni")+
+      '</div>'+
+
+      '<div class="order-detail-body">'+
+        '<div class="order-detail-info-grid">'+
+          '<div class="order-detail-info-card"><span>Müşteri</span><strong>'+esc(o.musteri_ad)+'</strong><small>'+esc(o.telefon)+'</small></div>'+
+          '<div class="order-detail-info-card"><span>Kaynak / Satıcı</span><strong>'+sourceText+'</strong><small>'+esc(o.kaynak === "site" ? "Site siparişi" : "Manuel/satıcı siparişi")+'</small></div>'+
+          '<div class="order-detail-info-card"><span>Sipariş Tarihi</span><strong>'+formatDate(o.tarih)+'</strong></div>'+
+          '<div class="order-detail-info-card"><span>Toplam m²</span><strong>'+num(displayTotalM2)+' m²</strong><small>Gerçek ölçü m²</small></div>'+
+          '<div class="order-detail-info-card"><span>Müşteri Tutarı</span><strong>'+tl(o.musteri_toplam_tutar)+'</strong><small>Satış toplamı</small></div>'+
+          '<div class="order-detail-info-card"><span>Satıcı Hesabı</span><strong>'+(o.satici_hesap_tutar !== "" ? tl(o.satici_hesap_tutar) : "-")+'</strong><small>Varsa satıcı hakedişi</small></div>'+
+        '</div>'+
+
+        '<div class="order-detail-info-card" style="margin-bottom:12px"><span>Adres</span><strong>'+esc(o.adres || "-")+'</strong></div>'+
+
+        '<div class="form-grid order-detail-control-panel">'+
+          '<label class="field"><span>Satıcı / Kaynak</span><select id="detailOrderSeller">'+plfSellerSelectOptions(o)+'</select></label>'+
+          '<label class="field"><span>Sipariş Durumu</span><select id="detailOrderStatus">'+statusOptions+'</select></label>'+
+          '<label class="field"><span>&nbsp;</span><button class="btn-main" data-save-order-code="'+attr(o.siparis_kodu)+'">Kaydet</button></label>'+
+        '</div>'+
+
+        '<div class="order-detail-actions-pro">'+
+          '<button class="btn-main" data-create-slip-code="'+attr(o.siparis_kodu)+'">İmalat Fişi Oluştur</button>'+
+          '<button class="btn-light" data-open-slips-code="'+attr(o.siparis_kodu)+'">Fişlere Git</button>'+
+          '<button class="btn-danger" data-delete-order-code="'+attr(o.siparis_kodu)+'">Siparişi Sil</button>'+
+        '</div>'+
+
+        '<div class="order-detail-section-title">Ölçüler ve Ürün Detayları</div>'+
+        '<div class="table-wrap"><table><thead><tr><th>Sıra</th><th>Ürün / Kumaş</th><th>Kasa</th><th>Sistem</th><th>Ölçü</th><th>Adet</th><th>m²</th></tr></thead><tbody>'+tableRows+'</tbody></table></div>'+
+        '<div class="order-measure-cards">'+measureCards+'</div>'+
+      '</div>'+
+    '</div>';
+}
 
 </script>
 </body>
