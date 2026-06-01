@@ -42,9 +42,8 @@ body.dark{--bg:#151618;--bg2:#202328;--card:#1e2023;--panel:#25282d;--text:#f2f0
   <div class="admin-grid compact-admin-menu">
     <div class="module-card active" onclick="openSection('siparisler',this)"><strong>Siparişler</strong><p>Gelen siparişleri görün, detay açın ve fiş oluşturun.</p></div>
     <div class="module-card" onclick="openSection('imalat',this)"><strong>İmalat Fişleri</strong><p>Fişleri kontrol edin, Excel/PDF/Yazdır işlemlerini yapın.</p></div>
-    <div class="module-card" onclick="openSection('ayarlar',this)"><strong>Fiyatlar</strong><p>Müşteri fiyatları ve satıcı m² fiyatlarını yönetin.</p></div>
-    <div class="module-card" onclick="openSection('raporlar',this)"><strong>Raporlar</strong><p>Tarih aralığına göre satış ve m² özetlerini görün.</p></div>
-    <div class="module-card" onclick="openSection('gelismis',this)"><strong>Gelişmiş</strong><p>Yönetim, yedekleme, muhasebe, şifre ve katalog işlemleri.</p></div>
+    <div class="module-card" onclick="openSection('muhasebe',this)"><strong>Muhasebe</strong><p>Satıcı hesaplarını, açık/kapanan durumları takip edin.</p></div>
+    <div class="module-card" onclick="openSection('gelismis',this)"><strong>Gelişmiş</strong><p>Fiyatlar, raporlar, yönetim, yedekleme ve panel ayarları.</p></div>
   </div>
 
   <div class="panel-section active" id="section-siparisler">
@@ -61,7 +60,7 @@ body.dark{--bg:#151618;--bg2:#202328;--card:#1e2023;--panel:#25282d;--text:#f2f0
       </div>
       <div class="actions"><button class="btn-main" onclick="loadOrders()">Siparişleri Listele</button><button class="btn-light" onclick="clearOrderFilters()">Filtreleri Temizle</button><button class="btn-light" onclick="toggleBox('manualOrderBox')">Manuel Sipariş Ekle</button></div>
       <div class="message error" id="ordersError"></div><div class="message success" id="ordersSuccess"></div><div class="message warning" id="ordersWarning"></div>
-      <div class="table-wrap" id="ordersTableWrap" style="display:none"><table><thead><tr><th>Sipariş</th><th>Tarih</th><th>Müşteri</th><th>Telefon</th><th>Kaynak / Satıcı</th><th>m²</th><th>Tutar</th><th>Durum</th><th>İşlem</th></tr></thead><tbody id="ordersTableBody"></tbody></table></div>
+      <div class="table-wrap" id="ordersTableWrap" style="display:none"><table><thead><tr><th>Sipariş Kodu</th><th>Tarih</th><th>Kaynak</th><th>Satıcı</th><th>Müşteri</th><th>m²</th><th>Müşteri Tutarı</th><th>Satıcı Hesabı</th><th>Durum</th><th>İşlem</th></tr></thead><tbody id="ordersTableBody"></tbody></table></div>
       <div id="orderDetailArea"></div>
     </div>
     <div class="box hidden" id="manualOrderBox">
@@ -154,14 +153,14 @@ body.dark{--bg:#151618;--bg2:#202328;--card:#1e2023;--panel:#25282d;--text:#f2f0
 
   <div class="panel-section" id="section-gelismis">
     <div class="section-title"><h2>Gelişmiş İşlemler</h2><button class="help-btn" onclick="showHelp('gelismis')">?</button></div>
-    <p class="subtitle">Günlük kullanım dışındaki yönetim, muhasebe, yedekleme ve panel ayarları burada toplandı. Hiçbir özellik silinmedi; sadece ana ekran sadeleştirildi.</p>
+    <p class="subtitle">Günlük kullanım dışındaki fiyat, rapor, yönetim, yedekleme ve panel ayarları burada toplandı. Hiçbir özellik silinmedi; sadece ana ekran sadeleştirildi.</p>
     <div class="admin-grid">
+      <div class="module-card" onclick="openAdvancedSection('ayarlar')"><strong>Fiyatlar / Ayarlar</strong><p>Müşteri fiyatları, satıcı m² fiyatları, şifre ve görünüm ayarları.</p></div>
+      <div class="module-card" onclick="openAdvancedSection('raporlar')"><strong>Raporlar</strong><p>Tarih aralığına göre satış, ürün m² ve imalat özetleri.</p></div>
       <div class="module-card" onclick="openAdvancedSection('yonetim')"><strong>Yönetim</strong><p>Satıcı, ürün, kumaş ve katalog kayıtlarını düzenleyin.</p></div>
-      <div class="module-card" onclick="openAdvancedSection('muhasebe')"><strong>Muhasebe</strong><p>Satıcı hesaplarını ve açık/kapanan hesapları takip edin.</p></div>
       <div class="module-card" onclick="openAdvancedSection('yedekleme')"><strong>Yedekleme</strong><p>Excel veya JSON yedeği indirin.</p></div>
-      <div class="module-card" onclick="openAdvancedSection('ayarlar')"><strong>Şifre / Görünüm</strong><p>Şifre değiştirme, koyu mod ve satıcı fiyat ayarlarına ulaşın.</p></div>
     </div>
-    <div class="placeholder">Günlük iş akışı için genelde Siparişler ve İmalat Fişleri yeterlidir. Katalog, ürün, satıcı ve yedekleme gibi işlemler gerektiğinde bu bölümden açılabilir.</div>
+    <div class="placeholder">Günlük iş akışı için ana ekranda Siparişler, İmalat Fişleri ve Muhasebe yeterlidir. Fiyat, katalog, ürün, rapor ve yedekleme işlemleri gerektiğinde bu bölümden açılır.</div>
   </div>
 
   <div class="panel-section" id="section-yedekleme"><div class="section-title"><h2>Yedekleme</h2><button class="help-btn" onclick="showHelp('yedekleme')">?</button></div><p class="subtitle">Sipariş, fiş, satıcı ve katalog verilerini bilgisayarınıza indirebilirsiniz.</p><div class="box"><h3>Verileri Dışa Aktar</h3><div class="actions"><button class="btn-main" onclick="downloadBackupExcel()">Excel Yedeği İndir</button><button class="btn-light" onclick="downloadBackupJson()">JSON Yedeği İndir</button></div><div class="message error" id="backupError"></div><div class="message success" id="backupSuccess"></div><div class="message warning" id="backupWarning"></div><div class="placeholder">Excel yedeği kolay inceleme içindir. JSON yedeği tüm verileri daha düzenli saklar.</div></div></div>
@@ -182,6 +181,7 @@ const MOUNT_OPTIONS=["Askılı","Vidalı","Standart"];
 const CASE_OPTIONS=["Bronz","Beyaz","Krem","Kahverengi","Antrasit","Gri"];
 let sellersList=[],sellerPriceRows=[],productsList=[],fabricsList=[],catalogsList=[],lastReportHTML="",lastBackup=null,priceFormDirty=false,pricesLoadedOnce=false;
 const HELP_CONTENT={
+  gelismis:{title:"Gelişmiş işlemler nedir?",body:`<p>Gelişmiş bölümü günlük kullanımda sürekli görünmesi gerekmeyen ama sistem için önemli olan alanları toplar.</p><ol><li><b>Fiyatlar / Ayarlar:</b> müşteri fiyatları, satıcı m² fiyatları, panel şifresi ve görünüm ayarları.</li><li><b>Raporlar:</b> tarih aralığına göre satış, m² ve imalat özetleri.</li><li><b>Yönetim:</b> satıcı, ürün, kumaş ve katalog kayıtları.</li><li><b>Yedekleme:</b> kayıtları Excel veya JSON olarak indirme.</li></ol><p>Hiçbir özellik silinmedi; sadece ana ekran daha sade hale getirildi.</p>`},
   siparisler:{title:"Siparişler nasıl kullanılır?",body:`<p>Bu bölümde internet sitesinden gelen siparişleri ve elle eklediğiniz siparişleri takip edersiniz.</p><ol><li>Filtreleri kullanarak listeyi daraltın.</li><li>Detay butonuyla sipariş bilgilerini açın.</li><li>Durumu değiştirerek sipariş sürecini takip edin.</li><li>İmalat Fişi Oluştur ile üretim fişi hazırlayın.</li><li>İptal olan siparişleri silebilirsiniz.</li></ol>`},
   imalat:{title:"İmalat fişleri nasıl kullanılır?",body:`<p>Üretim için gerekli fişleri buradan yönetirsiniz.</p><ol><li>Fişi açın ve ölçüleri kontrol edin.</li><li>Pile, ip veya not alanlarını elle düzenleyin.</li><li>Fişi Güncelle ile kaydedin.</li><li>Excel veya PDF olarak indirin.</li></ol>`},
   muhasebe:{title:"Muhasebe nasıl kullanılır?",body:`<p>Satıcı hesapları gerçek ölçü m² üzerinden takip edilir.</p><ol><li>Satıcı ve tarih seçin.</li><li>Açık veya kapanan hesapları filtreleyin.</li><li>Ödemesi yapılan siparişleri seçip hesabı kapatın.</li><li>Yanlışlık olursa hesabı tekrar açın.</li></ol>`},
@@ -1288,6 +1288,188 @@ async function loadOrderDetail(code){
   }
 }
 
+/* ADMIN SADELEŞTİRME + MOBİL KULLANIM DÜZENİ
+   Çalışan sipariş, fiyat, fiş, Excel, PDF ve Yazdır sistemlerine dokunmaz.
+   Sadece görünümü, mobil kullanılabilirliği, sipariş liste/detay sunumunu ve Gelişmiş yönlendirmesini düzenler.
+*/
+(function(){
+  var style = document.createElement("style");
+  style.id = "prestij-admin-mobile-clean-style";
+  style.textContent = `
+    .compact-admin-menu{grid-template-columns:repeat(4,minmax(160px,1fr));position:sticky;top:10px;z-index:20;background:rgba(246,243,238,.78);backdrop-filter:blur(10px);padding:10px;border-radius:22px;border:1px solid var(--border);box-shadow:0 12px 28px rgba(45,35,25,.08)}
+    body.dark .compact-admin-menu{background:rgba(30,32,35,.78)}
+    .compact-admin-menu .module-card{padding:14px;border-radius:18px;min-height:92px}
+    .compact-admin-menu .module-card strong{font-size:15px}
+    .compact-admin-menu .module-card p{font-size:12px;line-height:1.35}
+    .admin-mobile-hint{display:none;margin:0 0 12px;padding:12px 14px;border-radius:16px;background:var(--soft);border:1px solid var(--border);color:var(--muted);font-size:13px;line-height:1.45}
+    .order-mobile-list{display:none;gap:10px;margin-top:12px}
+    .order-mobile-card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:14px;box-shadow:0 8px 20px rgba(45,35,25,.05)}
+    .order-mobile-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:8px}
+    .order-mobile-code{font-weight:900;font-size:15px;color:var(--text)}
+    .order-mobile-date{font-size:12px;color:var(--muted);font-weight:800;text-align:right}
+    .order-mobile-customer{font-size:16px;font-weight:900;margin-bottom:4px}
+    .order-mobile-phone{font-size:13px;color:var(--muted);margin-bottom:10px}
+    .order-mobile-meta{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}
+    .order-mobile-meta div{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:8px}
+    .order-mobile-meta span{display:block;font-size:10px;font-weight:900;color:var(--muted);text-transform:uppercase;margin-bottom:4px}
+    .order-mobile-meta strong{font-size:14px}
+    .detail-clean-actions{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:10px}
+    .detail-clean-title{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+    .detail-clean-title h3{margin-bottom:4px}
+    .detail-section-label{margin:14px 0 8px;font-weight:900;color:var(--text)}
+    .mobile-stack-table table{min-width:760px}
+    @media(max-width:900px){
+      body{padding:8px;background:var(--bg)}
+      .container{max-width:100%}
+      .login-card,.admin-card{padding:14px;border-radius:18px;box-shadow:none}
+      .login-card{margin:30px auto}
+      .admin-header{gap:10px;margin-bottom:12px}
+      .admin-title span{font-size:11px}.admin-title h1{font-size:30px}
+      .compact-admin-menu{display:flex;overflow-x:auto;gap:8px;margin-left:-4px;margin-right:-4px;padding:8px;border-radius:18px;top:0;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch}
+      .compact-admin-menu .module-card{flex:0 0 138px;min-height:86px;padding:12px;scroll-snap-align:start}
+      .compact-admin-menu .module-card strong{font-size:14px}.compact-admin-menu .module-card p{display:none}
+      .panel-section{padding:14px;border-radius:18px}
+      .box,.settings-card,.detail-box{padding:14px;border-radius:16px;margin-top:12px}
+      .section-title h2{font-size:21px}.section-title h3{font-size:17px}
+      .subtitle{font-size:13px;margin-bottom:12px}
+      .form-grid,.filter-grid,.settings-grid,.price-grid{grid-template-columns:1fr;gap:9px}
+      .actions{grid-template-columns:1fr;gap:8px}
+      button,.btn-link{padding:13px 14px;font-size:14px}
+      input,textarea,select{font-size:16px;padding:12px 13px;border-radius:13px}
+      .table-wrap{border-radius:14px;max-height:70vh;overflow:auto}
+      table{min-width:780px}th,td{padding:9px;font-size:12px}
+      .admin-mobile-hint{display:block}
+      #ordersTableWrap{display:none!important}
+      .order-mobile-list{display:grid}
+      .detail-head{display:block}.detail-head .actions{min-width:0!important;width:100%}
+      .detail-grid,.summary-cards{grid-template-columns:1fr 1fr;gap:8px}
+      .info-tile strong,.summary-card strong{font-size:15px;word-break:break-word}
+      .header-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%}
+      .header-actions a,.header-actions button{width:100%;padding:11px 10px;font-size:13px}
+    }
+    @media(max-width:520px){
+      .detail-grid,.summary-cards{grid-template-columns:1fr}
+      .order-mobile-meta{grid-template-columns:1fr 1fr}
+      .logo-shell{width:132px;min-height:82px}.logo-shell img{width:108px}
+      h1{font-size:32px}
+    }
+  `;
+  document.head.appendChild(style);
+})();
+function openAdvancedSection(sectionName){
+  var cards = document.querySelectorAll(".module-card");
+  cards.forEach(function(card){ card.classList.remove("active"); });
+  document.querySelectorAll(".panel-section").forEach(function(section){ section.classList.remove("active"); });
+  var target = document.getElementById("section-" + sectionName);
+  if(target){
+    target.classList.add("active");
+    target.scrollIntoView({behavior:"smooth",block:"start"});
+  }
+  if(sectionName === "yonetim"){
+    if(typeof loadSellerPrices === "function") loadSellerPrices(false);
+    if(typeof loadCatalogData === "function") loadCatalogData();
+  }
+  if(sectionName === "muhasebe" && typeof loadAccounting === "function") loadAccounting();
+  if(sectionName === "ayarlar"){
+    if(typeof loadPrices === "function") loadPrices(false);
+    if(typeof loadSellerPrices === "function") loadSellerPrices(false);
+  }
+}
+function renderOrders(list){
+  ordersTableBody.innerHTML="";
+  var oldMobileList = document.getElementById("ordersMobileList");
+  if(oldMobileList) oldMobileList.remove();
+  var oldHint = document.getElementById("ordersMobileHint");
+  if(oldHint) oldHint.remove();
+
+  if(!list.length){
+    ordersTableWrap.style.display="none";
+    return showMessage("ordersWarning","Bu seçimlere uygun sipariş bulunamadı.");
+  }
+
+  var hint = document.createElement("div");
+  hint.id = "ordersMobileHint";
+  hint.className = "admin-mobile-hint";
+  hint.textContent = "Mobilde siparişler kart şeklinde gösterilir. Ayrıntı için Detay butonuna basın.";
+  ordersTableWrap.parentNode.insertBefore(hint, ordersTableWrap);
+
+  var mobileList = document.createElement("div");
+  mobileList.id = "ordersMobileList";
+  mobileList.className = "order-mobile-list";
+  ordersTableWrap.parentNode.insertBefore(mobileList, ordersTableWrap.nextSibling);
+
+  list.forEach(function(o){
+    var source=o.kaynak==="site"?"Merkez / Site":"Manuel";
+    var seller=o.kaynak==="site"?"Merkez / Site":(o.satici_adi||"-");
+    var tr=document.createElement("tr");
+    tr.innerHTML=`<td><strong>${esc(o.siparis_kodu)}</strong></td><td>${formatDate(o.tarih)}</td><td><strong>${esc(o.musteri_ad)}</strong></td><td>${esc(o.telefon)}</td><td><span class="tag">${source}</span><small>${esc(seller)}</small></td><td>${num(o.toplam_gercek_m2)} m²</td><td>${tl(o.musteri_toplam_tutar)}</td><td><span class="tag">${esc(o.durum||"Yeni")}</span></td><td><button class="btn-light" onclick="loadOrderDetail('${attr(o.siparis_kodu)}')">Detay</button></td>`;
+    ordersTableBody.appendChild(tr);
+
+    var card=document.createElement("div");
+    card.className="order-mobile-card";
+    card.innerHTML=`
+      <div class="order-mobile-top">
+        <div class="order-mobile-code">${esc(o.siparis_kodu)}</div>
+        <div class="order-mobile-date">${formatDate(o.tarih)}</div>
+      </div>
+      <div class="order-mobile-customer">${esc(o.musteri_ad)}</div>
+      <div class="order-mobile-phone">${esc(o.telefon || "Telefon yok")}</div>
+      <div class="order-mobile-meta">
+        <div><span>Kaynak</span><strong>${esc(source)}</strong></div>
+        <div><span>Durum</span><strong>${esc(o.durum||"Yeni")}</strong></div>
+        <div><span>m²</span><strong>${num(o.toplam_gercek_m2)} m²</strong></div>
+        <div><span>Tutar</span><strong>${tl(o.musteri_toplam_tutar)}</strong></div>
+      </div>
+      <button class="btn-main" onclick="loadOrderDetail('${attr(o.siparis_kodu)}')">Detay Aç</button>
+    `;
+    mobileList.appendChild(card);
+  });
+
+  var head = ordersTableWrap.querySelector("thead tr");
+  if(head){
+    head.innerHTML = "<th>Sipariş</th><th>Tarih</th><th>Müşteri</th><th>Telefon</th><th>Kaynak / Satıcı</th><th>m²</th><th>Tutar</th><th>Durum</th><th>İşlem</th>";
+  }
+  ordersTableWrap.style.display="block";
+}
+function renderOrderDetail(o,details){
+  var detailM2Total = (details || []).reduce(function(total,item){ return total + orderDetailM2(item); }, 0);
+  var displayTotalM2 = detailM2Total > 0 ? detailM2Total : Number(o.toplam_gercek_m2 || 0);
+  var rows=(details || []).map(function(x){
+    return `<tr><td>${esc(x.satir_no)}</td><td>${esc(x.urun)}</td><td>${esc(x.kasa_rengi)}</td><td>${esc(x.montaj_tipi)}</td><td>${esc(x.gercek_en)} × ${esc(x.gercek_boy)}</td><td>${esc(x.adet)}</td><td>${num(orderDetailM2(x))} m²</td></tr>`;
+  }).join("");
+  var statusOptions=ORDER_STATUSES.map(function(s){return `<option value="${attr(s)}" ${String(o.durum||"Yeni")===s?"selected":""}>${esc(s)}</option>`;}).join("");
+  var sourceText = o.kaynak==="site" ? "Merkez / Site" : esc(o.satici_adi || "Manuel");
+  orderDetailArea.innerHTML=`
+    <div class="detail-box">
+      <div class="detail-clean-title">
+        <div>
+          <h3>${esc(o.siparis_kodu)}</h3>
+          <p class="subtitle" style="margin-bottom:0">Sipariş detayları ve üretim işlemleri.</p>
+        </div>
+        <span class="tag">${esc(o.durum||"Yeni")}</span>
+      </div>
+      <div class="detail-grid">
+        <div class="info-tile"><span>Müşteri</span><strong>${esc(o.musteri_ad)}</strong></div>
+        <div class="info-tile"><span>Telefon</span><strong>${esc(o.telefon)}</strong></div>
+        <div class="info-tile"><span>Kaynak / Satıcı</span><strong>${sourceText}</strong></div>
+        <div class="info-tile"><span>m²</span><strong>${num(displayTotalM2)} m²</strong></div>
+        <div class="info-tile"><span>Müşteri Tutarı</span><strong>${tl(o.musteri_toplam_tutar)}</strong></div>
+        <div class="info-tile"><span>Satıcı Hesabı</span><strong>${o.satici_hesap_tutar!==""?tl(o.satici_hesap_tutar):"-"}</strong></div>
+      </div>
+      <div class="info-tile" style="margin-bottom:12px"><span>Adres</span><strong>${esc(o.adres)}</strong></div>
+      <div class="form-grid">
+        <label class="field"><span>Sipariş Durumu</span><select id="detailOrderStatus">${statusOptions}</select></label>
+        <label class="field"><span>Durumu Kaydet</span><button class="btn-light" onclick="updateOrderStatus('${attr(o.siparis_kodu)}')">Durumu Kaydet</button></label>
+      </div>
+      <div class="detail-clean-actions">
+        <button class="btn-main" onclick="createProductionSlips('${attr(o.siparis_kodu)}')">İmalat Fişi Oluştur</button>
+        <button class="btn-light" onclick="plfOpenRelatedSlips('${attr(o.siparis_kodu)}')">Fişlere Git</button>
+        <button class="btn-danger" onclick="deleteOrder('${attr(o.siparis_kodu)}')">Siparişi Sil</button>
+      </div>
+      <div class="detail-section-label">Ölçüler</div>
+      <div class="table-wrap mobile-stack-table"><table><thead><tr><th>Sıra</th><th>Ürün</th><th>Kasa</th><th>Sistem</th><th>Ölçü</th><th>Adet</th><th>m²</th></tr></thead><tbody>${rows}</tbody></table></div>
+    </div>`;
+}
 passwordInput.addEventListener("keydown",e=>{if(e.key==="Enter")login()});
 initAdmin();
 </script>
