@@ -153,14 +153,14 @@ body.dark{--bg:#151618;--bg2:#202328;--card:#1e2023;--panel:#25282d;--text:#f2f0
 
   <div class="panel-section" id="section-gelismis">
     <div class="section-title"><h2>Gelişmiş İşlemler</h2><button class="help-btn" onclick="showHelp('gelismis')">?</button></div>
-    <p class="subtitle">Günlük kullanım dışındaki fiyat, rapor, yönetim, yedekleme ve panel ayarları burada toplandı. Hiçbir özellik silinmedi; sadece ana ekran sadeleştirildi.</p>
+    <p class="subtitle">Fiyat, rapor, yönetim, yedekleme ve panel ayarlarına buradan ulaşabilirsiniz.</p>
     <div class="admin-grid">
       <div class="module-card" onclick="openAdvancedSection('ayarlar')"><strong>Fiyatlar / Ayarlar</strong><p>Müşteri fiyatları, satıcı m² fiyatları, şifre ve görünüm ayarları.</p></div>
       <div class="module-card" onclick="openAdvancedSection('raporlar')"><strong>Raporlar</strong><p>Tarih aralığına göre satış, ürün m² ve imalat özetleri.</p></div>
       <div class="module-card" onclick="openAdvancedSection('yonetim')"><strong>Yönetim</strong><p>Satıcı, ürün, kumaş ve katalog kayıtlarını düzenleyin.</p></div>
       <div class="module-card" onclick="openAdvancedSection('yedekleme')"><strong>Yedekleme</strong><p>Excel veya JSON yedeği indirin.</p></div>
     </div>
-    <div class="placeholder">Günlük iş akışı için ana ekranda Siparişler, İmalat Fişleri ve Muhasebe yeterlidir. Fiyat, katalog, ürün, rapor ve yedekleme işlemleri gerektiğinde bu bölümden açılır.</div>
+    <div class="placeholder">Fiyat, katalog, ürün, rapor ve yedekleme işlemleri için ilgili kartı seçin.</div>
   </div>
 
   <div class="panel-section" id="section-yedekleme"><div class="section-title"><h2>Yedekleme</h2><button class="help-btn" onclick="showHelp('yedekleme')">?</button></div><p class="subtitle">Sipariş, fiş, satıcı ve katalog verilerini bilgisayarınıza indirebilirsiniz.</p><div class="box"><h3>Verileri Dışa Aktar</h3><div class="actions"><button class="btn-main" onclick="downloadBackupExcel()">Excel Yedeği İndir</button><button class="btn-light" onclick="downloadBackupJson()">JSON Yedeği İndir</button></div><div class="message error" id="backupError"></div><div class="message success" id="backupSuccess"></div><div class="message warning" id="backupWarning"></div><div class="placeholder">Excel yedeği kolay inceleme içindir. JSON yedeği tüm verileri daha düzenli saklar.</div></div></div>
@@ -181,7 +181,7 @@ const MOUNT_OPTIONS=["Askılı","Vidalı","Standart"];
 const CASE_OPTIONS=["Bronz","Beyaz","Krem","Kahverengi","Antrasit","Gri"];
 let sellersList=[],sellerPriceRows=[],productsList=[],fabricsList=[],catalogsList=[],lastReportHTML="",lastBackup=null,priceFormDirty=false,pricesLoadedOnce=false;
 const HELP_CONTENT={
-  gelismis:{title:"Gelişmiş işlemler nedir?",body:`<p>Gelişmiş bölümü günlük kullanımda sürekli görünmesi gerekmeyen ama sistem için önemli olan alanları toplar.</p><ol><li><b>Fiyatlar / Ayarlar:</b> müşteri fiyatları, satıcı m² fiyatları, panel şifresi ve görünüm ayarları.</li><li><b>Raporlar:</b> tarih aralığına göre satış, m² ve imalat özetleri.</li><li><b>Yönetim:</b> satıcı, ürün, kumaş ve katalog kayıtları.</li><li><b>Yedekleme:</b> kayıtları Excel veya JSON olarak indirme.</li></ol><p>Hiçbir özellik silinmedi; sadece ana ekran daha sade hale getirildi.</p>`},
+  gelismis:{title:"Gelişmiş işlemler nedir?",body:`<p>Gelişmiş bölümü günlük kullanımda sürekli görünmesi gerekmeyen ama sistem için önemli olan alanları toplar.</p><ol><li><b>Fiyatlar / Ayarlar:</b> müşteri fiyatları, satıcı m² fiyatları, panel şifresi ve görünüm ayarları.</li><li><b>Raporlar:</b> tarih aralığına göre satış, m² ve imalat özetleri.</li><li><b>Yönetim:</b> satıcı, ürün, kumaş ve katalog kayıtları.</li><li><b>Yedekleme:</b> kayıtları Excel veya JSON olarak indirme.</li></ol>`},
   siparisler:{title:"Siparişler nasıl kullanılır?",body:`<p>Bu bölümde internet sitesinden gelen siparişleri ve elle eklediğiniz siparişleri takip edersiniz.</p><ol><li>Filtreleri kullanarak listeyi daraltın.</li><li>Detay butonuyla sipariş bilgilerini açın.</li><li>Durumu değiştirerek sipariş sürecini takip edin.</li><li>İmalat Fişi Oluştur ile üretim fişi hazırlayın.</li><li>İptal olan siparişleri silebilirsiniz.</li></ol>`},
   imalat:{title:"İmalat fişleri nasıl kullanılır?",body:`<p>Üretim için gerekli fişleri buradan yönetirsiniz.</p><ol><li>Fişi açın ve ölçüleri kontrol edin.</li><li>Pile, ip veya not alanlarını elle düzenleyin.</li><li>Fişi Güncelle ile kaydedin.</li><li>Excel veya PDF olarak indirin.</li></ol>`},
   muhasebe:{title:"Muhasebe nasıl kullanılır?",body:`<p>Satıcı hesapları gerçek ölçü m² üzerinden takip edilir.</p><ol><li>Satıcı ve tarih seçin.</li><li>Açık veya kapanan hesapları filtreleyin.</li><li>Ödemesi yapılan siparişleri seçip hesabı kapatın.</li><li>Yanlışlık olursa hesabı tekrar açın.</li></ol>`},
@@ -1469,6 +1469,60 @@ function renderOrderDetail(o,details){
       <div class="detail-section-label">Ölçüler</div>
       <div class="table-wrap mobile-stack-table"><table><thead><tr><th>Sıra</th><th>Ürün</th><th>Kasa</th><th>Sistem</th><th>Ölçü</th><th>Adet</th><th>m²</th></tr></thead><tbody>${rows}</tbody></table></div>
     </div>`;
+}
+/* GELİŞMİŞ BÖLÜMÜ GERİ TUŞU */
+function plfSetMainMenuActive(sectionName){
+  document.querySelectorAll(".module-card").forEach(function(card){ card.classList.remove("active"); });
+  var cards = Array.from(document.querySelectorAll(".compact-admin-menu .module-card"));
+  var targetText = sectionName === "gelismis" ? "Gelişmiş" : "";
+  if(targetText){
+    var card = cards.find(function(item){ return String(item.textContent || "").indexOf(targetText) !== -1; });
+    if(card) card.classList.add("active");
+  }
+}
+function plfClearAdvancedBackButtons(){
+  document.querySelectorAll(".advanced-back-row").forEach(function(item){ item.remove(); });
+}
+function plfShowSectionOnly(sectionName){
+  document.querySelectorAll(".panel-section").forEach(function(section){ section.classList.remove("active"); });
+  var target = document.getElementById("section-" + sectionName);
+  if(target) target.classList.add("active");
+  return target;
+}
+function plfReturnToAdvanced(){
+  plfClearAdvancedBackButtons();
+  plfShowSectionOnly("gelismis");
+  plfSetMainMenuActive("gelismis");
+  var advanced = document.getElementById("section-gelismis");
+  if(advanced) advanced.scrollIntoView({behavior:"smooth",block:"start"});
+}
+function plfAddAdvancedBackButton(sectionName){
+  plfClearAdvancedBackButtons();
+  var target = document.getElementById("section-" + sectionName);
+  if(!target || sectionName === "gelismis") return;
+  var row = document.createElement("div");
+  row.className = "advanced-back-row";
+  row.style.marginBottom = "12px";
+  row.innerHTML = '<button class="btn-light" style="width:auto;min-width:180px" onclick="plfReturnToAdvanced()">← Gelişmişe Geri Dön</button>';
+  target.insertBefore(row, target.firstChild);
+}
+function openAdvancedSection(sectionName){
+  var target = plfShowSectionOnly(sectionName);
+  plfSetMainMenuActive("gelismis");
+  plfAddAdvancedBackButton(sectionName);
+  if(target) target.scrollIntoView({behavior:"smooth",block:"start"});
+
+  if(sectionName === "yonetim"){
+    if(typeof loadSellerPrices === "function") loadSellerPrices(false);
+    if(typeof loadCatalogData === "function") loadCatalogData();
+  }
+  if(sectionName === "muhasebe" && typeof loadAccounting === "function") loadAccounting();
+  if(sectionName === "raporlar" && typeof loadReports === "function"){}
+  if(sectionName === "yedekleme"){}
+  if(sectionName === "ayarlar"){
+    if(typeof loadPrices === "function") loadPrices(false);
+    if(typeof loadSellerPrices === "function") loadSellerPrices(false);
+  }
 }
 passwordInput.addEventListener("keydown",e=>{if(e.key==="Enter")login()});
 initAdmin();
