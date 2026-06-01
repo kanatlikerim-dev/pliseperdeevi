@@ -2971,6 +2971,198 @@ function collectSellerPriceRows(){
 }
 function plfRemoveDuplicateThemeCard(){return;}
 
+
+/* MANUEL SİPARİŞ KODU TAKİP DÜZENİ
+   Manuel siparişler Apps Script tarafında MN-YYYYMMDD-0001 formatında kod alır.
+   Bu ekleme kodu ekranda net gösterir, listeyi yeniler ve detaya hızlı geçiş verir.
+*/
+(function(){
+  if(window.__plfManualOrderCodePatch) return;
+  window.__plfManualOrderCodePatch = true;
+
+  var style = document.createElement("style");
+  style.id = "prestij-manual-order-code-style";
+  style.textContent = `
+    .manual-order-code-result{
+      margin-top:12px;
+      padding:14px;
+      border:1px solid rgba(38,130,75,.38);
+      background:var(--success-bg);
+      color:var(--success);
+      border-radius:16px;
+      display:none;
+      gap:10px;
+      align-items:center;
+      justify-content:space-between;
+      flex-wrap:wrap;
+    }
+    .manual-order-code-result.active{display:flex}
+    .manual-order-code-result strong{
+      display:block;
+      font-size:15px;
+      margin-bottom:3px;
+    }
+    .manual-order-code-result span{
+      display:block;
+      font-size:12px;
+      opacity:.9;
+      font-weight:700;
+    }
+    .manual-order-code-actions{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+    .manual-order-code-actions button{
+      width:auto!important;
+      min-width:120px!important;
+      padding:10px 12px!important;
+      border-radius:12px!important;
+      font-size:13px!important;
+      margin:0!important;
+    }
+    .manual-order-helper{
+      margin-top:10px;
+      color:var(--muted);
+      font-size:12.5px;
+      line-height:1.45;
+      background:var(--panel);
+      border:1px dashed var(--border);
+      border-radius:14px;
+      padding:10px 12px;
+    }
+    .manual-code-mini{
+      display:inline-flex;
+      align-items:center;
+      gap:5px;
+      margin-top:4px;
+      font-size:11px;
+      color:var(--muted);
+      font-weight:800;
+    }
+    @media(max-width:700px){
+      .manual-order-code-result{align-items:flex-start}
+      .manual-order-code-actions{width:100%}
+      .manual-order-code-actions button{width:100%!important}
+    }
+  `;
+  document.head.appendChild(style);
+
+  function ensureManualOrderCodeUI(){
+    var box = document.getElementById("manualOrderBox");
+    if(!box) return null;
+
+    var success = document.getElementById("manualOrderSuccess");
+    if(success && !document.getElementById("manualOrderCodeResult")){
+      var result = document.createElement("div");
+      result.id = "manualOrderCodeResult";
+      result.className = "manual-order-code-result";
+      result.innerHTML =
+        '<div><strong id="manualOrderCodeText">Manuel sipariş kodu oluşturuldu.</strong>' +
+        '<span>Bu kodla siparişi, imalat fişini ve muhasebe kaydını takip edebilirsiniz.</span></div>' +
+        '<div class="manual-order-code-actions">' +
+        '<button class="btn-light" id="manualOrderOpenDetailBtn" type="button">Detayı Aç</button>' +
+        '<button class="btn-main" id="manualOrderCreateSlipBtn" type="button">Fiş Oluştur</button>' +
+        '</div>';
+      success.insertAdjacentElement("afterend", result);
+    }
+
+    if(!document.getElementById("manualOrderCodeHelper")){
+      var helper = document.createElement("div");
+      helper.id = "manualOrderCodeHelper";
+      helper.className = "manual-order-helper";
+      helper.innerHTML = "<b>Not:</b> Manuel sipariş kaydedilince sistem otomatik <b>MN-...</b> sipariş kodu oluşturur. Kod tarayıcıda değil, Apps Script tarafında benzersiz şekilde üretilir.";
+      var formGrid = box.querySelector(".form-grid");
+      if(formGrid) formGrid.insertAdjacentElement("beforebegin", helper);
+    }
+
+    return document.getElementById("manualOrderCodeResult");
+  }
+
+  ensureManualOrderCodeUI();
+
+  window.plfExtractManualOrderCode = function(response){
+    if(!response) return "";
+    return response.orderCode || response.siparis_kodu || response.siparisKodu || 
+      (response.order && (response.order.siparis_kodu || response.order.orderCode)) || "";
+  };
+
+  window.plfShowManualOrderCode = function(code){
+    var result = ensureManualOrderCodeUI();
+    if(!result || !code) return;
+
+    var text = document.getElementById("manualOrderCodeText");
+    if(text) text.textContent = "Manuel sipariş kodu: " + code;
+
+    var detailBtn = document.getElementById("manualOrderOpenDetailBtn");
+    if(detailBtn){
+      detailBtn.onclick = function(){
+        if(typeof openSection === "function"){
+          var siparisCard = Array.from(document.querySelectorAll(".compact-admin-menu .module-card")).find(function(card){
+            return String(card.textContent || "").indexOf("Siparişler") !== -1;
+          });
+          if(siparisCard) openSection("siparisler", siparisCard);
+        }
+        setTimeout(function(){ if(typeof loadOrderDetail === "function") loadOrderDetail(code); }, 250);
+      };
+    }
+
+    var slipBtn = document.getElementById("manualOrderCreateSlipBtn");
+    if(slipBtn){
+      slipBtn.onclick = function(){
+        if(typeof createProductionSlips === "function") createProductionSlips(code);
+      };
+    }
+
+    result.classList.add("active");
+  };
+
+  window.plfResetManualOrderFormAfterSave = function(){
+    try{
+      if(window.manualCustomer) manualCustomer.value = "";
+      if(window.manualPhone) manualPhone.value = "";
+      if(window.manualAddress) manualAddress.value = "";
+      if(window.manualNote) manualNote.value = "";
+      if(window.manualOrderRows) manualOrderRows.innerHTML = "";
+      if(typeof addManualOrderRow === "function") addManualOrderRow();
+    }catch(error){}
+  };
+})();
+
+async function saveManualOrder(){
+  hideMessages(["manualOrderError","manualOrderSuccess"]);
+  var result = document.getElementById("manualOrderCodeResult");
+  if(result) result.classList.remove("active");
+
+  try{
+    if(typeof showGlobalToast === "function") showGlobalToast("Manuel sipariş kaydediliyor...","loading",9000);
+
+    const d = await apiPost(collectManualOrder(),30000);
+    if(!d.success) throw new Error(d.message || "Manuel sipariş kaydedilemedi.");
+
+    const code = plfExtractManualOrderCode(d);
+    if(!code){
+      throw new Error("Sipariş kaydedildi fakat sipariş kodu cevabı alınamadı. Apps Script createManualOrder cevabını kontrol edin.");
+    }
+
+    showMessage("manualOrderSuccess","Manuel sipariş kaydedildi. Sipariş kodu: " + code);
+    if(typeof showGlobalToast === "function") showGlobalToast("Manuel sipariş oluşturuldu: " + code,"success",3200);
+    plfShowManualOrderCode(code);
+
+    if(typeof loadOrders === "function") await loadOrders();
+    if(typeof loadAccounting === "function") loadAccounting();
+
+    setTimeout(function(){
+      if(typeof loadOrderDetail === "function") loadOrderDetail(code);
+    }, 400);
+
+    plfResetManualOrderFormAfterSave();
+  }catch(e){
+    showMessage("manualOrderError","Kayıt yapılamadı. " + (e.message || e));
+    if(typeof showGlobalToast === "function") showGlobalToast("Kayıt yapılamadı: " + (e.message || e),"error",4500);
+  }
+}
+
 </script>
 </body>
 </html>
