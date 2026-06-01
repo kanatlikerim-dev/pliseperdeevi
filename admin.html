@@ -285,6 +285,52 @@ body.dark{--bg:#151618;--bg2:#202328;--card:#1e2023;--panel:#25282d;--text:#f2f0
 }
 </style>
 
+
+<style>
+/* SİPARİŞ SATIŞ TUTARI DÜZENLEME */
+.sale-override-panel{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:10px;
+  margin:12px 0;
+}
+.sale-override-info{
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:12px;
+}
+.sale-override-info span{
+  display:block;
+  color:var(--muted);
+  font-size:10.5px;
+  font-weight:950;
+  text-transform:uppercase;
+  margin-bottom:5px;
+}
+.sale-override-info strong{
+  display:block;
+  font-size:16px;
+}
+.sale-override-note{
+  margin:8px 0 12px;
+  background:var(--soft);
+  border:1px solid rgba(139,106,69,.25);
+  color:var(--text);
+  border-radius:14px;
+  padding:10px 12px;
+  font-size:12.5px;
+  line-height:1.45;
+  font-weight:700;
+}
+@media(max-width:900px){
+  .sale-override-panel{grid-template-columns:1fr 1fr}
+}
+@media(max-width:560px){
+  .sale-override-panel{grid-template-columns:1fr}
+}
+</style>
+
 </head>
 <body>
 <div class="container">
@@ -434,6 +480,8 @@ body.dark{--bg:#151618;--bg2:#202328;--card:#1e2023;--panel:#25282d;--text:#f2f0
 <label class="field"><span>Blackout</span><input id="priceBlackout" min="1" type="number"/></label>
 <label class="field"><span>Çiftli Sistem</span><input id="priceCiftli" min="1" type="number"/></label>
 <label class="field"><span>Tül Perde</span><input id="priceTulPerde" min="1" type="number"/></label>
+<label class="field"><span>Slim Kasa Farkı</span><input id="priceSlimFark" min="1" type="number"/></label>
+<label class="field"><span>Slim Satıcı Farkı</span><input id="priceSlimSaticiFark" min="1" type="number"/></label>
 <label class="field"><span>Kargo</span><input id="priceKargo" min="1" type="number"/></label>
 </div>
 <div class="actions compact-actions"><button class="btn-main" id="savePricesBtn" onclick="savePrices()">Fiyatları Kaydet</button><button class="btn-light" onclick="loadPrices(true)">Fiyatları Yenile</button></div>
@@ -573,6 +621,8 @@ async function loadPrices(force = false){
     priceBlackout.value = p.blackout;
     priceCiftli.value = p.ciftli;
     priceTulPerde.value = p.tul_perde;
+    if(document.getElementById("priceSlimFark")) priceSlimFark.value = p.slim_fark || 300;
+    if(document.getElementById("priceSlimSaticiFark")) priceSlimSaticiFark.value = p.slim_satici_fark || 85;
     priceKargo.value = p.kargo;
 
     priceFormDirty = false;
@@ -593,6 +643,8 @@ async function savePrices(){
       blackout: readPositive("priceBlackout", "Blackout"),
       ciftli: readPositive("priceCiftli", "Çiftli Sistem"),
       tul_perde: readPositive("priceTulPerde", "Tül Perde"),
+      slim_fark: readPositive("priceSlimFark", "Slim Kasa Farkı"),
+      slim_satici_fark: readPositive("priceSlimSaticiFark", "Slim Satıcı Farkı"),
       kargo: readPositive("priceKargo", "Kargo")
     };
   }catch(error){
@@ -5770,6 +5822,194 @@ function renderOrderDetail(o,details){
     return oldShowMessage ? oldShowMessage(id,msg) : undefined;
   };
 })();
+
+
+
+/* SİPARİŞ SATIŞ TUTARI DÜZENLEME */
+function plfOrderFormulaTotal(o){
+  var formula = Number(o.formul_toplam_tutar || 0);
+  if(formula > 0) return formula;
+  var current = Number(o.musteri_toplam_tutar || 0);
+  var adj = Number(o.satis_duzeltme_tutari || 0);
+  if(current > 0 && adj > 0) return current - adj;
+  return current;
+}
+
+function plfOrderAdjustment(o){
+  var formula = plfOrderFormulaTotal(o);
+  var current = Number(o.musteri_toplam_tutar || 0);
+  return Math.max(0, Math.round((current - formula + Number.EPSILON) * 100) / 100);
+}
+
+function plfParseMoneyInput(value){
+  var cleaned = String(value || "").replace(/\./g,"").replace(",",".").replace(/[^\d.]/g,"");
+  return Number(cleaned || 0);
+}
+
+async function saveOrderDetailChanges(orderCode){
+  try{
+    var statusSelect = document.getElementById("detailOrderStatus");
+    var sellerSelect = document.getElementById("detailOrderSeller");
+    var saleInput = document.getElementById("detailSaleTotal");
+
+    if(typeof showGlobalToast === "function") showGlobalToast("Kaydediliyor...","loading",9000);
+
+    if(sellerSelect){
+      var selected = sellerSelect.options[sellerSelect.selectedIndex];
+      var sellerId = sellerSelect.value || "";
+      var sellerName = sellerId ? (selected.getAttribute("data-name") || selected.textContent || "") : "Merkez / Site";
+      var sellerResponse = await apiPost({
+        action:"updateOrderSeller",
+        apiKey:ADMIN_API_KEY,
+        siparis_kodu:orderCode,
+        satici_id:sellerId,
+        satici_adi:sellerName,
+        kaynak:sellerId ? "manual" : "site"
+      },22000);
+      if(!sellerResponse || !sellerResponse.success){
+        throw new Error((sellerResponse && sellerResponse.message) || "Satıcı bilgisi kaydedilemedi.");
+      }
+    }
+
+    if(statusSelect){
+      var statusResponse = await apiPost({
+        action:"updateOrderStatus",
+        apiKey:ADMIN_API_KEY,
+        siparis_kodu:orderCode,
+        status:statusSelect.value
+      },16000);
+      if(!statusResponse || !statusResponse.success){
+        throw new Error((statusResponse && statusResponse.message) || "Sipariş durumu kaydedilemedi.");
+      }
+    }
+
+    if(saleInput){
+      var saleTotal = plfParseMoneyInput(saleInput.value);
+      var saleResponse = await apiPost({
+        action:"updateOrderSaleTotal",
+        apiKey:ADMIN_API_KEY,
+        siparis_kodu:orderCode,
+        musteri_toplam_tutar:saleTotal
+      },22000);
+      if(!saleResponse || !saleResponse.success){
+        throw new Error((saleResponse && saleResponse.message) || "Satış tutarı kaydedilemedi.");
+      }
+    }
+
+    if(typeof showGlobalToast === "function") showGlobalToast("Kaydedildi.","success",2800);
+    if(typeof loadOrders === "function") loadOrders();
+    if(typeof loadAccounting === "function") loadAccounting();
+    if(typeof loadOrderDetail === "function") loadOrderDetail(orderCode);
+  }catch(e){
+    if(typeof showGlobalToast === "function") showGlobalToast("Kaydedilemedi: " + (e.message || e),"error",4500);
+    else showMessage("ordersError","Kaydedilemedi: " + (e.message || e));
+  }
+}
+
+function renderOrderDetail(o,details){
+  details = details || [];
+  var detailM2Total = details.reduce(function(total,item){ return total + orderDetailM2(item); }, 0);
+  var displayTotalM2 = detailM2Total > 0 ? detailM2Total : Number(o.toplam_gercek_m2 || 0);
+  var statusOptions = ORDER_STATUSES.map(function(s){
+    return '<option value="'+attr(s)+'" '+(String(o.durum || "Yeni") === s ? "selected" : "")+'>'+esc(s)+'</option>';
+  }).join("");
+  var sourceText = o.kaynak === "site" ? "Merkez / Site" : esc(o.satici_adi || "Manuel");
+  var formulaTotal = plfOrderFormulaTotal(o);
+  var adjustment = plfOrderAdjustment(o);
+
+  var tableRows = details.map(function(x){
+    return '<tr>'+
+      '<td>'+esc(x.satir_no)+'</td>'+
+      '<td><strong>'+esc(x.urun)+'</strong><small>'+esc(plfDetailFabricText(x))+'</small></td>'+
+      '<td>'+esc(x.kasa_rengi_raw || x.kasa_rengi || "-")+'</td>'+
+      '<td>'+esc(x.montaj_tipi)+'</td>'+
+      '<td>'+esc(x.gercek_en)+' × '+esc(x.gercek_boy)+'</td>'+
+      '<td>'+esc(x.adet)+'</td>'+
+      '<td>'+num(orderDetailM2(x))+' m²</td>'+
+    '</tr>';
+  }).join("");
+
+  var measureCards = details.map(function(x,idx){
+    var fabric = plfDetailFabricText(x);
+    return '<div class="order-measure-card">'+
+      '<div class="order-measure-card-top"><strong>'+(idx+1)+'. Ölçü · '+esc(x.urun)+'</strong><span class="tag">'+esc(x.adet)+' adet</span></div>'+
+      '<span>Ölçü: '+esc(x.gercek_en)+' × '+esc(x.gercek_boy)+' cm<br>'+
+      'Sistem: '+esc(x.montaj_tipi || "-")+'<br>'+
+      'Kasa: '+esc(x.kasa_rengi_raw || x.kasa_rengi || "-")+
+      (fabric ? '<br>Kumaş: '+esc(fabric) : '')+
+      '<br>m²: '+num(orderDetailM2(x))+' m²</span>'+
+    '</div>';
+  }).join("");
+
+  orderDetailArea.innerHTML =
+    '<div class="detail-box order-detail-pro">'+
+      '<div class="order-detail-hero">'+
+        '<div class="order-detail-hero-top">'+
+          '<div>'+
+            '<span class="eyebrow">Sipariş Detayı</span>'+
+            '<h3 style="margin:0">'+esc(o.siparis_kodu)+'</h3>'+
+            '<button type="button" class="order-code-copy" data-copy-order-code="'+attr(o.siparis_kodu)+'">📋 Sipariş kodunu kopyala</button>'+
+          '</div>'+
+          '<span class="order-detail-status">'+esc(o.durum || "Yeni")+'</span>'+
+        '</div>'+
+        plfAdminStatusFlow(o.durum || "Yeni")+
+      '</div>'+
+
+      '<div class="order-detail-body">'+
+        '<div class="order-detail-info-grid">'+
+          '<div class="order-detail-info-card"><span>Müşteri</span><strong>'+esc(o.musteri_ad)+'</strong><small>'+esc(o.telefon)+'</small></div>'+
+          '<div class="order-detail-info-card"><span>Kaynak / Satıcı</span><strong>'+sourceText+'</strong><small>'+esc(o.kaynak === "site" ? "Site siparişi" : "Manuel/satıcı siparişi")+'</small></div>'+
+          '<div class="order-detail-info-card"><span>Sipariş Tarihi</span><strong>'+formatDate(o.tarih)+'</strong></div>'+
+          '<div class="order-detail-info-card"><span>Toplam m²</span><strong>'+num(displayTotalM2)+' m²</strong><small>Gerçek ölçü m²</small></div>'+
+          '<div class="order-detail-info-card"><span>Gerçek Satış</span><strong>'+tl(o.musteri_toplam_tutar)+'</strong><small>Admin tarafından değiştirilebilir</small></div>'+
+          '<div class="order-detail-info-card"><span>Satıcı Hakedişi</span><strong>'+(o.satici_hesap_tutar !== "" ? tl(o.satici_hesap_tutar) : "-")+'</strong><small>Fazla satış satıcıya eklenir</small></div>'+
+        '</div>'+
+
+        '<div class="sale-override-panel">'+
+          '<div class="sale-override-info"><span>Formül Tutarı</span><strong>'+tl(formulaTotal)+'</strong></div>'+
+          '<div class="sale-override-info"><span>Fazla Satış Farkı</span><strong>'+tl(adjustment)+'</strong></div>'+
+          '<div class="sale-override-info"><span>Prestij Life Kazancı</span><strong>'+(o.fark_tutar !== "" ? tl(o.fark_tutar) : "-")+'</strong></div>'+
+          '<label class="field"><span>Gerçek Satış Tutarı</span><input id="detailSaleTotal" type="number" min="'+attr(formulaTotal)+'" value="'+attr(o.musteri_toplam_tutar || formulaTotal)+'"></label>'+
+        '</div>'+
+        '<div class="sale-override-note">Not: Gerçek satış tutarı formül tutarından yüksek girilirse aradaki fark satıcının hakedişine eklenir. Örnek: formül 1.200 TL, gerçek satış 1.500 TL ise +300 TL satıcı hakedişine eklenir.</div>'+
+
+        '<div class="order-detail-info-card" style="margin-bottom:12px"><span>Adres</span><strong>'+esc(o.adres || "-")+'</strong></div>'+
+
+        '<div class="form-grid order-detail-control-panel">'+
+          '<label class="field"><span>Satıcı / Kaynak</span><select id="detailOrderSeller">'+plfSellerSelectOptions(o)+'</select></label>'+
+          '<label class="field"><span>Sipariş Durumu</span><select id="detailOrderStatus">'+statusOptions+'</select></label>'+
+          '<label class="field"><span>&nbsp;</span><button class="btn-main" data-save-order-code="'+attr(o.siparis_kodu)+'">Kaydet</button></label>'+
+        '</div>'+
+
+        '<div class="order-detail-actions-pro">'+
+          '<button class="btn-main" data-create-slip-code="'+attr(o.siparis_kodu)+'">İmalat Fişi Oluştur</button>'+
+          '<button class="btn-light" data-open-slips-code="'+attr(o.siparis_kodu)+'">Fişlere Git</button>'+
+          '<button class="btn-danger" data-delete-order-code="'+attr(o.siparis_kodu)+'">Siparişi Sil</button>'+
+        '</div>'+
+
+        '<div class="order-detail-section-title">Ölçüler ve Ürün Detayları</div>'+
+        '<div class="table-wrap"><table><thead><tr><th>Sıra</th><th>Ürün / Kumaş</th><th>Kasa</th><th>Sistem</th><th>Ölçü</th><th>Adet</th><th>m²</th></tr></thead><tbody>'+tableRows+'</tbody></table></div>'+
+        '<div class="order-measure-cards">'+measureCards+'</div>'+
+      '</div>'+
+    '</div>';
+}
+
+document.addEventListener("click", function(e){
+  var copyBtn = e.target && e.target.closest ? e.target.closest("[data-copy-order-code]") : null;
+  if(copyBtn) return plfCopyAdminOrderCode(copyBtn.getAttribute("data-copy-order-code"));
+
+  var saveBtn = e.target && e.target.closest ? e.target.closest("[data-save-order-code]") : null;
+  if(saveBtn) return saveOrderDetailChanges(saveBtn.getAttribute("data-save-order-code"));
+
+  var createBtn = e.target && e.target.closest ? e.target.closest("[data-create-slip-code]") : null;
+  if(createBtn) return createProductionSlips(createBtn.getAttribute("data-create-slip-code"));
+
+  var slipsBtn = e.target && e.target.closest ? e.target.closest("[data-open-slips-code]") : null;
+  if(slipsBtn) return plfOpenRelatedSlips(slipsBtn.getAttribute("data-open-slips-code"));
+
+  var deleteBtn = e.target && e.target.closest ? e.target.closest("[data-delete-order-code]") : null;
+  if(deleteBtn) return deleteOrder(deleteBtn.getAttribute("data-delete-order-code"));
+});
 
 </script>
 </body>
