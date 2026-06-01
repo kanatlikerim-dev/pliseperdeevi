@@ -1377,6 +1377,84 @@ body.same-product .product-and-color-area{
 }
 </style>
 
+
+<style>
+/* SİPARİŞ TAKİP İNCE AYAR - DESTEK VE KODU KAYBETTİM */
+.tracking-support-actions{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+    margin-top:12px;
+}
+.tracking-support-note{
+    margin-top:12px;
+    background:var(--note-bg);
+    border:1px solid var(--warning-border);
+    color:var(--warning-text);
+    border-radius:16px;
+    padding:12px;
+    font-size:13px;
+    line-height:1.55;
+    font-weight:700;
+}
+.tracking-support-note b{
+    display:block;
+    margin-bottom:3px;
+}
+.tracking-mini-help{
+    display:flex;
+    align-items:flex-start;
+    gap:10px;
+    margin-top:12px;
+    background:var(--panel-bg);
+    border:1px dashed var(--border);
+    border-radius:16px;
+    padding:12px;
+    color:var(--muted);
+    font-size:13px;
+    line-height:1.45;
+}
+.tracking-mini-help strong{
+    color:var(--text);
+}
+.order-success-help{
+    margin-top:12px;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+}
+.order-success-help .btn-light{
+    margin-top:0;
+    text-align:center;
+}
+@media(max-width:700px){
+    .tracking-support-actions,
+    .order-success-help{
+        grid-template-columns:1fr;
+    }
+}
+</style>
+
+
+<style>
+/* SİPARİŞ SORGULAMA SON İNCE AYAR */
+.tracking-status-note{
+    margin-top:10px;
+    color:var(--muted);
+    font-size:13px;
+    line-height:1.45;
+}
+.tracking-found-actions{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+    margin-top:12px;
+}
+@media(max-width:700px){
+    .tracking-found-actions{grid-template-columns:1fr}
+}
+</style>
+
 </head>
 
 <body>
@@ -1529,6 +1607,16 @@ body.same-product .product-and-color-area{
             <button type="button" class="btn-main" onclick="queryOrderStatus()">Sorgula</button>
         </div>
 
+        <div class="tracking-mini-help">
+            <span>🔎</span>
+            <div><strong>Sipariş kodunuzu kaybettiyseniz</strong><br>WhatsApp üzerinden ad soyad ve telefon numaranızı göndererek sipariş kodunuzu öğrenebilirsiniz.</div>
+        </div>
+
+        <div class="tracking-support-actions">
+            <button type="button" class="btn-light" onclick="openLostOrderCodeWhatsApp()">Sipariş Kodumu Kaybettim</button>
+            <a class="btn-main" href="https://wa.me/905053559532" target="_blank" style="margin-top:0">WhatsApp Destek</a>
+        </div>
+
         <div class="tracking-result" id="orderStatusResult"></div>
     </div>
 
@@ -1599,6 +1687,11 @@ body.same-product .product-and-color-area{
         <div class="modal-actions">
             <button type="button" class="btn-main" onclick="goToOrderTracking()">Sipariş Durumuna Git</button>
             <button type="button" class="btn-light" onclick="closeOrderSuccessModal()">Tamam</button>
+        </div>
+
+        <div class="order-success-help">
+            <button type="button" class="btn-light" onclick="openOrderWhatsAppSupport()">WhatsApp'a Gönder</button>
+            <button type="button" class="btn-light" onclick="openLostOrderCodeWhatsApp()">Kodumu Kaybedersem?</button>
         </div>
 
         <div class="copy-status" id="successCopyStatus"></div>
@@ -3837,6 +3930,154 @@ async function queryOrderStatus(){
     }catch(error){
         result.innerHTML = `<div class="warning-box"><b>Sipariş bulunamadı.</b>${escapeHTML(error.message || "Lütfen takip numaranızı kontrol edin.")}</div>`;
     }
+}
+
+
+/* SİPARİŞ TAKİP İNCE AYAR - WHATSAPP DESTEK */
+function openLostOrderCodeWhatsApp(){
+    const name = document.getElementById("name") ? document.getElementById("name").value.trim() : "";
+    const phone = document.getElementById("phone") ? document.getElementById("phone").value.trim() : "";
+    const message = [
+        "Merhaba Prestij Life, sipariş takip numaramı kaybettim.",
+        name ? "Ad Soyad: " + name : "",
+        phone ? "Telefon: " + phone : "",
+        "Siparişimi bulabilir misiniz?"
+    ].filter(Boolean).join("\\n");
+    window.open("https://wa.me/905053559532?text=" + encodeURIComponent(message), "_blank");
+}
+
+function openOrderWhatsAppSupport(){
+    const code = lastSubmittedOrderCode || (document.getElementById("successOrderCode") ? document.getElementById("successOrderCode").textContent.trim() : "");
+    const message = [
+        "Merhaba Prestij Life, siparişim oluşturuldu.",
+        code && code !== "-" ? "Sipariş Takip No: " + code : "",
+        "Sipariş durumumu bu kodla takip edeceğim."
+    ].filter(Boolean).join("\\n");
+    window.open("https://wa.me/905053559532?text=" + encodeURIComponent(message), "_blank");
+}
+
+
+/* SİPARİŞ DURUM AKIŞI SON HAL */
+function trackingStatusIndex(status){
+    const s = String(status || "").toLowerCase();
+    if(s.includes("iptal")) return -1;
+    if(s.includes("teslim")) return 5;
+    if(s.includes("kargo")) return 4;
+    if(s.includes("hazır") || s.includes("hazir")) return 3;
+    if(s.includes("üret") || s.includes("uret")) return 2;
+    if(s.includes("ölçü") || s.includes("olcu") || s.includes("onay")) return 1;
+    return 0;
+}
+
+function trackingTimelineHTML(status){
+    const steps = ["Sipariş Alındı", "Ölçü Onaylandı", "Üretimde", "Hazır", "Kargoya Verildi", "Teslim Edildi"];
+    const activeIndex = trackingStatusIndex(status);
+
+    if(activeIndex < 0){
+        return `<div class="status-timeline"><div class="status-step active" style="grid-column:1/-1">Sipariş İptal Edildi</div></div>`;
+    }
+
+    return `<div class="status-timeline">` + steps.map(function(step, index){
+        const cls = index < activeIndex ? "done" : (index === activeIndex ? "active" : "");
+        return `<div class="status-step ${cls}">${escapeHTML(step)}</div>`;
+    }).join("") + `</div>`;
+}
+
+function customerStatusDescription(status){
+    const s = String(status || "Yeni");
+    if(s === "Yeni") return "Siparişiniz alınmıştır. Ekibimiz ölçü ve ürün bilgilerini kontrol edecektir.";
+    if(s === "Ölçü Onaylandı") return "Ölçü ve ürün bilgileriniz onaylandı. Siparişiniz üretim sırasına alınacaktır.";
+    if(s === "Üretimde") return "Siparişiniz üretim aşamasındadır.";
+    if(s === "Hazır") return "Siparişiniz hazırlandı. Teslimat/kargo aşamasına geçilecektir.";
+    if(s === "Kargoya Verildi") return "Siparişiniz kargoya verilmiştir.";
+    if(s === "Teslim Edildi") return "Siparişiniz teslim edilmiştir. Güzel günlerde kullanın.";
+    if(s === "İptal") return "Siparişiniz iptal edilmiştir. Detay için WhatsApp üzerinden iletişime geçebilirsiniz.";
+    return "Siparişinizin güncel durumu görüntüleniyor.";
+}
+
+async function queryOrderStatus(){
+    const input = document.getElementById("orderStatusCode");
+    const result = document.getElementById("orderStatusResult");
+    const code = input ? input.value.trim().toUpperCase() : "";
+
+    if(!result) return;
+
+    if(!code){
+        result.className = "tracking-result show";
+        result.innerHTML = `<div class="warning-box"><b>Sipariş kodu gerekli.</b>Sipariş durumunu görmek için size verilen takip numarasını yazın.</div>`;
+        return;
+    }
+
+    result.className = "tracking-result show";
+    result.innerHTML = `<div class="tracking-status-card">Sipariş bilgileri sorgulanıyor...</div>`;
+
+    try{
+        const response = await fetch(PRICE_API_URL + "?action=getPublicOrderStatus&orderCode=" + encodeURIComponent(code) + "&t=" + Date.now(), {
+            method:"GET",
+            cache:"no-store"
+        });
+
+        const data = await response.json();
+        if(!data.success){
+            throw new Error(data.message || "Sipariş bulunamadı.");
+        }
+
+        const order = data.order || {};
+        const details = data.details || [];
+        const statusText = order.durum_metin || order.durum || "Siparişiniz alındı";
+
+        result.innerHTML = `
+            <div class="tracking-status-card">
+                <div class="tracking-status-top">
+                    <div>
+                        <h3>${escapeHTML(statusText)}</h3>
+                        <p class="tracking-status-note">${escapeHTML(customerStatusDescription(order.durum || statusText))}</p>
+                    </div>
+                    <span class="tracking-code-pill">${escapeHTML(order.siparis_kodu || code)}</span>
+                </div>
+
+                ${trackingTimelineHTML(order.durum || statusText)}
+
+                <div class="modal-summary">
+                    <div class="modal-summary-row"><span>Sipariş Tarihi</span><strong>${escapeHTML(formatOrderDateForCustomer(order.tarih))}</strong></div>
+                    <div class="modal-summary-row"><span>Müşteri</span><strong>${escapeHTML(order.musteri_ad || "-")}</strong></div>
+                    <div class="modal-summary-row"><span>Toplam Adet</span><strong>${escapeHTML(order.toplam_adet || "-")}</strong></div>
+                    ${order.toplam_tutar ? `<div class="modal-summary-row"><span>Toplam Tutar</span><strong>${formatTL(order.toplam_tutar)}</strong></div>` : ""}
+                </div>
+
+                <div class="summary-section-title">Sipariş Detayları</div>
+                <div class="tracking-details">${renderCustomerOrderDetails(details)}</div>
+
+                <div class="tracking-found-actions">
+                    <button type="button" class="btn-light" onclick="copyTrackingFromInput()">Takip No Kopyala</button>
+                    <button type="button" class="btn-main" onclick="openTrackingWhatsAppSupport()">WhatsApp Destek</button>
+                </div>
+            </div>
+        `;
+    }catch(error){
+        result.innerHTML = `<div class="warning-box"><b>Sipariş bulunamadı.</b>${escapeHTML(error.message || "Lütfen takip numaranızı kontrol edin.")}</div>`;
+    }
+}
+
+function copyTrackingFromInput(){
+    const input = document.getElementById("orderStatusCode");
+    const code = input ? input.value.trim().toUpperCase() : "";
+    if(!code) return;
+    navigator.clipboard.writeText(code).then(function(){
+        alert("Takip numarası kopyalandı.");
+    }).catch(function(){
+        alert("Kopyalama yapılamadı. Takip numarasını elle seçip kopyalayabilirsiniz.");
+    });
+}
+
+function openTrackingWhatsAppSupport(){
+    const input = document.getElementById("orderStatusCode");
+    const code = input ? input.value.trim().toUpperCase() : "";
+    const message = [
+        "Merhaba Prestij Life, sipariş durumum hakkında bilgi almak istiyorum.",
+        code ? "Sipariş Takip No: " + code : ""
+    ].filter(Boolean).join("\\n");
+    window.open("https://wa.me/905053559532?text=" + encodeURIComponent(message), "_blank");
 }
 
 init();
