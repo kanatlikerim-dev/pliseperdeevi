@@ -1702,13 +1702,26 @@ async function plfOpenRelatedSlips(orderCode){
   if(imalatSection) imalatSection.scrollIntoView({behavior:"smooth",block:"start"});
 
   try{
-    showGlobalToast ? showGlobalToast("Fişler kontrol ediliyor...","warning") : null;
-    var response = await apiPost({action:"listSlips",apiKey:ADMIN_API_KEY,orderCode:orderCode},16000);
-    if(!response || !response.success) throw new Error((response && response.message) || "Fiş bilgisi alınamadı.");
+    if(showGlobalToast) showGlobalToast("Fişler açılıyor, lütfen bekleyin...","warning");
 
-    if(typeof loadSlips === "function") loadSlips();
+    var response = await apiPost({
+      action:"listSlips",
+      apiKey:ADMIN_API_KEY,
+      orderCode:orderCode
+    },45000);
+
+    if(!response || !response.success){
+      throw new Error((response && response.message) || "Fiş bilgisi alınamadı.");
+    }
 
     var slips = response.slips || [];
+
+    if(typeof renderSlips === "function"){
+      renderSlips(slips);
+    }else if(typeof loadSlips === "function"){
+      loadSlips();
+    }
+
     if(!slips.length){
       if(showGlobalToast) showGlobalToast("Bu sipariş için oluşturulmuş fiş bulunamadı.","warning");
       return;
@@ -1723,6 +1736,7 @@ async function plfOpenRelatedSlips(orderCode){
 
     var latest = slips[0];
     var latestCode = latest.fis_kodu || latest.kod || latest.fis_no || "";
+
     if(latestCode && typeof loadSlipDetail === "function"){
       await loadSlipDetail(latestCode);
       if(showGlobalToast) showGlobalToast("En son oluşturulan fiş açıldı.","success");
@@ -1730,8 +1744,7 @@ async function plfOpenRelatedSlips(orderCode){
       if(showGlobalToast) showGlobalToast("Fiş listesi açıldı.","success");
     }
   }catch(e){
-    if(typeof loadSlips === "function") loadSlips();
-    if(showGlobalToast) showGlobalToast("Fişler açılırken sorun oluştu: " + (e.message || e),"error");
+    if(showGlobalToast) showGlobalToast("Fişler açılırken sorun oluştu. İmalat Fişleri bölümünden tekrar listeleyin.","error");
   }
 }
 passwordInput.addEventListener("keydown",e=>{if(e.key==="Enter")login()});
@@ -1845,6 +1858,94 @@ function renderOrderDetail(o,details){
     </div>`;
 }
 
+/* ANINDA AKSİYON BİLDİRİMİ - GÜNCEL */
+(function(){
+  if(window.__plfInstantActionFeedbackBound) return;
+  window.__plfInstantActionFeedbackBound = true;
+
+  var style = document.createElement("style");
+  style.id = "prestij-admin-instant-action-style-v2";
+  style.textContent = `
+    #globalToast.loading{border-color:rgba(139,106,69,.45);background:linear-gradient(145deg,#fff9ee,var(--card));color:var(--text)}
+    body.dark #globalToast.loading{background:linear-gradient(145deg,#332819,var(--card));color:#f3ddbd}
+    #globalToast.loading:before{content:"";display:inline-block;width:12px;height:12px;margin-right:9px;border-radius:50%;border:2px solid currentColor;border-top-color:transparent;vertical-align:-2px;animation:plfSpin .8s linear infinite}
+    @keyframes plfSpin{to{transform:rotate(360deg)}}
+    button.is-working,.btn-light.is-working,.btn-main.is-working,.btn-danger.is-working{opacity:.82!important;cursor:wait!important;filter:brightness(.96)}
+  `;
+  document.head.appendChild(style);
+
+  window.showGlobalToast = function(message,type,duration){
+    if(!message) return;
+    var toast = document.getElementById("globalToast");
+    if(!toast){
+      toast = document.createElement("div");
+      toast.id = "globalToast";
+      document.body.appendChild(toast);
+    }
+
+    clearTimeout(window.__plfToastTimer);
+    toast.className = "";
+    toast.classList.add(type || "success");
+    toast.textContent = String(message).replace(/<[^>]*>/g," ").trim();
+    toast.classList.remove("show");
+
+    setTimeout(function(){ toast.classList.add("show"); },20);
+
+    var wait = Number(duration || 0);
+    if(!wait){
+      wait = type === "loading" ? 9000 : 2800;
+    }
+    window.__plfToastTimer = setTimeout(function(){
+      toast.classList.remove("show");
+    },wait);
+  };
+
+  if(typeof window.showMessage === "function" && !window.__toastShowMessageBoundV2){
+    window.__toastShowMessageBoundV2 = true;
+    var oldShowMessage = window.__oldShowMessage || window.showMessage;
+    window.showMessage = function(id,message){
+      oldShowMessage(id,message);
+      var type = "success";
+      var idText = String(id || "").toLowerCase();
+      if(idText.indexOf("error") !== -1) type = "error";
+      if(idText.indexOf("warning") !== -1) type = "warning";
+      showGlobalToast(message,type, type === "error" ? 4200 : 2800);
+    };
+  }
+
+  function plfIsActionButton(btn){
+    if(!btn) return false;
+    if(btn.classList.contains("help-btn")) return false;
+    if(btn.classList.contains("modal-close")) return false;
+    if(btn.classList.contains("advanced-back-btn")) return false;
+    var text = String(btn.textContent || btn.getAttribute("aria-label") || btn.title || "").trim().toLowerCase();
+    if(!text) return false;
+    var keywords = ["kaydet","listele","oluştur","sil","indir","güncelle","yenile","kapat","aç","ekle","git","giriş","çıkış","yedek","pdf","excel","yazdır","temizle"];
+    return keywords.some(function(word){ return text.indexOf(word) !== -1; });
+  }
+
+  function plfActionMessage(btn){
+    var text = String(btn.textContent || "").trim();
+    if(text.indexOf("Kaydet") !== -1) return "Kaydediliyor...";
+    if(text.indexOf("Listele") !== -1) return "Listeleniyor...";
+    if(text.indexOf("Oluştur") !== -1) return "Oluşturuluyor...";
+    if(text.indexOf("Sil") !== -1) return "Silme işlemi hazırlanıyor...";
+    if(text.indexOf("İndir") !== -1 || text.indexOf("Excel") !== -1 || text.indexOf("PDF") !== -1) return "Dosya hazırlanıyor...";
+    if(text.indexOf("Yazdır") !== -1) return "Yazdırma hazırlanıyor...";
+    if(text.indexOf("Giriş") !== -1) return "Giriş kontrol ediliyor...";
+    if(text.indexOf("Git") !== -1 || text.indexOf("Aç") !== -1) return "Açılıyor...";
+    if(text.indexOf("Temizle") !== -1) return "Temizleniyor...";
+    return "İşlem yapılıyor...";
+  }
+
+  document.addEventListener("click",function(event){
+    var btn = event.target && event.target.closest ? event.target.closest("button,.btn-light,.btn-main,.btn-danger") : null;
+    if(!plfIsActionButton(btn)) return;
+    if(typeof showGlobalToast === "function") showGlobalToast(plfActionMessage(btn),"loading",9000);
+    btn.classList.add("is-working");
+    setTimeout(function(){ btn.classList.remove("is-working"); },1500);
+  },true);
+})();
 passwordInput.addEventListener("keydown",e=>{if(e.key==="Enter")login()});
 </script>
 </body>
