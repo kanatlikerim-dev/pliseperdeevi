@@ -1107,6 +1107,276 @@ body.same-product .product-and-color-area{
     }
 }
 </style>
+
+<style>
+/* SİPARİŞ TAKİP VE SİPARİŞ KODU BİLDİRİMİ */
+.order-tracking-card{
+    margin-top:22px;
+}
+.tracking-head{
+    display:flex;
+    justify-content:space-between;
+    gap:14px;
+    align-items:flex-start;
+    margin-bottom:14px;
+}
+.tracking-head h2{
+    margin:0 0 6px;
+    font-family:"Cormorant Garamond", serif;
+    font-size:30px;
+    line-height:1;
+}
+.tracking-head p{
+    color:var(--muted);
+    font-size:14px;
+    line-height:1.55;
+    margin:0;
+}
+.tracking-grid{
+    display:grid;
+    grid-template-columns:1fr 150px;
+    gap:10px;
+    align-items:end;
+}
+.tracking-result{
+    margin-top:14px;
+    display:none;
+}
+.tracking-result.show{
+    display:block;
+}
+.tracking-status-card{
+    background:var(--card-bg);
+    border:1px solid var(--border);
+    border-radius:20px;
+    padding:16px;
+    box-shadow:var(--soft-shadow);
+}
+.tracking-status-top{
+    display:flex;
+    justify-content:space-between;
+    gap:12px;
+    align-items:flex-start;
+    margin-bottom:12px;
+}
+.tracking-status-top h3{
+    margin:0 0 4px;
+    font-size:18px;
+}
+.tracking-code-pill{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    padding:8px 12px;
+    border-radius:999px;
+    background:var(--accent-soft);
+    color:var(--accent);
+    font-size:13px;
+    font-weight:900;
+    white-space:nowrap;
+}
+.status-timeline{
+    display:grid;
+    grid-template-columns:repeat(5,1fr);
+    gap:7px;
+    margin:14px 0;
+}
+.status-step{
+    background:var(--panel-bg);
+    border:1px solid var(--border);
+    color:var(--muted);
+    border-radius:14px;
+    padding:10px 8px;
+    text-align:center;
+    font-size:11px;
+    font-weight:900;
+    line-height:1.25;
+}
+.status-step.active{
+    background:var(--accent-soft);
+    color:var(--accent);
+    border-color:rgba(139,106,69,0.35);
+}
+.status-step.done{
+    background:var(--soft-bg);
+    color:var(--text);
+}
+.tracking-details{
+    display:grid;
+    gap:8px;
+    margin-top:12px;
+}
+.tracking-detail-item{
+    border:1px solid var(--border);
+    border-radius:15px;
+    background:var(--panel-bg);
+    padding:11px;
+}
+.tracking-detail-item strong{
+    display:block;
+    font-size:14px;
+    margin-bottom:4px;
+}
+.tracking-detail-item span{
+    color:var(--muted);
+    font-size:12.5px;
+    font-weight:700;
+    line-height:1.5;
+}
+.order-success-overlay{
+    position:fixed;
+    inset:0;
+    background:var(--modal-bg);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index:99999;
+    padding:16px;
+}
+.order-success-overlay.show{
+    display:flex;
+}
+.order-success-modal{
+    width:min(620px,100%);
+    max-height:92vh;
+    overflow:auto;
+    background:var(--card-bg);
+    color:var(--text);
+    border:1px solid var(--border);
+    border-radius:28px;
+    box-shadow:0 28px 80px rgba(0,0,0,0.35);
+    padding:22px;
+}
+.order-success-title{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:12px;
+    margin-bottom:14px;
+}
+.order-success-title h2{
+    margin:0;
+    font-family:"Cormorant Garamond", serif;
+    font-size:34px;
+    line-height:1;
+}
+.order-success-title p{
+    color:var(--muted);
+    font-size:14px;
+    line-height:1.5;
+    margin-top:8px;
+}
+.modal-x{
+    width:36px;
+    height:36px;
+    border-radius:50%;
+    padding:0;
+    background:var(--soft-bg);
+    color:var(--text);
+    border:1px solid var(--border);
+}
+.tracking-number-box{
+    background:linear-gradient(145deg,var(--accent-soft),var(--card-bg));
+    border:1px solid rgba(139,106,69,0.28);
+    border-radius:20px;
+    padding:15px;
+    margin:12px 0;
+}
+.tracking-number-label{
+    display:block;
+    color:var(--muted);
+    font-size:12px;
+    font-weight:900;
+    text-transform:uppercase;
+    margin-bottom:8px;
+}
+.tracking-number-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+}
+.tracking-number{
+    flex:1;
+    font-size:22px;
+    font-weight:950;
+    letter-spacing:0.3px;
+    word-break:break-word;
+}
+.copy-code-btn{
+    width:44px;
+    height:44px;
+    border-radius:14px;
+    padding:0;
+    flex:0 0 auto;
+    background:var(--card-bg);
+    border:1px solid var(--input-border);
+    color:var(--accent);
+    font-size:19px;
+    box-shadow:var(--soft-shadow);
+}
+.order-warning{
+    background:var(--warning-bg);
+    color:var(--warning-text);
+    border:1px solid var(--warning-border);
+    border-radius:16px;
+    padding:12px;
+    font-size:13.5px;
+    line-height:1.5;
+    margin:12px 0;
+    font-weight:700;
+}
+.modal-summary{
+    border:1px solid var(--border);
+    border-radius:18px;
+    background:var(--panel-bg);
+    padding:13px;
+    margin-top:12px;
+}
+.modal-summary-row{
+    display:flex;
+    justify-content:space-between;
+    gap:12px;
+    padding:7px 0;
+    border-bottom:1px dashed var(--border);
+    font-size:14px;
+}
+.modal-summary-row:last-child{
+    border-bottom:0;
+}
+.modal-summary-row span{
+    color:var(--muted);
+}
+.modal-actions{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+    margin-top:14px;
+}
+@media(max-width:700px){
+    .tracking-grid{
+        grid-template-columns:1fr;
+    }
+    .tracking-head{
+        display:block;
+    }
+    .status-timeline{
+        grid-template-columns:1fr;
+    }
+    .tracking-status-top{
+        display:block;
+    }
+    .tracking-code-pill{
+        margin-top:8px;
+    }
+    .modal-actions{
+        grid-template-columns:1fr;
+    }
+    .tracking-number-row{
+        align-items:stretch;
+    }
+}
+</style>
+
 </head>
 
 <body>
@@ -1241,6 +1511,27 @@ body.same-product .product-and-color-area{
 
     <div class="result" id="result"></div>
 
+
+    <div class="card order-tracking-card" id="orderTrackingSection">
+        <div class="tracking-head">
+            <div>
+                <h2>Sipariş Durumu Sorgula</h2>
+                <p>Sipariş verdikten sonra size verilen takip numarası ile üretim ve teslimat sürecini buradan takip edebilirsiniz.</p>
+            </div>
+            <span class="summary-pill">Takip</span>
+        </div>
+
+        <div class="tracking-grid">
+            <label class="field" for="orderStatusCode">
+                <span>Sipariş Takip Numarası</span>
+                <input id="orderStatusCode" placeholder="Örn: PL-20260601-0001" autocomplete="off">
+            </label>
+            <button type="button" class="btn-main" onclick="queryOrderStatus()">Sorgula</button>
+        </div>
+
+        <div class="tracking-result" id="orderStatusResult"></div>
+    </div>
+
     <div class="social">
         <div class="social-item">
             <a href="https://wa.me/905053559532" target="_blank">
@@ -1278,6 +1569,41 @@ body.same-product .product-and-color-area{
         <a href="./admin.html" class="admin-link" target="_blank" rel="noopener noreferrer">Admin Paneli Girişi</a>
     </div>
 </main>
+
+
+<div class="order-success-overlay" id="orderSuccessOverlay" onclick="orderSuccessOutsideClose(event)">
+    <div class="order-success-modal">
+        <div class="order-success-title">
+            <div>
+                <span class="eyebrow">Siparişiniz Alındı</span>
+                <h2>Sipariş Takip Bilgisi</h2>
+                <p>Siparişinizi aşağıdaki takip numarası ile sorgulayabilirsiniz.</p>
+            </div>
+            <button type="button" class="modal-x" onclick="closeOrderSuccessModal()">×</button>
+        </div>
+
+        <div class="tracking-number-box">
+            <span class="tracking-number-label">Sipariş Takip Numaranız</span>
+            <div class="tracking-number-row">
+                <strong class="tracking-number" id="successOrderCode">-</strong>
+                <button type="button" class="copy-code-btn" onclick="copyTrackingCode()" title="Takip numarasını kopyala">📋</button>
+            </div>
+        </div>
+
+        <div class="order-warning">
+            <b>Önemli:</b> Sipariş numaranızı kaybetmeyin. Üretim, hazırlık ve teslimat durumunu bu numara ile takip edebilirsiniz.
+        </div>
+
+        <div class="modal-summary" id="successOrderSummary"></div>
+
+        <div class="modal-actions">
+            <button type="button" class="btn-main" onclick="goToOrderTracking()">Sipariş Durumuna Git</button>
+            <button type="button" class="btn-light" onclick="closeOrderSuccessModal()">Tamam</button>
+        </div>
+
+        <div class="copy-status" id="successCopyStatus"></div>
+    </div>
+</div>
 
 <div class="modal" id="imageModal" onclick="modalOutsideClose(event)">
     <div class="modal-content">
@@ -2701,8 +3027,21 @@ async function submitSiteOrder(){
             throw new Error(data.message || "Sipariş kaydedilemedi.");
         }
 
-        if(status) status.textContent = "Siparişiniz alındı. En kısa sürede sizinle iletişime geçeceğiz.";
+        const orderCode = getOrderCodeFromResponse(data);
+
+        if(status){
+            status.innerHTML = orderCode
+                ? `Siparişiniz alındı. Takip numaranız: <b>${escapeHTML(orderCode)}</b>`
+                : "Siparişiniz alındı. En kısa sürede sizinle iletişime geçeceğiz.";
+        }
+
         button.textContent = "Sipariş Alındı";
+
+        if(orderCode){
+            showOrderSuccessModal(orderCode, data);
+        }else{
+            alert("Siparişiniz alındı. Sipariş takip numarası alınamadıysa WhatsApp üzerinden bizimle iletişime geçin.");
+        }
     }catch(error){
         if(status) status.textContent = "Sipariş kaydedilemedi. Lütfen WhatsApp üzerinden bizimle iletişime geçin.";
         button.disabled = false;
@@ -2711,6 +3050,7 @@ async function submitSiteOrder(){
         orderSubmitInProgress = false;
     }
 }
+
 
 function copyOrderText(){
     if(!lastOrderText){
@@ -3323,6 +3663,181 @@ window.addEventListener("keydown", function(event){
         if(event.target && event.target.id === "imageModal") window.closeImageModal();
     };
 })();
+
+
+/* SİPARİŞ TAKİP VE SİPARİŞ KODU BİLDİRİMİ */
+let lastSubmittedOrderCode = "";
+
+function getOrderCodeFromResponse(data){
+    if(!data) return "";
+    return data.orderCode || data.siparis_kodu || data.siparisKodu || (data.order && (data.order.siparis_kodu || data.order.orderCode)) || "";
+}
+
+function formatOrderDateForCustomer(value){
+    if(!value) return "-";
+    const date = new Date(value);
+    if(isNaN(date.getTime())) return String(value).slice(0,16);
+    return date.toLocaleString("tr-TR", { day:"2-digit", month:"2-digit", year:"numeric", hour:"2-digit", minute:"2-digit" });
+}
+
+function trackingStatusIndex(status){
+    const s = String(status || "").toLowerCase();
+    if(s.includes("teslim")) return 4;
+    if(s.includes("kargo")) return 3;
+    if(s.includes("hazır") || s.includes("hazir")) return 2;
+    if(s.includes("üret") || s.includes("uret")) return 1;
+    if(s.includes("iptal")) return -1;
+    return 0;
+}
+
+function trackingTimelineHTML(status){
+    const steps = ["Sipariş Alındı", "Üretimde", "Hazır", "Kargoya Verildi", "Teslim Edildi"];
+    const activeIndex = trackingStatusIndex(status);
+
+    if(activeIndex < 0){
+        return `<div class="status-timeline"><div class="status-step active" style="grid-column:1/-1">Sipariş İptal Edildi</div></div>`;
+    }
+
+    return `<div class="status-timeline">` + steps.map(function(step, index){
+        const cls = index < activeIndex ? "done" : (index === activeIndex ? "active" : "");
+        return `<div class="status-step ${cls}">${escapeHTML(step)}</div>`;
+    }).join("") + `</div>`;
+}
+
+function renderCustomerOrderDetails(details){
+    if(!details || !details.length){
+        return `<div class="tracking-detail-item"><strong>Ürün detayı hazırlanıyor</strong><span>Sipariş detayları henüz listelenemedi.</span></div>`;
+    }
+
+    return details.map(function(item, index){
+        const measure = `${item.en || "-"} × ${item.boy || "-"} cm`;
+        const fabric = item.kumas ? `<br>Kumaş: ${escapeHTML(item.kumas)}` : "";
+        const kasa = item.kasa_rengi ? `<br>Kasa: ${escapeHTML(item.kasa_rengi)}` : "";
+        return `
+            <div class="tracking-detail-item">
+                <strong>${index + 1}. Ölçü · ${escapeHTML(item.urun || "Ürün")}</strong>
+                <span>${escapeHTML(measure)} · ${escapeHTML(item.adet || "1")} adet<br>Sistem: ${escapeHTML(item.montaj_tipi || "-")}${kasa}${fabric}</span>
+            </div>
+        `;
+    }).join("");
+}
+
+function showOrderSuccessModal(orderCode, responseData){
+    lastSubmittedOrderCode = orderCode || "";
+    const codeEl = document.getElementById("successOrderCode");
+    const summaryEl = document.getElementById("successOrderSummary");
+    const overlay = document.getElementById("orderSuccessOverlay");
+
+    if(codeEl) codeEl.textContent = orderCode || "-";
+
+    const order = responseData && responseData.order ? responseData.order : {};
+    const customer = lastCalculatedOrderData && lastCalculatedOrderData.customer ? lastCalculatedOrderData.customer : {};
+    const total = order.musteri_toplam_tutar || "";
+    const count = order.toplam_adet || (lastCalculatedOrderData && lastCalculatedOrderData.items ? lastCalculatedOrderData.items.reduce(function(sum,item){ return sum + Number(item.adet || 0); }, 0) : "");
+
+    if(summaryEl){
+        summaryEl.innerHTML = `
+            <div class="modal-summary-row"><span>Müşteri</span><strong>${escapeHTML(customer.name || order.musteri_ad || "-")}</strong></div>
+            <div class="modal-summary-row"><span>Toplam Adet</span><strong>${escapeHTML(count || "-")}</strong></div>
+            ${total ? `<div class="modal-summary-row"><span>Toplam Tutar</span><strong>${formatTL(total)}</strong></div>` : ""}
+            <div class="modal-summary-row"><span>Durum</span><strong>Sipariş Alındı</strong></div>
+        `;
+    }
+
+    if(overlay) overlay.classList.add("show");
+}
+
+function closeOrderSuccessModal(){
+    const overlay = document.getElementById("orderSuccessOverlay");
+    if(overlay) overlay.classList.remove("show");
+}
+
+function orderSuccessOutsideClose(event){
+    if(event.target && event.target.id === "orderSuccessOverlay") closeOrderSuccessModal();
+}
+
+function copyTrackingCode(){
+    const code = lastSubmittedOrderCode || (document.getElementById("successOrderCode") ? document.getElementById("successOrderCode").textContent.trim() : "");
+    const status = document.getElementById("successCopyStatus");
+    if(!code || code === "-"){
+        if(status) status.textContent = "Kopyalanacak takip numarası bulunamadı.";
+        return;
+    }
+
+    navigator.clipboard.writeText(code).then(function(){
+        if(status) status.textContent = "Takip numarası kopyalandı.";
+    }).catch(function(){
+        if(status) status.textContent = "Kopyalama yapılamadı. Takip numarasını elle seçip kopyalayabilirsiniz.";
+    });
+}
+
+function goToOrderTracking(){
+    closeOrderSuccessModal();
+    const input = document.getElementById("orderStatusCode");
+    if(input && lastSubmittedOrderCode) input.value = lastSubmittedOrderCode;
+    const section = document.getElementById("orderTrackingSection");
+    if(section) section.scrollIntoView({ behavior:"smooth", block:"start" });
+    if(lastSubmittedOrderCode) queryOrderStatus();
+}
+
+async function queryOrderStatus(){
+    const input = document.getElementById("orderStatusCode");
+    const result = document.getElementById("orderStatusResult");
+    const code = input ? input.value.trim().toUpperCase() : "";
+
+    if(!result) return;
+
+    if(!code){
+        result.className = "tracking-result show";
+        result.innerHTML = `<div class="warning-box"><b>Sipariş kodu gerekli.</b>Sipariş durumunu görmek için size verilen takip numarasını yazın.</div>`;
+        return;
+    }
+
+    result.className = "tracking-result show";
+    result.innerHTML = `<div class="tracking-status-card">Sipariş bilgileri sorgulanıyor...</div>`;
+
+    try{
+        const response = await fetch(PRICE_API_URL + "?action=getPublicOrderStatus&orderCode=" + encodeURIComponent(code) + "&t=" + Date.now(), {
+            method:"GET",
+            cache:"no-store"
+        });
+
+        const data = await response.json();
+        if(!data.success){
+            throw new Error(data.message || "Sipariş bulunamadı.");
+        }
+
+        const order = data.order || {};
+        const details = data.details || [];
+        const statusText = order.durum_metin || order.durum || "Siparişiniz alındı";
+
+        result.innerHTML = `
+            <div class="tracking-status-card">
+                <div class="tracking-status-top">
+                    <div>
+                        <h3>${escapeHTML(statusText)}</h3>
+                        <p class="hint">Siparişinizin güncel durumu aşağıdadır.</p>
+                    </div>
+                    <span class="tracking-code-pill">${escapeHTML(order.siparis_kodu || code)}</span>
+                </div>
+
+                ${trackingTimelineHTML(order.durum || statusText)}
+
+                <div class="modal-summary">
+                    <div class="modal-summary-row"><span>Sipariş Tarihi</span><strong>${escapeHTML(formatOrderDateForCustomer(order.tarih))}</strong></div>
+                    <div class="modal-summary-row"><span>Müşteri</span><strong>${escapeHTML(order.musteri_ad || "-")}</strong></div>
+                    <div class="modal-summary-row"><span>Toplam Adet</span><strong>${escapeHTML(order.toplam_adet || "-")}</strong></div>
+                    ${order.toplam_tutar ? `<div class="modal-summary-row"><span>Toplam Tutar</span><strong>${formatTL(order.toplam_tutar)}</strong></div>` : ""}
+                </div>
+
+                <div class="summary-section-title">Sipariş Detayları</div>
+                <div class="tracking-details">${renderCustomerOrderDetails(details)}</div>
+            </div>
+        `;
+    }catch(error){
+        result.innerHTML = `<div class="warning-box"><b>Sipariş bulunamadı.</b>${escapeHTML(error.message || "Lütfen takip numaranızı kontrol edin.")}</div>`;
+    }
+}
 
 init();
 </script>
