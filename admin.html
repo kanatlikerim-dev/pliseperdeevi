@@ -3788,6 +3788,193 @@ window.plfOpenNotificationOrder = async function(code){
   }
 };
 
+
+/* BİLDİRİM PANELİ ANLIK KONTROL DÜZELTMESİ
+   Sorun: Yeni siparişler bazen "Siparişleri Listele" denmeden bildirim paneline düşmüyordu.
+   Çözüm:
+   - Admin açılır açılmaz bildirim kontrolü yapılır.
+   - Bildirim paneli açılınca tekrar güncel siparişler çekilir.
+   - İlk yüklemede son 15 gün içindeki site siparişleri de bildirim listesine eklenir.
+   - Yeni gelen siparişler okunmadı olarak işaretlenir.
+*/
+(function(){
+  if(window.__plfNotificationImmediateFix) return;
+  window.__plfNotificationImmediateFix = true;
+
+  var NOTIFICATION_KEY = "prestijLifeAdminNotifications_v1";
+  var NOTIFICATION_LAST_CHECK_KEY = "prestijLifeAdminNotificationsLastCheck_v1";
+  var NOTIFICATION_DAYS = 15;
+  var FAST_POLL_MS = 15000;
+  var NORMAL_POLL_MS = 60000;
+
+  function nowIso(){ return new Date().toISOString(); }
+  function cutoffTime(){ return Date.now() - (NOTIFICATION_DAYS * 24 * 60 * 60 * 1000); }
+  function parseTime(value){
+    var t = new Date(value || 0).getTime();
+    return isNaN(t) ? 0 : t;
+  }
+
+  function loadNotificationsSafe(){
+    try{
+      var arr = JSON.parse(localStorage.getItem(NOTIFICATION_KEY) || "[]");
+      if(!Array.isArray(arr)) arr = [];
+      arr = arr.filter(function(n){ return parseTime(n.createdAt || n.tarih) >= cutoffTime(); });
+      localStorage.setItem(NOTIFICATION_KEY, JSON.stringify(arr));
+      return arr;
+    }catch(e){
+      localStorage.removeItem(NOTIFICATION_KEY);
+      return [];
+    }
+  }
+
+  function saveNotificationsSafe(arr){
+    arr = (arr || []).filter(function(n){ return parseTime(n.createdAt || n.tarih) >= cutoffTime(); });
+    localStorage.setItem(NOTIFICATION_KEY, JSON.stringify(arr));
+  }
+
+  function normalizeSource(v){
+    return String(v || "").toLowerCase().trim();
+  }
+
+  window.plfSyncOrderNotifications = function(orders, silent){
+    if(typeof plfEnsureNotificationPanel === "function") plfEnsureNotificationPanel();
+
+    var arr = loadNotificationsSafe();
+    var map = {};
+    arr.forEach(function(n){ map[String(n.code)] = n; });
+
+    var added = 0;
+
+    (orders || []).forEach(function(o){
+      var source = normalizeSource(o.kaynak);
+      if(source && source !== "site") return;
+
+      var code = String(o.siparis_kodu || o.orderCode || "").trim();
+      if(!code) return;
+
+      var orderTime = parseTime(o.tarih) || Date.now();
+      if(orderTime < cutoffTime()) return;
+
+      if(!map[code]){
+        var item = {
+          code: code,
+          customer: o.musteri_ad || "",
+          phone: o.telefon || "",
+          tarih: o.tarih || nowIso(),
+          createdAt: o.tarih || nowIso(),
+          read: false
+        };
+        arr.push(item);
+        map[code] = item;
+        added++;
+      }else{
+        map[code].customer = o.musteri_ad || map[code].customer || "";
+        map[code].phone = o.telefon || map[code].phone || "";
+        map[code].tarih = o.tarih || map[code].tarih || nowIso();
+      }
+    });
+
+    localStorage.setItem(NOTIFICATION_LAST_CHECK_KEY, nowIso());
+    saveNotificationsSafe(arr);
+
+    if(typeof plfRenderNotifications === "function") plfRenderNotifications();
+
+    if(added && !silent && typeof showGlobalToast === "function"){
+      showGlobalToast(added + " yeni sipariş bildirimi var.", "success", 3500);
+    }
+  };
+
+  window.plfCheckNewOrders = async function(silent){
+    try{
+      if(typeof plfEnsureNotificationPanel === "function") plfEnsureNotificationPanel();
+
+      var start = new Date(Date.now() - (NOTIFICATION_DAYS * 24 * 60 * 60 * 1000));
+      var startText = start.toISOString().slice(0,10);
+
+      var d = await apiPost({
+        action: "listOrders",
+        apiKey: ADMIN_API_KEY,
+        dateStart: startText
+      }, 30000);
+
+      if(d && d.success){
+        var siteOrders = (d.orders || []).filter(function(o){
+          return !o.kaynak || normalizeSource(o.kaynak) === "site";
+        });
+        plfSyncOrderNotifications(siteOrders, !!silent);
+      }
+    }catch(e){
+      if(!silent && typeof showGlobalToast === "function"){
+        showGlobalToast("Bildirimler kontrol edilemedi: " + (e.message || e), "warning", 3000);
+      }
+    }
+  };
+
+  var oldToggleNotifications = window.plfToggleNotifications;
+  window.plfToggleNotifications = function(){
+    if(typeof oldToggleNotifications === "function"){
+      oldToggleNotifications();
+    }else{
+      var panel = document.getElementById("notificationPanel");
+      if(panel) panel.classList.toggle("active");
+    }
+    setTimeout(function(){ plfCheckNewOrders(true); }, 80);
+  };
+
+  function startImmediateNotificationChecks(){
+    if(typeof plfEnsureNotificationPanel === "function") plfEnsureNotificationPanel();
+
+    // Admin açıldığında beklemeden kontrol et.
+    plfCheckNewOrders(false);
+
+    // İlk dakikada daha sık kontrol et.
+    if(!window.__plfFastNotificationInterval){
+      var fastCount = 0;
+      window.__plfFastNotificationInterval = setInterval(function(){
+        fastCount++;
+        plfCheckNewOrders(true);
+        if(fastCount >= 4){
+          clearInterval(window.__plfFastNotificationInterval);
+          window.__plfFastNotificationInterval = null;
+        }
+      }, FAST_POLL_MS);
+    }
+
+    // Normal aralıkla kontrol et.
+    if(!window.__plfNotificationIntervalFixed){
+      window.__plfNotificationIntervalFixed = setInterval(function(){
+        plfCheckNewOrders(false);
+      }, NORMAL_POLL_MS);
+    }
+  }
+
+  var oldShowAdminPanel = window.showAdminPanel;
+  window.showAdminPanel = function(){
+    var result;
+    if(typeof oldShowAdminPanel === "function"){
+      result = oldShowAdminPanel.apply(this, arguments);
+    }
+    setTimeout(startImmediateNotificationChecks, 600);
+    return result;
+  };
+
+  if(sessionStorage.getItem(ADMIN_SESSION_KEY) === "true"){
+    setTimeout(startImmediateNotificationChecks, 1000);
+  }
+
+  document.addEventListener("visibilitychange", function(){
+    if(!document.hidden && sessionStorage.getItem(ADMIN_SESSION_KEY) === "true"){
+      plfCheckNewOrders(false);
+    }
+  });
+
+  window.addEventListener("focus", function(){
+    if(sessionStorage.getItem(ADMIN_SESSION_KEY) === "true"){
+      plfCheckNewOrders(true);
+    }
+  });
+})();
+
 </script>
 </body>
 </html>
