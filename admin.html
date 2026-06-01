@@ -1503,7 +1503,7 @@ function plfAddAdvancedBackButton(sectionName){
   var row = document.createElement("div");
   row.className = "advanced-back-row";
   row.style.marginBottom = "12px";
-  row.innerHTML = '<button class="btn-light" style="width:auto;min-width:180px" onclick="plfReturnToAdvanced()">←</button>';
+  row.innerHTML = '<button class="btn-light advanced-back-btn" title="Geri" aria-label="Geri" onclick="plfReturnToAdvanced()">←</button>';
   target.insertBefore(row, target.firstChild);
 }
 function openAdvancedSection(sectionName){
@@ -1524,6 +1524,95 @@ function openAdvancedSection(sectionName){
     if(typeof loadSellerPrices === "function") loadSellerPrices(false);
   }
 }
+/* MOBİL GÖRÜNÜM VE BASİT MUHASEBE DÜZENİ */
+(function(){
+  var style = document.createElement("style");
+  style.id = "prestij-admin-mobile-accounting-fix";
+  style.textContent = `
+    .advanced-back-btn{width:52px!important;min-width:52px!important;height:44px!important;padding:0!important;font-size:22px!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;border-radius:14px!important}
+    .simple-account-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin:14px 0}
+    .simple-account-card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:14px;box-shadow:0 8px 20px rgba(45,35,25,.05)}
+    .simple-account-card span{display:block;color:var(--muted);font-size:11px;font-weight:900;text-transform:uppercase;margin-bottom:6px}
+    .simple-account-card strong{font-size:20px;line-height:1.15}
+    .simple-account-card.main{background:linear-gradient(145deg,var(--soft),var(--card));border-color:rgba(139,106,69,.28)}
+    .simple-account-note{padding:12px 14px;border-radius:16px;background:var(--soft);border:1px solid var(--border);color:var(--muted);font-size:13px;line-height:1.45;margin:10px 0}
+    @media(max-width:900px){
+      html,body{width:100%;max-width:100%;overflow-x:hidden!important}
+      body{padding:8px!important}
+      .container,.admin-card,.login-card,.panel-section,.box,.settings-card,.detail-box{width:100%!important;max-width:100%!important;min-width:0!important;overflow:hidden!important}
+      .container{padding:0!important;background:transparent!important;border:none!important;box-shadow:none!important}
+      .admin-card,.login-card{padding:12px!important;border-radius:18px!important}
+      .admin-header{display:block!important}
+      .admin-title{margin-bottom:10px!important}.admin-title h1{font-size:30px!important}
+      .header-actions{display:grid!important;grid-template-columns:1fr 1fr!important;gap:8px!important;width:100%!important}.header-actions button,.header-actions a{width:100%!important;min-width:0!important}
+      .compact-admin-menu{display:flex!important;grid-template-columns:none!important;overflow-x:auto!important;overflow-y:hidden!important;width:100%!important;max-width:100%!important;gap:8px!important;padding:8px!important;margin:0 0 12px!important;position:sticky!important;top:0!important;scroll-snap-type:x mandatory!important;-webkit-overflow-scrolling:touch!important}
+      .compact-admin-menu .module-card{flex:0 0 148px!important;width:148px!important;min-width:148px!important;max-width:148px!important;min-height:82px!important;padding:12px!important;scroll-snap-align:start!important}.compact-admin-menu .module-card p{display:none!important}.compact-admin-menu .module-card strong{font-size:14px!important;white-space:normal!important}
+      .admin-grid:not(.compact-admin-menu){grid-template-columns:1fr!important}
+      .panel-section{padding:12px!important;border-radius:18px!important}.box,.settings-card{padding:12px!important;border-radius:16px!important}
+      .filter-grid,.form-grid,.settings-grid,.price-grid,.actions{display:grid!important;grid-template-columns:1fr!important;gap:9px!important;width:100%!important;max-width:100%!important}.field{width:100%!important;min-width:0!important}input,select,textarea{width:100%!important;max-width:100%!important;min-width:0!important;box-sizing:border-box!important;font-size:16px!important}
+      .section-title{align-items:center!important}.section-title h2{font-size:24px!important}.section-title h3{font-size:18px!important}.subtitle{font-size:14px!important;line-height:1.45!important}
+      .table-wrap{width:100%!important;max-width:100%!important;overflow:auto!important;-webkit-overflow-scrolling:touch!important}table{min-width:720px!important}
+      .summary-cards,.simple-account-summary{grid-template-columns:1fr!important}.simple-account-card strong{font-size:18px!important}
+      #ordersTableWrap{display:none!important}.order-mobile-list{display:grid!important;width:100%!important}.order-mobile-card{width:100%!important;max-width:100%!important}.order-mobile-meta{grid-template-columns:1fr 1fr!important}
+    }
+    @media(max-width:430px){.header-actions{grid-template-columns:1fr!important}.compact-admin-menu .module-card{flex-basis:136px!important;width:136px!important;min-width:136px!important}.order-mobile-meta{grid-template-columns:1fr!important}}
+  `;
+  document.head.appendChild(style);
+})();
+function plfPrepareAccountingPanel(){
+  var section = document.getElementById("section-muhasebe");
+  if(!section) return;
+  var title = section.querySelector(".section-title h2");
+  if(title) title.textContent = "Muhasebe";
+  var sub = section.querySelector(".subtitle");
+  if(sub) sub.textContent = "Satıcıya göre ne alınacak, ne verilecek ve kalan tutarı sade şekilde takip edin.";
+  var boxTitle = section.querySelector(".box h3");
+  if(boxTitle) boxTitle.textContent = "Alacak / Verecek Hesabı";
+  var actions = section.querySelector(".actions");
+  if(actions){
+    var btns = actions.querySelectorAll("button");
+    if(btns[0]) btns[0].textContent = "Hesabı Listele";
+    if(btns[1]) btns[1].textContent = "Seçilenleri Kapat";
+    if(btns[2]) btns[2].textContent = "Seçilenleri Aç";
+  }
+}
+function renderAccounting(rows,summary){
+  plfPrepareAccountingPanel();
+  var totalSales = Number(summary.toplam_satis_tutari || 0);
+  var totalPay = Number(summary.toplam_satici_tutari || 0);
+  var totalDiff = Number(summary.toplam_fark || 0);
+  var openPay = Number(summary.acik_satici_tutari || 0);
+  var closedPay = Number(summary.kapanan_satici_tutari || 0);
+  accSummaryCards.innerHTML = `
+    <div class="simple-account-card main"><span>Alınacak</span><strong>${tl(totalSales)}</strong></div>
+    <div class="simple-account-card main"><span>Verilecek</span><strong>${tl(totalPay)}</strong></div>
+    <div class="simple-account-card"><span>Kalan</span><strong>${tl(totalDiff)}</strong></div>
+    <div class="simple-account-card"><span>Açık Verilecek</span><strong>${tl(openPay)}</strong></div>
+    <div class="simple-account-card"><span>Kapanan</span><strong>${tl(closedPay)}</strong></div>
+    <div class="simple-account-card"><span>Sipariş / m²</span><strong>${summary.siparis_sayisi||0} / ${num(summary.toplam_gercek_m2)} m²</strong></div>
+  `;
+  accTableBody.innerHTML="";
+  var note = document.getElementById("simpleAccountNote");
+  if(!note){
+    note = document.createElement("div");
+    note.id = "simpleAccountNote";
+    note.className = "simple-account-note";
+    accSummaryCards.parentNode.insertBefore(note, accSummaryCards.nextSibling);
+  }
+  note.innerHTML = "<b>Alınacak</b> müşteri satış toplamıdır. <b>Verilecek</b> satıcıya/sipariş sahibine ödenecek tutardır. <b>Kalan</b> Prestij Life tarafında kalan farktır.";
+  if(!rows.length){accTableWrap.style.display="none";return showMessage("accWarning","Bu seçimlere uygun muhasebe kaydı bulunamadı.")}
+  var head = accTableWrap.querySelector("thead tr");
+  if(head){
+    head.innerHTML = "<th>Seç</th><th>Sipariş</th><th>Tarih</th><th>Satıcı</th><th>Müşteri</th><th>m²</th><th>Alınacak</th><th>Verilecek</th><th>Kalan</th><th>Durum</th>";
+  }
+  rows.forEach(function(r){
+    var tr=document.createElement("tr");
+    tr.innerHTML=`<td><input type="checkbox" class="acc-check" value="${attr(r.siparis_kodu)}"></td><td><strong>${esc(r.siparis_kodu)}</strong></td><td>${formatDate(r.tarih)}</td><td>${esc(r.satici_adi)}</td><td><strong>${esc(r.musteri_ad)}</strong><small>${esc(r.telefon)}</small></td><td>${num(r.toplam_gercek_m2)} m²</td><td>${tl(r.satis_tutari)}</td><td>${tl(r.satici_tutari)}</td><td>${tl(r.fark_tutar)}</td><td><span class="tag">${esc(r.hesap_durumu)}</span><small>${formatDate(r.hesap_kapanis_tarihi||"")}</small></td>`;
+    accTableBody.appendChild(tr);
+  });
+  accTableWrap.style.display="block";
+}
+plfPrepareAccountingPanel();
 passwordInput.addEventListener("keydown",e=>{if(e.key==="Enter")login()});
 initAdmin();
 </script>
