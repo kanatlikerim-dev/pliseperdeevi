@@ -575,6 +575,204 @@ body.dark{--bg:#151618;--bg2:#202328;--card:#1e2023;--panel:#25282d;--text:#f2f0
 }
 </style>
 
+
+<style>
+/* MUHASEBE DİLİ DÜZELTME - SATICI KAZANCI / FİRMA ALACAĞI */
+.account-owner-layout{
+  display:grid;
+  gap:14px;
+}
+.account-section-card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:20px;
+  padding:15px;
+  box-shadow:0 10px 26px rgba(0,0,0,.04);
+}
+.account-section-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:12px;
+}
+.account-section-head h3{
+  margin:0;
+  font-size:18px;
+}
+.account-section-head p{
+  margin:4px 0 0;
+  color:var(--muted);
+  font-size:12.5px;
+  line-height:1.45;
+  font-weight:700;
+}
+.owner-summary-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(170px,1fr));
+  gap:10px;
+}
+.owner-summary-card{
+  border:1px solid var(--border);
+  background:var(--panel);
+  border-radius:17px;
+  padding:13px;
+}
+.owner-summary-card span{
+  display:block;
+  color:var(--muted);
+  font-size:10.5px;
+  font-weight:950;
+  text-transform:uppercase;
+  margin-bottom:5px;
+}
+.owner-summary-card strong{
+  display:block;
+  font-size:20px;
+  line-height:1.15;
+}
+.owner-summary-card small{
+  display:block;
+  color:var(--muted);
+  font-size:11.5px;
+  line-height:1.35;
+  margin-top:5px;
+  font-weight:700;
+}
+.owner-summary-card.primary{
+  background:linear-gradient(145deg,var(--soft),var(--card));
+  border-color:rgba(139,106,69,.38);
+}
+.seller-account-list{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+  gap:11px;
+}
+.seller-account-card{
+  border:1px solid var(--border);
+  background:var(--panel);
+  border-radius:18px;
+  padding:14px;
+}
+.seller-account-card-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:10px;
+  margin-bottom:10px;
+  padding-bottom:10px;
+  border-bottom:1px dashed var(--border);
+}
+.seller-account-card h4{
+  margin:0;
+  font-size:16px;
+}
+.seller-account-card small{
+  color:var(--muted);
+  font-weight:800;
+  line-height:1.35;
+}
+.seller-total-profit{
+  display:block;
+  margin-top:3px;
+  color:var(--accent);
+  font-size:20px;
+  font-weight:950;
+}
+.seller-account-row{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  padding:7px 0;
+  border-bottom:1px dashed var(--border);
+  font-size:13px;
+}
+.seller-account-row:last-child{
+  border-bottom:0;
+}
+.seller-account-row span{
+  color:var(--muted);
+  font-weight:800;
+}
+.seller-account-row strong{
+  text-align:right;
+}
+.seller-account-row.highlight{
+  background:rgba(139,106,69,.09);
+  border:1px solid rgba(139,106,69,.20);
+  border-radius:12px;
+  padding:8px 10px;
+  margin:6px 0;
+}
+.account-table-note{
+  margin:8px 0 12px;
+  padding:10px 12px;
+  border-radius:14px;
+  background:var(--soft);
+  border:1px solid rgba(139,106,69,.22);
+  font-size:12.5px;
+  color:var(--muted);
+  line-height:1.45;
+  font-weight:700;
+}
+.account-status-pill{
+  display:inline-flex;
+  padding:5px 8px;
+  border-radius:999px;
+  background:var(--soft);
+  color:var(--accent);
+  font-size:11px;
+  font-weight:950;
+}
+.extra-profit-chip{
+  display:inline-flex;
+  margin-top:4px;
+  padding:3px 7px;
+  border-radius:999px;
+  background:rgba(139,106,69,.12);
+  color:var(--accent);
+  font-size:10.5px;
+  font-weight:950;
+}
+.account-money-main{
+  display:block;
+  font-weight:950;
+}
+.account-money-sub{
+  display:block;
+  margin-top:3px;
+  font-size:11px;
+  color:var(--muted);
+  font-weight:800;
+  line-height:1.25;
+}
+@media(max-width:760px){
+  .account-section-card{
+    padding:12px;
+    border-radius:17px;
+  }
+  .account-section-head{
+    display:block;
+  }
+  .seller-account-list,
+  .owner-summary-grid{
+    grid-template-columns:1fr;
+  }
+}
+</style>
+
+
+<style>
+/* MUHASEBE DİLİ SON DÜZELTME */
+.seller-total-pay-final{
+  display:block;
+  margin-top:3px;
+  color:var(--accent);
+  font-size:20px;
+  font-weight:950;
+}
+</style>
+
 </head>
 <body>
 <div class="container">
@@ -6697,6 +6895,392 @@ function renderAccounting(rows, summary){
       <td><span class="account-money-main">${tl(sold)}</span><span class="account-money-sub">Müşteriye satılan</span>${extra ? `<span class="extra-profit-chip">+${tl(extra)} fazla satış</span>` : ""}</td>
       <td><span class="account-money-main">${tl(sellerPay)}</span><span class="account-money-sub">Satıcının kazancı</span></td>
       <td><span class="account-money-main">${tl(companyProfit)}</span><span class="account-money-sub">Prestij Life'a kalan</span></td>
+      <td><span class="account-status-pill">${esc(r.hesap_durumu)}</span><small>${formatDate(r.hesap_kapanis_tarihi || "")}</small></td>
+    `;
+    body.appendChild(tr);
+  });
+
+  accTableWrap.style.display = "block";
+}
+
+
+
+/* MUHASEBE DİLİ KESİN DÜZELTME
+   satici_tutari = Prestij Life'ın satıcıdan tahsil edeceği / firmaya ödenecek tutar
+   fark_tutar    = Satıcının bu satıştan kazancı
+*/
+function renderAccounting(rows, summary){
+  rows = rows || [];
+  summary = summary || {};
+  lastAccountingRows = rows;
+
+  const sellerMap = {};
+  rows.forEach(function(r){
+    const name = r.satici_adi || "Satıcı";
+    if(!sellerMap[name]){
+      sellerMap[name] = {
+        count:0,
+        m2:0,
+        mustSell:0,
+        sold:0,
+        extra:0,
+        companyReceivable:0,
+        sellerProfit:0,
+        openReceivable:0,
+        closedReceivable:0,
+        openCount:0,
+        closedCount:0
+      };
+    }
+
+    const mustSell = plfNumRaw(r.formul_tutari) || plfNumRaw(r.satis_tutari);
+    const sold = plfNumRaw(r.satis_tutari);
+    const extra = plfNumRaw(r.satis_duzeltme_tutari);
+    const companyReceivable = plfNumRaw(r.satici_tutari);
+    const sellerProfit = plfNumRaw(r.fark_tutar);
+    const closed = plfAccountStatusText(r.hesap_durumu) === "kapandı";
+
+    sellerMap[name].count++;
+    sellerMap[name].m2 += plfNumRaw(r.toplam_gercek_m2);
+    sellerMap[name].mustSell += mustSell;
+    sellerMap[name].sold += sold;
+    sellerMap[name].extra += extra;
+    sellerMap[name].companyReceivable += companyReceivable;
+    sellerMap[name].sellerProfit += sellerProfit;
+
+    if(closed){
+      sellerMap[name].closedReceivable += companyReceivable;
+      sellerMap[name].closedCount++;
+    }else{
+      sellerMap[name].openReceivable += companyReceivable;
+      sellerMap[name].openCount++;
+    }
+  });
+
+  const sellerNames = Object.keys(sellerMap).sort();
+  const totalExtra = rows.reduce(function(t,r){ return t + plfNumRaw(r.satis_duzeltme_tutari); },0);
+  const totalMustSell = rows.reduce(function(t,r){ return t + (plfNumRaw(r.formul_tutari) || plfNumRaw(r.satis_tutari)); },0);
+  const totalCompanyReceivable = plfNumRaw(summary.toplam_satici_tutari);
+  const totalSellerProfit = plfNumRaw(summary.toplam_fark);
+  const totalSold = plfNumRaw(summary.toplam_satis_tutari);
+
+  const sellerCards = sellerNames.map(function(name){
+    const s = sellerMap[name];
+    return `
+      <div class="seller-account-card">
+        <div class="seller-account-card-head">
+          <div>
+            <h4>${esc(name)}</h4>
+            <small>${s.count} sipariş · ${num(s.m2)} m²</small>
+          </div>
+          <div style="text-align:right">
+            <small>${esc(name)} Kazancı</small>
+            <span class="seller-total-profit">${tl(s.sellerProfit)}</span>
+          </div>
+        </div>
+
+        <div class="seller-account-row"><span>Ne Kadara Satılması Gerekirdi</span><strong>${tl(s.mustSell)}</strong></div>
+        <div class="seller-account-row"><span>Ne Kadara Satılmış</span><strong>${tl(s.sold)}</strong></div>
+        <div class="seller-account-row highlight"><span>Fazla Satış Kârı</span><strong>${tl(s.extra)}</strong></div>
+        <div class="seller-account-row"><span>${esc(name)} Kazancı</span><strong>${tl(s.sellerProfit)}</strong></div>
+        <div class="seller-account-row"><span>Prestij Life'a Ödenecek</span><strong>${tl(s.companyReceivable)}</strong></div>
+        <div class="seller-account-row"><span>Kapanan Ödeme</span><strong>${tl(s.closedReceivable)}<br><small>${s.closedCount} sipariş</small></strong></div>
+        <div class="seller-account-row"><span>Açık Ödeme</span><strong>${tl(s.openReceivable)}<br><small>${s.openCount} sipariş</small></strong></div>
+      </div>
+    `;
+  }).join("");
+
+  accSummaryCards.innerHTML = `
+    <div class="account-owner-layout">
+      <div class="account-section-card">
+        <div class="account-section-head">
+          <div>
+            <h3>Genel Muhasebe Özeti</h3>
+            <p>Firma sahibi ekranı: satıcıların satış tutarı, satıcı kazancı ve Prestij Life'a ödenecek tutar.</p>
+          </div>
+          <span class="tag">${rows.length} kayıt</span>
+        </div>
+
+        <div class="owner-summary-grid">
+          <div class="owner-summary-card"><span>Sipariş Sayısı</span><strong>${summary.siparis_sayisi || 0}</strong><small>Filtreye uyan sipariş</small></div>
+          <div class="owner-summary-card"><span>Toplam Gerçek m²</span><strong>${num(summary.toplam_gercek_m2)} m²</strong><small>Gerçek ölçü m²</small></div>
+          <div class="owner-summary-card"><span>Olması Gereken Satış</span><strong>${tl(totalMustSell)}</strong><small>Formülün hesapladığı toplam</small></div>
+          <div class="owner-summary-card"><span>Yapılan Satış</span><strong>${tl(totalSold)}</strong><small>Satıcıların müşteriye sattığı toplam</small></div>
+          <div class="owner-summary-card primary"><span>Prestij Life'a Ödenecek</span><strong>${tl(totalCompanyReceivable)}</strong><small>Satıcılardan firmaya gelecek toplam</small></div>
+          <div class="owner-summary-card"><span>Açık Ödeme</span><strong>${tl(summary.acik_satici_tutari)}</strong><small>${summary.acik_siparis || 0} açık sipariş</small></div>
+          <div class="owner-summary-card"><span>Kapanan Ödeme</span><strong>${tl(summary.kapanan_satici_tutari)}</strong><small>${summary.kapanan_siparis || 0} kapanan sipariş</small></div>
+          <div class="owner-summary-card"><span>Toplam Satıcı Kazancı</span><strong>${tl(totalSellerProfit)}</strong><small>Satıcılara kalan toplam kâr</small></div>
+          <div class="owner-summary-card"><span>Fazla Satış Kârı</span><strong>${tl(totalExtra)}</strong><small>Satıcı kazancına eklenen formül üstü satış</small></div>
+        </div>
+      </div>
+
+      <div class="account-section-card">
+        <div class="account-section-head">
+          <div>
+            <h3>Satıcı Hesapları</h3>
+            <p>Her satıcının kazancı, firmaya ödeyeceği tutar, açık/kapanan ödemesi ve tek tek satış özeti.</p>
+          </div>
+          <span class="tag">${sellerNames.length} satıcı</span>
+        </div>
+        ${sellerCards ? `<div class="seller-account-list">${sellerCards}</div>` : `<div class="placeholder">Bu filtrede satıcı hesabı yok.</div>`}
+      </div>
+
+      <div class="account-section-card">
+        <div class="account-section-head">
+          <div>
+            <h3>Tek Tek Sipariş Hesapları</h3>
+            <p>Sipariş bazında olması gereken satış, yapılan satış, satıcı kazancı ve Prestij Life'a ödenecek tutar.</p>
+          </div>
+        </div>
+        <div class="account-table-note">
+          Dil mantığı: <b>Prestij Life'a Ödenecek</b> satıcının firmaya ödeyeceği tutardır. <b>Satıcı Kazancı</b> satıcının müşteriden aldığı satıştan kendisine kalan kârdır.
+        </div>
+      </div>
+    </div>
+  `;
+
+  if(!rows.length){
+    accTableWrap.style.display = "none";
+    return showMessage("accWarning", "Bu seçimlere uygun muhasebe kaydı bulunamadı.");
+  }
+
+  accTableWrap.innerHTML = `
+    <table>
+      <thead>
+        <tr>
+          <th>Seç</th>
+          <th>Sipariş</th>
+          <th>Tarih</th>
+          <th>Satıcı</th>
+          <th>Müşteri</th>
+          <th>Bölge</th>
+          <th>Gerçek m²</th>
+          <th>Olması Gereken Satış</th>
+          <th>Yapılan Satış</th>
+          <th>Satıcı Kazancı</th>
+          <th>Prestij Life'a Ödenecek</th>
+          <th>Hesap</th>
+        </tr>
+      </thead>
+      <tbody id="accTableBody"></tbody>
+    </table>
+  `;
+
+  const body = document.getElementById("accTableBody");
+
+  rows.forEach(function(r){
+    const tr = document.createElement("tr");
+    const mustSell = plfNumRaw(r.formul_tutari) || plfNumRaw(r.satis_tutari);
+    const sold = plfNumRaw(r.satis_tutari);
+    const extra = plfNumRaw(r.satis_duzeltme_tutari);
+    const companyReceivable = plfNumRaw(r.satici_tutari);
+    const sellerProfit = plfNumRaw(r.fark_tutar);
+
+    tr.innerHTML = `
+      <td><input type="checkbox" class="acc-check" value="${attr(r.siparis_kodu)}"></td>
+      <td><strong>${esc(r.siparis_kodu)}</strong></td>
+      <td>${formatDate(r.tarih)}</td>
+      <td><strong>${esc(r.satici_adi)}</strong></td>
+      <td><strong>${esc(r.musteri_ad)}</strong><small>${esc(r.telefon)}</small></td>
+      <td><span class="tag">${esc(r.bolge_kodu)}</span><small>${esc(r.fiyat_bolgesi)}</small></td>
+      <td>${num(r.toplam_gercek_m2)} m²</td>
+      <td><span class="account-money-main">${tl(mustSell)}</span><span class="account-money-sub">Formül fiyatı</span></td>
+      <td><span class="account-money-main">${tl(sold)}</span><span class="account-money-sub">Müşteriye satılan</span>${extra ? `<span class="extra-profit-chip">+${tl(extra)} fazla satış</span>` : ""}</td>
+      <td><span class="account-money-main">${tl(sellerProfit)}</span><span class="account-money-sub">Satıcının kârı</span></td>
+      <td><span class="account-money-main">${tl(companyReceivable)}</span><span class="account-money-sub">Firmaya ödenecek</span></td>
+      <td><span class="account-status-pill">${esc(r.hesap_durumu)}</span><small>${formatDate(r.hesap_kapanis_tarihi || "")}</small></td>
+    `;
+    body.appendChild(tr);
+  });
+
+  accTableWrap.style.display = "block";
+}
+
+
+
+/* MUHASEBE DİLİ SON DÜZELTME
+   satici_tutari = Prestij Life'ın kazancı / firmaya kalacak tutar
+   fark_tutar    = Satıcıya ödenecek tutar
+*/
+function renderAccounting(rows, summary){
+  rows = rows || [];
+  summary = summary || {};
+  lastAccountingRows = rows;
+
+  const sellerMap = {};
+  rows.forEach(function(r){
+    const name = r.satici_adi || "Satıcı";
+    if(!sellerMap[name]){
+      sellerMap[name] = {
+        count:0,
+        m2:0,
+        mustSell:0,
+        sold:0,
+        extra:0,
+        prestijProfit:0,
+        sellerPay:0,
+        openPay:0,
+        closedPay:0,
+        openCount:0,
+        closedCount:0
+      };
+    }
+
+    const mustSell = plfNumRaw(r.formul_tutari) || plfNumRaw(r.satis_tutari);
+    const sold = plfNumRaw(r.satis_tutari);
+    const extra = plfNumRaw(r.satis_duzeltme_tutari);
+    const prestijProfit = plfNumRaw(r.satici_tutari);
+    const sellerPay = plfNumRaw(r.fark_tutar);
+    const closed = plfAccountStatusText(r.hesap_durumu) === "kapandı";
+
+    sellerMap[name].count++;
+    sellerMap[name].m2 += plfNumRaw(r.toplam_gercek_m2);
+    sellerMap[name].mustSell += mustSell;
+    sellerMap[name].sold += sold;
+    sellerMap[name].extra += extra;
+    sellerMap[name].prestijProfit += prestijProfit;
+    sellerMap[name].sellerPay += sellerPay;
+
+    if(closed){
+      sellerMap[name].closedPay += sellerPay;
+      sellerMap[name].closedCount++;
+    }else{
+      sellerMap[name].openPay += sellerPay;
+      sellerMap[name].openCount++;
+    }
+  });
+
+  const sellerNames = Object.keys(sellerMap).sort();
+  const totalExtra = rows.reduce(function(t,r){ return t + plfNumRaw(r.satis_duzeltme_tutari); },0);
+  const totalMustSell = rows.reduce(function(t,r){ return t + (plfNumRaw(r.formul_tutari) || plfNumRaw(r.satis_tutari)); },0);
+  const totalPrestijProfit = plfNumRaw(summary.toplam_satici_tutari);
+  const totalSellerPay = plfNumRaw(summary.toplam_fark);
+  const totalSold = plfNumRaw(summary.toplam_satis_tutari);
+
+  const sellerCards = sellerNames.map(function(name){
+    const s = sellerMap[name];
+    return `
+      <div class="seller-account-card">
+        <div class="seller-account-card-head">
+          <div>
+            <h4>${esc(name)}</h4>
+            <small>${s.count} sipariş · ${num(s.m2)} m²</small>
+          </div>
+          <div style="text-align:right">
+            <small>${esc(name)}'ya Ödenecek</small>
+            <span class="seller-total-pay-final">${tl(s.sellerPay)}</span>
+          </div>
+        </div>
+
+        <div class="seller-account-row"><span>Ne Kadara Satılması Gerekirdi</span><strong>${tl(s.mustSell)}</strong></div>
+        <div class="seller-account-row"><span>Satılan Fiyat</span><strong>${tl(s.sold)}</strong></div>
+        <div class="seller-account-row highlight"><span>Fazla Satış Kârı</span><strong>${tl(s.extra)}</strong></div>
+        <div class="seller-account-row"><span>Prestij Life Kazancı</span><strong>${tl(s.prestijProfit)}</strong></div>
+        <div class="seller-account-row"><span>${esc(name)}'ya Ödenecek</span><strong>${tl(s.sellerPay)}</strong></div>
+        <div class="seller-account-row"><span>Kapanan Ödeme</span><strong>${tl(s.closedPay)}<br><small>${s.closedCount} sipariş</small></strong></div>
+        <div class="seller-account-row"><span>Açık Ödeme</span><strong>${tl(s.openPay)}<br><small>${s.openCount} sipariş</small></strong></div>
+      </div>
+    `;
+  }).join("");
+
+  accSummaryCards.innerHTML = `
+    <div class="account-owner-layout">
+      <div class="account-section-card">
+        <div class="account-section-head">
+          <div>
+            <h3>Genel Muhasebe Özeti</h3>
+            <p>Firma sahibi ekranı: ne kadara satılması gerektiği, kaça satıldığı, Prestij Life kazancı ve satıcı ödemesi.</p>
+          </div>
+          <span class="tag">${rows.length} kayıt</span>
+        </div>
+
+        <div class="owner-summary-grid">
+          <div class="owner-summary-card"><span>Sipariş Sayısı</span><strong>${summary.siparis_sayisi || 0}</strong><small>Filtreye uyan sipariş</small></div>
+          <div class="owner-summary-card"><span>Toplam Gerçek m²</span><strong>${num(summary.toplam_gercek_m2)} m²</strong><small>Gerçek ölçü m²</small></div>
+          <div class="owner-summary-card"><span>Ne Kadara Satılması Gerekirdi</span><strong>${tl(totalMustSell)}</strong><small>Formülün hesapladığı toplam</small></div>
+          <div class="owner-summary-card"><span>Satılan Fiyat</span><strong>${tl(totalSold)}</strong><small>Müşteriye yapılan satış toplamı</small></div>
+          <div class="owner-summary-card primary"><span>Prestij Life Kazancı</span><strong>${tl(totalPrestijProfit)}</strong><small>Firmaya kalan toplam</small></div>
+          <div class="owner-summary-card"><span>Satıcılara Ödenecek</span><strong>${tl(totalSellerPay)}</strong><small>Tüm satıcıların toplam payı</small></div>
+          <div class="owner-summary-card"><span>Açık Ödeme</span><strong>${tl(summary.acik_satici_tutari ? totalSellerPay : 0)}</strong><small>Açık satıcı ödemeleri aşağıdaki kartlarda takip edilir</small></div>
+          <div class="owner-summary-card"><span>Fazla Satış Kârı</span><strong>${tl(totalExtra)}</strong><small>Formül üstü satıştan gelen fark</small></div>
+        </div>
+      </div>
+
+      <div class="account-section-card">
+        <div class="account-section-head">
+          <div>
+            <h3>Satıcı Hesapları</h3>
+            <p>Her satıcının satılan fiyatı, Prestij Life kazancı, satıcıya ödenecek tutarı ve açık/kapanan ödemesi.</p>
+          </div>
+          <span class="tag">${sellerNames.length} satıcı</span>
+        </div>
+        ${sellerCards ? `<div class="seller-account-list">${sellerCards}</div>` : `<div class="placeholder">Bu filtrede satıcı hesabı yok.</div>`}
+      </div>
+
+      <div class="account-section-card">
+        <div class="account-section-head">
+          <div>
+            <h3>Tek Tek Sipariş Hesapları</h3>
+            <p>Sipariş bazında satılması gereken tutar, satılan fiyat, Prestij Life kazancı ve satıcıya ödenecek tutar.</p>
+          </div>
+        </div>
+        <div class="account-table-note">
+          Örnek dil: <b>Satılan fiyat 5.500 TL</b>, <b>ne kadara satılması gerekirdi 5.280 TL</b>, <b>Prestij Life kazancı 4.646 TL</b>, <b>Beyza'ya ödenecek 854 TL</b>.
+        </div>
+      </div>
+    </div>
+  `;
+
+  if(!rows.length){
+    accTableWrap.style.display = "none";
+    return showMessage("accWarning", "Bu seçimlere uygun muhasebe kaydı bulunamadı.");
+  }
+
+  accTableWrap.innerHTML = `
+    <table>
+      <thead>
+        <tr>
+          <th>Seç</th>
+          <th>Sipariş</th>
+          <th>Tarih</th>
+          <th>Satıcı</th>
+          <th>Müşteri</th>
+          <th>Bölge</th>
+          <th>Gerçek m²</th>
+          <th>Ne Kadara Satılması Gerekirdi</th>
+          <th>Satılan Fiyat</th>
+          <th>Prestij Life Kazancı</th>
+          <th>Satıcıya Ödenecek</th>
+          <th>Hesap</th>
+        </tr>
+      </thead>
+      <tbody id="accTableBody"></tbody>
+    </table>
+  `;
+
+  const body = document.getElementById("accTableBody");
+
+  rows.forEach(function(r){
+    const tr = document.createElement("tr");
+    const mustSell = plfNumRaw(r.formul_tutari) || plfNumRaw(r.satis_tutari);
+    const sold = plfNumRaw(r.satis_tutari);
+    const extra = plfNumRaw(r.satis_duzeltme_tutari);
+    const prestijProfit = plfNumRaw(r.satici_tutari);
+    const sellerPay = plfNumRaw(r.fark_tutar);
+    const sellerName = r.satici_adi || "Satıcı";
+
+    tr.innerHTML = `
+      <td><input type="checkbox" class="acc-check" value="${attr(r.siparis_kodu)}"></td>
+      <td><strong>${esc(r.siparis_kodu)}</strong></td>
+      <td>${formatDate(r.tarih)}</td>
+      <td><strong>${esc(sellerName)}</strong></td>
+      <td><strong>${esc(r.musteri_ad)}</strong><small>${esc(r.telefon)}</small></td>
+      <td><span class="tag">${esc(r.bolge_kodu)}</span><small>${esc(r.fiyat_bolgesi)}</small></td>
+      <td>${num(r.toplam_gercek_m2)} m²</td>
+      <td><span class="account-money-main">${tl(mustSell)}</span><span class="account-money-sub">Formül fiyatı</span></td>
+      <td><span class="account-money-main">${tl(sold)}</span><span class="account-money-sub">Müşteriye satılan</span>${extra ? `<span class="extra-profit-chip">+${tl(extra)} fazla satış</span>` : ""}</td>
+      <td><span class="account-money-main">${tl(prestijProfit)}</span><span class="account-money-sub">Firmaya kalan</span></td>
+      <td><span class="account-money-main">${tl(sellerPay)}</span><span class="account-money-sub">${esc(sellerName)}'ya ödenecek</span></td>
       <td><span class="account-status-pill">${esc(r.hesap_durumu)}</span><small>${formatDate(r.hesap_kapanis_tarihi || "")}</small></td>
     `;
     body.appendChild(tr);
