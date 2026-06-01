@@ -1947,6 +1947,90 @@ function renderOrderDetail(o,details){
   },true);
 })();
 passwordInput.addEventListener("keydown",e=>{if(e.key==="Enter")login()});
+/* SİPARİŞ DETAYI - TEK KAYDET BUTONU
+   Satıcı/Kaynak ve Sipariş Durumu tek Kaydet butonuyla kaydedilir.
+*/
+async function saveOrderDetailChanges(orderCode){
+  try{
+    var statusSelect = document.getElementById("detailOrderStatus");
+    var sellerSelect = document.getElementById("detailOrderSeller");
+    if(typeof showGlobalToast === "function") showGlobalToast("Kaydediliyor...","loading",9000);
+
+    if(sellerSelect){
+      var selected = sellerSelect.options[sellerSelect.selectedIndex];
+      var sellerId = sellerSelect.value || "";
+      var sellerName = sellerId ? (selected.getAttribute("data-name") || selected.textContent || "") : "Merkez / Site";
+      var sellerResponse = await apiPost({
+        action:"updateOrderSeller",
+        apiKey:ADMIN_API_KEY,
+        siparis_kodu:orderCode,
+        satici_id:sellerId,
+        satici_adi:sellerName,
+        kaynak:sellerId ? "manual" : "site"
+      },16000);
+      if(!sellerResponse || !sellerResponse.success){
+        throw new Error((sellerResponse && sellerResponse.message) || "Satıcı bilgisi kaydedilemedi.");
+      }
+    }
+
+    if(statusSelect){
+      var statusResponse = await apiPost({
+        action:"updateOrderStatus",
+        apiKey:ADMIN_API_KEY,
+        siparis_kodu:orderCode,
+        status:statusSelect.value
+      },16000);
+      if(!statusResponse || !statusResponse.success){
+        throw new Error((statusResponse && statusResponse.message) || "Sipariş durumu kaydedilemedi.");
+      }
+    }
+
+    if(typeof showGlobalToast === "function") showGlobalToast("Kaydedildi.","success",2800);
+    if(typeof loadOrders === "function") loadOrders();
+    if(typeof loadAccounting === "function") loadAccounting();
+    if(typeof loadOrderDetail === "function") loadOrderDetail(orderCode);
+  }catch(e){
+    if(typeof showGlobalToast === "function") showGlobalToast("Kaydedilemedi: " + (e.message || e),"error",4500);
+    else showMessage("ordersError","Kaydedilemedi: " + (e.message || e));
+  }
+}
+function renderOrderDetail(o,details){
+  var detailM2Total = (details || []).reduce(function(total,item){ return total + orderDetailM2(item); }, 0);
+  var displayTotalM2 = detailM2Total > 0 ? detailM2Total : Number(o.toplam_gercek_m2 || 0);
+  var rows=(details || []).map(function(x){
+    return '<tr><td>'+esc(x.satir_no)+'</td><td>'+esc(x.urun)+'</td><td>'+esc(x.kasa_rengi)+'</td><td>'+esc(x.montaj_tipi)+'</td><td>'+esc(x.gercek_en)+' × '+esc(x.gercek_boy)+'</td><td>'+esc(x.adet)+'</td><td>'+num(orderDetailM2(x))+' m²</td></tr>';
+  }).join("");
+  var statusOptions=ORDER_STATUSES.map(function(s){return '<option value="'+attr(s)+'" '+(String(o.durum||"Yeni")===s?"selected":"")+'>'+esc(s)+'</option>';}).join("");
+  var sourceText = o.kaynak==="site" ? "Merkez / Site" : esc(o.satici_adi || "Manuel");
+  orderDetailArea.innerHTML = ''+
+    '<div class="detail-box">'+
+      '<div class="detail-clean-title">'+
+        '<div><h3>'+esc(o.siparis_kodu)+'</h3><p class="subtitle" style="margin-bottom:0">Sipariş bilgileri, satıcı, durum ve üretim işlemleri.</p></div>'+
+        '<span class="tag">'+esc(o.durum||"Yeni")+'</span>'+
+      '</div>'+
+      '<div class="detail-grid">'+
+        '<div class="info-tile"><span>Müşteri</span><strong>'+esc(o.musteri_ad)+'</strong></div>'+
+        '<div class="info-tile"><span>Telefon</span><strong>'+esc(o.telefon)+'</strong></div>'+
+        '<div class="info-tile"><span>Kaynak / Satıcı</span><strong>'+sourceText+'</strong></div>'+
+        '<div class="info-tile"><span>m²</span><strong>'+num(displayTotalM2)+' m²</strong></div>'+
+        '<div class="info-tile"><span>Alınacak</span><strong>'+tl(o.musteri_toplam_tutar)+'</strong></div>'+
+        '<div class="info-tile"><span>Satıcı Hesabı</span><strong>'+(o.satici_hesap_tutar!==""?tl(o.satici_hesap_tutar):"-")+'</strong></div>'+
+      '</div>'+
+      '<div class="info-tile" style="margin-bottom:12px"><span>Adres</span><strong>'+esc(o.adres)+'</strong></div>'+
+      '<div class="form-grid">'+
+        '<label class="field"><span>Satıcı / Kaynak</span><select id="detailOrderSeller">'+plfSellerSelectOptions(o)+'</select></label>'+
+        '<label class="field"><span>Sipariş Durumu</span><select id="detailOrderStatus">'+statusOptions+'</select></label>'+
+        '<label class="field wide"><span>Değişiklikleri Kaydet</span><button class="btn-main" onclick="saveOrderDetailChanges(\''+attr(o.siparis_kodu)+'\')">Kaydet</button></label>'+
+      '</div>'+
+      '<div class="detail-clean-actions">'+
+        '<button class="btn-main" onclick="createProductionSlips(\''+attr(o.siparis_kodu)+'\')">İmalat Fişi Oluştur</button>'+
+        '<button class="btn-light" onclick="plfOpenRelatedSlips(\''+attr(o.siparis_kodu)+'\')">Fişlere Git</button>'+
+        '<button class="btn-danger" onclick="deleteOrder(\''+attr(o.siparis_kodu)+'\')">Siparişi Sil</button>'+
+      '</div>'+
+      '<div class="detail-section-label">Ölçüler</div>'+
+      '<div class="table-wrap mobile-stack-table"><table><thead><tr><th>Sıra</th><th>Ürün</th><th>Kasa</th><th>Sistem</th><th>Ölçü</th><th>Adet</th><th>m²</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
+    '</div>';
+}
 </script>
 </body>
 </html>
