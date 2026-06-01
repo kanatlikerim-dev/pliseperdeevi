@@ -773,6 +773,61 @@ body.dark{--bg:#151618;--bg2:#202328;--card:#1e2023;--panel:#25282d;--text:#f2f0
 }
 </style>
 
+<style>
+/* SON GÖRSEL DENGE KATMANI */
+body{padding:16px!important;}
+.container{max-width:1360px!important;}
+.login-card,.admin-card{border-radius:18px!important;padding:22px!important;}
+.login-card{max-width:400px!important;margin:54px auto!important;}
+.logo-shell{width:136px!important;min-height:80px!important;border-radius:18px!important;padding:11px!important;}
+.logo-shell img{width:110px!important;}
+h1{font-size:38px!important;}
+h2{font-size:22px!important;}
+h3{font-size:17px!important;}
+.subtitle{font-size:13.5px!important;margin-bottom:14px!important;}
+.admin-header{align-items:center!important;margin-bottom:16px!important;}
+.header-actions{gap:8px!important;flex-wrap:wrap!important;}
+.header-actions button,.header-actions a{min-height:40px!important;padding:9px 12px!important;border-radius:12px!important;}
+.admin-grid{grid-template-columns:repeat(auto-fit,minmax(180px,1fr))!important;gap:10px!important;margin-bottom:14px!important;}
+.module-card{border-radius:14px!important;padding:14px!important;}
+.module-card strong{font-size:15px!important;margin-bottom:4px!important;}
+.module-card p{font-size:12px!important;line-height:1.35!important;}
+.panel-section{border-radius:16px!important;padding:18px!important;}
+.box,.settings-card,.detail-box,.account-section-card{border-radius:15px!important;padding:14px!important;}
+.form-grid,.filter-grid,.settings-grid{grid-template-columns:repeat(auto-fit,minmax(190px,1fr))!important;gap:10px!important;}
+.actions{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))!important;gap:8px!important;}
+button,.btn-link{min-height:40px!important;border-radius:12px!important;padding:10px 12px!important;font-size:13.5px!important;}
+input,textarea,select{min-height:40px!important;border-radius:12px!important;padding:10px 12px!important;font-size:14px!important;}
+textarea{min-height:84px!important;}
+.field{gap:5px!important;margin-bottom:9px!important;}
+.field span{font-size:12px!important;}
+.table-wrap{border-radius:14px!important;margin-top:10px!important;}
+table{min-width:860px!important;}
+th,td{padding:9px 10px!important;font-size:12.5px!important;}
+.tag,.account-status-pill{border-radius:999px!important;font-size:11px!important;padding:5px 8px!important;}
+.summary-cards,.owner-summary-grid,.account-pro-summary{grid-template-columns:repeat(auto-fit,minmax(155px,1fr))!important;gap:8px!important;}
+.summary-card,.owner-summary-card,.account-pro-card,.info-tile,.order-detail-info-card{border-radius:13px!important;padding:11px!important;}
+.summary-card strong,.owner-summary-card strong,.account-pro-card strong,.info-tile strong{font-size:17px!important;}
+.order-detail-info-grid{grid-template-columns:repeat(auto-fit,minmax(190px,1fr))!important;}
+.order-detail-hero{padding:15px!important;}
+.order-detail-body{padding:14px!important;}
+.order-detail-control-panel{grid-template-columns:minmax(0,1fr) minmax(0,1fr) 120px!important;}
+.order-detail-actions-pro{grid-template-columns:repeat(3,minmax(130px,170px))!important;}
+.seller-account-list{grid-template-columns:repeat(auto-fit,minmax(240px,1fr))!important;gap:10px!important;}
+.seller-account-card{border-radius:14px!important;padding:12px!important;}
+@media(max-width:760px){
+    body{padding:10px!important;}
+    .login-card,.admin-card{padding:14px!important;border-radius:16px!important;}
+    .admin-header{display:block!important;}
+    .header-actions{display:grid!important;grid-template-columns:1fr!important;margin-top:12px!important;}
+    .admin-grid,.form-grid,.filter-grid,.settings-grid,.actions,.summary-cards,.owner-summary-grid,.account-pro-summary,.seller-account-list{grid-template-columns:1fr!important;}
+    .panel-section{padding:13px!important;}
+    .box,.settings-card,.detail-box,.account-section-card{padding:12px!important;}
+    table{min-width:760px!important;}
+    .order-detail-control-panel,.order-detail-actions-pro{grid-template-columns:1fr!important;}
+    .order-detail-control-panel button{width:100%!important;}
+}
+</style>
 </head>
 <body>
 <div class="container">
@@ -814,7 +869,7 @@ body.dark{--bg:#151618;--bg2:#202328;--card:#1e2023;--panel:#25282d;--text:#f2f0
 </div>
 <div class="actions"><button class="btn-main" onclick="loadOrders()">Siparişleri Listele</button><button class="btn-light" onclick="clearOrderFilters()">Filtreleri Temizle</button><button class="btn-light" onclick="toggleBox('manualOrderBox')">Manuel Sipariş Ekle</button></div>
 <div class="message error" id="ordersError"></div><div class="message success" id="ordersSuccess"></div><div class="message warning" id="ordersWarning"></div>
-<div class="table-wrap" id="ordersTableWrap" style="display:none"><table><thead><tr><th>Sipariş Kodu</th><th>Tarih</th><th>Kaynak</th><th>Satıcı</th><th>Müşteri</th><th>m²</th><th>Müşteri Tutarı</th><th>Satıcı Hesabı</th><th>Durum</th><th>İşlem</th></tr></thead><tbody id="ordersTableBody"></tbody></table></div>
+<div class="table-wrap" id="ordersTableWrap" style="display:none"><table><thead><tr><th>Sipariş Kodu</th><th>Tarih</th><th>Kaynak</th><th>Satıcı</th><th>Müşteri</th><th>m²</th><th>Satış Tutarı</th><th>Satıcı Hakedişi</th><th>Durum</th><th>İşlem</th></tr></thead><tbody id="ordersTableBody"></tbody></table></div>
 <div id="orderDetailArea"></div>
 </div>
 <div class="box hidden" id="manualOrderBox">
@@ -831,7 +886,7 @@ body.dark{--bg:#151618;--bg2:#202328;--card:#1e2023;--panel:#25282d;--text:#f2f0
 <div class="box"><h3>Fişleri Listele</h3><div class="filter-grid"><label class="field"><span>Başlangıç Tarihi</span><input id="slipDateStart" type="date"/></label><label class="field"><span>Bitiş Tarihi</span><input id="slipDateEnd" type="date"/></label><label class="field"><span>Sipariş Kodu</span><input id="slipOrderCode" placeholder="PL-..."/></label></div><div class="actions"><button class="btn-main" onclick="loadSlips()">Fişleri Listele</button><button class="btn-light" onclick="toggleBox('manualSlipBox')">Manuel Fiş Ekle</button></div><div class="message error" id="slipsError"></div><div class="message success" id="slipsSuccess"></div><div class="message warning" id="slipsWarning"></div><div class="table-wrap" id="slipsTableWrap" style="display:none"><table><thead><tr><th>Fiş Kodu</th><th>Sipariş</th><th>Tarih</th><th>Müşteri</th><th>Ürün</th><th>Kasa</th><th>Toplam</th><th>İşlem</th></tr></thead><tbody id="slipsTableBody"></tbody></table></div><div id="slipDetailArea"></div></div>
 <div class="box hidden" id="manualSlipBox"><h3>Manuel İmalat Fişi Ekle</h3><div class="form-grid"><label class="field"><span>Sipariş Kodu</span><input id="manualSlipOrder" placeholder="MANUEL"/></label><label class="field"><span>Müşteri</span><input id="manualSlipCustomer"/></label><label class="field"><span>Satıcı</span><input id="manualSlipSeller"/></label><label class="field"><span>Ürün</span><input id="manualSlipProduct" placeholder="Klasik Seri Plise"/></label><label class="field"><span>Kasa Çeşidi</span><input id="manualSlipCase" placeholder="Beyaz / Vidalı"/></label><label class="field"><span>Montaj Tipi</span><input id="manualSlipMount" placeholder="Vidalı"/></label><label class="field wide"><span>Not</span><textarea id="manualSlipNote"></textarea></label></div><div class="actions"><button class="btn-light" onclick="addManualSlipRow()">Fiş Satırı Ekle</button><button class="btn-main" onclick="saveManualSlip()">Manuel Fişi Kaydet</button></div><div class="table-wrap"><table><thead><tr><th>Adet</th><th>En</th><th>Boy</th><th>Pile</th><th>İp</th><th>m²</th><th>Not</th><th>Sil</th></tr></thead><tbody id="manualSlipRows"></tbody></table></div><div class="message error" id="manualSlipError"></div><div class="message success" id="manualSlipSuccess"></div></div>
 </div>
-<div class="panel-section" id="section-muhasebe"><div class="section-title"><h2>Muhasebe</h2><button class="help-btn" onclick="showHelp('muhasebe')">?</button></div><p class="subtitle">Satıcı hesaplarını gerçek ölçü m² üzerinden takip edebilir, ödeme yapılan siparişleri kapatabilirsiniz.</p><div class="box"><h3>Satıcı Hesapları</h3><div class="filter-grid"><label class="field"><span>Başlangıç Tarihi</span><input id="accDateStart" type="date"/></label><label class="field"><span>Bitiş Tarihi</span><input id="accDateEnd" type="date"/></label><label class="field"><span>Satıcı</span><select id="accSellerFilter"><option value="">Tüm Satıcılar</option></select></label><label class="field"><span>Hesap Durumu</span><select id="accStatusFilter"><option value="">Tüm Hesaplar</option><option value="açık">Açık Hesaplar</option><option value="kapandı">Kapanan Hesaplar</option></select></label></div><div class="actions"><button class="btn-main" onclick="loadAccounting()">Muhasebe Listele</button><button class="btn-light" onclick="closeSelectedAccounting()">Seçilenleri Hesabı Kapat</button><button class="btn-light" onclick="reopenSelectedAccounting()">Seçilenleri Tekrar Aç</button></div><div class="message error" id="accError"></div><div class="message success" id="accSuccess"></div><div class="message warning" id="accWarning"></div><div class="summary-cards" id="accSummaryCards"></div><div class="table-wrap" id="accTableWrap" style="display:none"><table><thead><tr><th>Seç</th><th>Sipariş</th><th>Tarih</th><th>Satıcı</th><th>Müşteri</th><th>Bölge</th><th>Gerçek m²</th><th>Satış Tutarı</th><th>Satıcıya Verilecek</th><th>Prestij Farkı</th><th>Durum</th></tr></thead><tbody id="accTableBody"></tbody></table></div></div></div>
+<div class="panel-section" id="section-muhasebe"><div class="section-title"><h2>Muhasebe</h2><button class="help-btn" onclick="showHelp('muhasebe')">?</button></div><p class="subtitle">Satıcı hakedişlerini, Prestij Life kazancını ve açık/kapanan ödemeleri buradan takip edebilirsiniz.</p><div class="box"><h3>Satıcı Hesapları</h3><div class="filter-grid"><label class="field"><span>Başlangıç Tarihi</span><input id="accDateStart" type="date"/></label><label class="field"><span>Bitiş Tarihi</span><input id="accDateEnd" type="date"/></label><label class="field"><span>Satıcı</span><select id="accSellerFilter"><option value="">Tüm Satıcılar</option></select></label><label class="field"><span>Hesap Durumu</span><select id="accStatusFilter"><option value="">Tüm Hesaplar</option><option value="açık">Açık Hesaplar</option><option value="kapandı">Kapanan Hesaplar</option></select></label></div><div class="actions"><button class="btn-main" onclick="loadAccounting()">Muhasebe Listele</button><button class="btn-light" onclick="closeSelectedAccounting()">Seçilenleri Hesabı Kapat</button><button class="btn-light" onclick="reopenSelectedAccounting()">Seçilenleri Tekrar Aç</button></div><div class="message error" id="accError"></div><div class="message success" id="accSuccess"></div><div class="message warning" id="accWarning"></div><div class="summary-cards" id="accSummaryCards"></div><div class="table-wrap" id="accTableWrap" style="display:none"><table><thead><tr><th>Seç</th><th>Sipariş</th><th>Tarih</th><th>Satıcı</th><th>Müşteri</th><th>Bölge</th><th>Gerçek m²</th><th>Satış Tutarı</th><th>Satıcı Hakedişi</th><th>Prestij Life Kazancı</th><th>Durum</th></tr></thead><tbody id="accTableBody"></tbody></table></div></div></div>
 <div class="panel-section" id="section-raporlar"><div class="section-title"><h2>Raporlar</h2><button class="help-btn" onclick="showHelp('raporlar')">?</button></div><p class="subtitle">Seçtiğiniz tarihler için satış, m² ve imalat özetlerini tek ekranda görebilirsiniz.</p><div class="box"><h3>Rapor Oluştur</h3><div class="filter-grid"><label class="field"><span>Başlangıç Tarihi</span><input id="reportDateStart" type="date"/></label><label class="field"><span>Bitiş Tarihi</span><input id="reportDateEnd" type="date"/></label><label class="field"><span>Satıcı / Kaynak</span><select id="reportSellerFilter"><option value="">Tüm Siparişler</option><option value="__site">Merkez / Site Siparişleri</option></select></label></div><div class="actions"><button class="btn-main" onclick="loadReports()">Rapor Oluştur</button><button class="btn-light" onclick="downloadReportExcel()">Excel İndir</button></div><div class="message error" id="reportError"></div><div class="message success" id="reportSuccess"></div><div class="message warning" id="reportWarning"></div><div class="placeholder" id="reportOutput">Raporu görmek için tarihleri seçip Rapor Oluştur butonuna basın.</div></div></div>
 <div class="panel-section" id="section-yonetim">
 <div class="section-title"><h2>Yönetim</h2><button class="help-btn" onclick="showHelp('yonetim')">?</button></div>
@@ -1202,7 +1257,7 @@ function renderOrderDetail(o,details){
 
   const rows=details.map(x=>`<tr><td>${esc(x.satir_no)}</td><td>${esc(x.urun)}</td><td>${esc(x.kasa_rengi)}</td><td>${esc(x.montaj_tipi)}</td><td>${esc(x.gercek_en)} × ${esc(x.gercek_boy)}</td><td>${esc(x.adet)}</td><td>${num(orderDetailM2(x))} m²</td></tr>`).join("");
   const statusOptions=ORDER_STATUSES.map(s=>`<option value="${attr(s)}" ${String(o.durum||"Yeni")===s?"selected":""}>${esc(s)}</option>`).join("");
-  orderDetailArea.innerHTML=`<div class="detail-box"><div class="detail-head"><div><h3>${esc(o.siparis_kodu)}</h3><p class="subtitle" style="margin-bottom:0">Bu kod müşteri ekranında görünmez.</p></div><div class="actions" style="min-width:420px"><button class="btn-main" onclick="createProductionSlips('${attr(o.siparis_kodu)}')">İmalat Fişi Oluştur</button><button class="btn-danger" onclick="deleteOrder('${attr(o.siparis_kodu)}')">Siparişi Sil</button></div></div><div class="form-grid"><label class="field"><span>Sipariş Durumu</span><select id="detailOrderStatus">${statusOptions}</select></label><label class="field"><span>Durum İşlemi</span><button class="btn-light" onclick="updateOrderStatus('${attr(o.siparis_kodu)}')">Durumu Kaydet</button></label></div><div class="detail-grid"><div class="info-tile"><span>Müşteri</span><strong>${esc(o.musteri_ad)}</strong></div><div class="info-tile"><span>Telefon</span><strong>${esc(o.telefon)}</strong></div><div class="info-tile"><span>Satıcı</span><strong>${o.kaynak==="site"?"Merkez / Site":esc(o.satici_adi)}</strong></div><div class="info-tile"><span>m²</span><strong>${num(displayTotalM2)} m²</strong></div><div class="info-tile"><span>Müşteri Tutarı</span><strong>${tl(o.musteri_toplam_tutar)}</strong></div><div class="info-tile"><span>Satıcı Hesabı</span><strong>${o.satici_hesap_tutar!==""?tl(o.satici_hesap_tutar):"-"}</strong></div></div><div class="info-tile" style="margin-bottom:12px"><span>Adres</span><strong>${esc(o.adres)}</strong></div><div class="table-wrap"><table><thead><tr><th>Sıra</th><th>Ürün</th><th>Kasa</th><th>Sistem</th><th>Ölçü</th><th>Adet</th><th>m²</th></tr></thead><tbody>${rows}</tbody></table></div></div>`}
+  orderDetailArea.innerHTML=`<div class="detail-box"><div class="detail-head"><div><h3>${esc(o.siparis_kodu)}</h3><p class="subtitle" style="margin-bottom:0">Sipariş detayları</p></div><div class="actions" style="min-width:420px"><button class="btn-main" onclick="createProductionSlips('${attr(o.siparis_kodu)}')">İmalat Fişi Oluştur</button><button class="btn-danger" onclick="deleteOrder('${attr(o.siparis_kodu)}')">Siparişi Sil</button></div></div><div class="form-grid"><label class="field"><span>Sipariş Durumu</span><select id="detailOrderStatus">${statusOptions}</select></label><label class="field"><span>Durum İşlemi</span><button class="btn-light" onclick="updateOrderStatus('${attr(o.siparis_kodu)}')">Durumu Kaydet</button></label></div><div class="detail-grid"><div class="info-tile"><span>Müşteri</span><strong>${esc(o.musteri_ad)}</strong></div><div class="info-tile"><span>Telefon</span><strong>${esc(o.telefon)}</strong></div><div class="info-tile"><span>Satıcı</span><strong>${o.kaynak==="site"?"Merkez / Site":esc(o.satici_adi)}</strong></div><div class="info-tile"><span>m²</span><strong>${num(displayTotalM2)} m²</strong></div><div class="info-tile"><span>Satış Tutarı</span><strong>${tl(o.musteri_toplam_tutar)}</strong></div><div class="info-tile"><span>Satıcı Hakedişi</span><strong>${o.satici_hesap_tutar!==""?tl(o.satici_hesap_tutar):"-"}</strong></div></div><div class="info-tile" style="margin-bottom:12px"><span>Adres</span><strong>${esc(o.adres)}</strong></div><div class="table-wrap"><table><thead><tr><th>Sıra</th><th>Ürün</th><th>Kasa</th><th>Sistem</th><th>Ölçü</th><th>Adet</th><th>m²</th></tr></thead><tbody>${rows}</tbody></table></div></div>`}
 async function updateOrderStatus(code){try{const d=await apiPost({action:"updateOrderStatus",apiKey:ADMIN_API_KEY,siparis_kodu:code,status:detailOrderStatus.value});if(!d.success)throw new Error(d.message);showMessage("ordersSuccess","Sipariş durumu güncellendi.");loadOrders()}catch(e){showMessage("ordersError","Durum güncellenemedi. "+e.message)}}
 async function deleteOrder(code){if(!confirm(code+" siparişi silinsin mi? Bağlı imalat fişleri de silinir."))return;try{const d=await apiPost({action:"deleteOrder",apiKey:ADMIN_API_KEY,siparis_kodu:code},16000);if(!d.success)throw new Error(d.message);showMessage("ordersSuccess","Sipariş silindi.");orderDetailArea.innerHTML="";loadOrders();loadSlips();loadAccounting()}catch(e){showMessage("ordersError","Sipariş silinemedi. "+e.message)}}
 async function createProductionSlips(code){
@@ -6786,7 +6841,7 @@ function renderAccounting(rows, summary){
           </div>
         </div>
 
-        <div class="seller-account-row"><span>Ne Kadara Satılması Gerekirdi</span><strong>${tl(s.mustSell)}</strong></div>
+        <div class="seller-account-row"><span>Olması Gereken Fiyat</span><strong>${tl(s.mustSell)}</strong></div>
         <div class="seller-account-row"><span>Ne Kadara Satılmış</span><strong>${tl(s.sold)}</strong></div>
         <div class="seller-account-row highlight"><span>Fazla Satış Kârı</span><strong>${tl(s.extra)}</strong></div>
         <div class="seller-account-row"><span>Satıcının Bu Satışlardan Hakedişi</span><strong>${tl(s.sellerPay)}</strong></div>
@@ -7167,18 +7222,18 @@ function renderAccounting(rows, summary){
             <small>${s.count} sipariş · ${num(s.m2)} m²</small>
           </div>
           <div style="text-align:right">
-            <small>${esc(name)}'ya Ödenecek</small>
+            <small>${esc(name)} hakedişi</small>
             <span class="seller-total-pay-final">${tl(s.sellerPay)}</span>
           </div>
         </div>
 
-        <div class="seller-account-row"><span>Ne Kadara Satılması Gerekirdi</span><strong>${tl(s.mustSell)}</strong></div>
+        <div class="seller-account-row"><span>Olması Gereken Fiyat</span><strong>${tl(s.mustSell)}</strong></div>
         <div class="seller-account-row"><span>Satılan Fiyat</span><strong>${tl(s.sold)}</strong></div>
         <div class="seller-account-row highlight"><span>Fazla Satış Kârı</span><strong>${tl(s.extra)}</strong></div>
         <div class="seller-account-row"><span>Prestij Life Kazancı</span><strong>${tl(s.prestijProfit)}</strong></div>
-        <div class="seller-account-row"><span>${esc(name)}'ya Ödenecek</span><strong>${tl(s.sellerPay)}</strong></div>
-        <div class="seller-account-row"><span>Kapanan Ödeme</span><strong>${tl(s.closedPay)}<br><small>${s.closedCount} sipariş</small></strong></div>
-        <div class="seller-account-row"><span>Açık Ödeme</span><strong>${tl(s.openPay)}<br><small>${s.openCount} sipariş</small></strong></div>
+        <div class="seller-account-row"><span>${esc(name)} hakedişi</span><strong>${tl(s.sellerPay)}</strong></div>
+        <div class="seller-account-row"><span>Kapanan Hakediş</span><strong>${tl(s.closedPay)}<br><small>${s.closedCount} sipariş</small></strong></div>
+        <div class="seller-account-row"><span>Açık Hakediş</span><strong>${tl(s.openPay)}<br><small>${s.openCount} sipariş</small></strong></div>
       </div>
     `;
   }).join("");
@@ -7197,10 +7252,10 @@ function renderAccounting(rows, summary){
         <div class="owner-summary-grid">
           <div class="owner-summary-card"><span>Sipariş Sayısı</span><strong>${summary.siparis_sayisi || 0}</strong><small>Filtreye uyan sipariş</small></div>
           <div class="owner-summary-card"><span>Toplam Gerçek m²</span><strong>${num(summary.toplam_gercek_m2)} m²</strong><small>Gerçek ölçü m²</small></div>
-          <div class="owner-summary-card"><span>Ne Kadara Satılması Gerekirdi</span><strong>${tl(totalMustSell)}</strong><small>Formülün hesapladığı toplam</small></div>
+          <div class="owner-summary-card"><span>Olması Gereken Fiyat</span><strong>${tl(totalMustSell)}</strong><small>Formülün hesapladığı toplam</small></div>
           <div class="owner-summary-card"><span>Satılan Fiyat</span><strong>${tl(totalSold)}</strong><small>Müşteriye yapılan satış toplamı</small></div>
           <div class="owner-summary-card primary"><span>Prestij Life Kazancı</span><strong>${tl(totalPrestijProfit)}</strong><small>Firmaya kalan toplam</small></div>
-          <div class="owner-summary-card"><span>Satıcılara Ödenecek</span><strong>${tl(totalSellerPay)}</strong><small>Tüm satıcıların toplam payı</small></div>
+          <div class="owner-summary-card"><span>Satıcı Hakedişi</span><strong>${tl(totalSellerPay)}</strong><small>Tüm satıcıların toplam payı</small></div>
           <div class="owner-summary-card"><span>Açık Ödeme</span><strong>${tl(summary.acik_satici_tutari ? totalSellerPay : 0)}</strong><small>Açık satıcı ödemeleri aşağıdaki kartlarda takip edilir</small></div>
           <div class="owner-summary-card"><span>Fazla Satış Kârı</span><strong>${tl(totalExtra)}</strong><small>Formül üstü satıştan gelen fark</small></div>
         </div>
@@ -7210,7 +7265,7 @@ function renderAccounting(rows, summary){
         <div class="account-section-head">
           <div>
             <h3>Satıcı Hesapları</h3>
-            <p>Her satıcının satılan fiyatı, Prestij Life kazancı, satıcıya ödenecek tutarı ve açık/kapanan ödemesi.</p>
+            <p>Her satıcının satış toplamı, hakedişi, açık/kapanan ödemesi ve Prestij Life kazancı.</p>
           </div>
           <span class="tag">${sellerNames.length} satıcı</span>
         </div>
@@ -7221,11 +7276,11 @@ function renderAccounting(rows, summary){
         <div class="account-section-head">
           <div>
             <h3>Tek Tek Sipariş Hesapları</h3>
-            <p>Sipariş bazında satılması gereken tutar, satılan fiyat, Prestij Life kazancı ve satıcıya ödenecek tutar.</p>
+            <p>Sipariş bazında olması gereken fiyat, satılan fiyat, Prestij Life kazancı ve satıcı hakedişi.</p>
           </div>
         </div>
         <div class="account-table-note">
-          Örnek dil: <b>Satılan fiyat 5.500 TL</b>, <b>ne kadara satılması gerekirdi 5.280 TL</b>, <b>Prestij Life kazancı 4.646 TL</b>, <b>Beyza'ya ödenecek 854 TL</b>.
+          Örnek: <b>Satılan fiyat 5.500 TL</b>, <b>olması gereken fiyat 5.280 TL</b>, <b>Prestij Life kazancı 4.646 TL</b>, <b>Beyza hakedişi 854 TL</b>.
         </div>
       </div>
     </div>
@@ -7247,10 +7302,10 @@ function renderAccounting(rows, summary){
           <th>Müşteri</th>
           <th>Bölge</th>
           <th>Gerçek m²</th>
-          <th>Ne Kadara Satılması Gerekirdi</th>
+          <th>Olması Gereken Fiyat</th>
           <th>Satılan Fiyat</th>
           <th>Prestij Life Kazancı</th>
-          <th>Satıcıya Ödenecek</th>
+          <th>Satıcı Hakedişi</th>
           <th>Hesap</th>
         </tr>
       </thead>
@@ -7280,7 +7335,7 @@ function renderAccounting(rows, summary){
       <td><span class="account-money-main">${tl(mustSell)}</span><span class="account-money-sub">Formül fiyatı</span></td>
       <td><span class="account-money-main">${tl(sold)}</span><span class="account-money-sub">Müşteriye satılan</span>${extra ? `<span class="extra-profit-chip">+${tl(extra)} fazla satış</span>` : ""}</td>
       <td><span class="account-money-main">${tl(prestijProfit)}</span><span class="account-money-sub">Firmaya kalan</span></td>
-      <td><span class="account-money-main">${tl(sellerPay)}</span><span class="account-money-sub">${esc(sellerName)}'ya ödenecek</span></td>
+      <td><span class="account-money-main">${tl(sellerPay)}</span><span class="account-money-sub">${esc(sellerName)} hakedişi</span></td>
       <td><span class="account-status-pill">${esc(r.hesap_durumu)}</span><small>${formatDate(r.hesap_kapanis_tarihi || "")}</small></td>
     `;
     body.appendChild(tr);
