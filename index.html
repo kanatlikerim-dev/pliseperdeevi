@@ -1994,6 +1994,52 @@ button{
 }
 </style>
 
+<style>
+/* EN SON GÖRSEL DENGE KATMANI */
+body{padding:16px!important;}
+.container{max-width:1060px!important;border-radius:18px!important;padding:24px!important;}
+.header{padding-top:42px!important;margin-bottom:20px!important;}
+.logo-shell{width:152px!important;min-height:88px!important;border-radius:18px!important;padding:12px!important;margin-bottom:12px!important;}
+.header img{width:120px!important;}
+.header h1{font-size:44px!important;margin-bottom:6px!important;}
+.hero-kicker{font-size:13px!important;letter-spacing:.35px!important;}
+.hero-subtitle{max-width:660px!important;font-size:14.5px!important;}
+.hero-badges{margin-top:13px!important;gap:7px!important;}
+.badge,.price-status{padding:7px 10px!important;font-size:12px!important;}
+.card{border-radius:16px!important;padding:16px!important;margin-bottom:14px!important;}
+.control-card h2,.card h2{font-size:24px!important;}
+.selection-box,.global-selection,.system-mode-box,.selection-option,.product-choice,.choice,.cam-card,.result,.summary-card,.order-tracking-card,.social-item,.note{border-radius:14px!important;}
+.grid{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))!important;}
+.selection-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;}
+.system-mode-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;}
+.product-grid{grid-template-columns:repeat(auto-fit,minmax(170px,1fr))!important;}
+.fabric-grid,.color-grid{grid-template-columns:repeat(auto-fit,minmax(120px,1fr))!important;}
+.catalog-actions,.result-actions{grid-template-columns:repeat(auto-fit,minmax(170px,1fr))!important;}
+button,.btn-main,.btn-light{min-height:42px!important;border-radius:12px!important;}
+.btn-main{margin-top:8px!important;}
+.cam-header{padding:14px 16px!important;}
+.cam-body{padding:0 16px 16px!important;}
+.summary-head h2{font-size:30px!important;}
+.order-item,.customer-box,.price-panel,.tracking-status-card,.price-list-card,.order-success-modal,.modal-content{border-radius:16px!important;}
+.price-row.grand strong{font-size:24px!important;}
+.social{margin-top:18px!important;}
+.social-item{padding:9px 11px!important;}
+.social-item img{width:23px!important;height:23px!important;}
+@media(max-width:760px){
+    body{padding:10px!important;}
+    .container{padding:14px!important;border-radius:16px!important;}
+    .top-actions{position:static!important;display:grid!important;grid-template-columns:1fr 1fr!important;margin-bottom:14px!important;}
+    .top-small-btn{width:100%!important;font-size:12.5px!important;padding:8px 9px!important;}
+    .header{padding-top:0!important;}
+    .logo-shell{width:132px!important;min-height:78px!important;}
+    .header img{width:106px!important;}
+    .header h1{font-size:38px!important;}
+    .hero-badges{display:grid!important;grid-template-columns:1fr!important;}
+    .selection-grid,.system-mode-grid,.catalog-actions,.result-actions,.tracking-grid{grid-template-columns:1fr!important;}
+    .summary-head,.tracking-head,.price-list-head,.order-success-title{display:block!important;}
+    .summary-pill{display:inline-flex!important;margin-top:8px!important;}
+}
+</style>
 </head>
 
 <body>
@@ -2011,9 +2057,9 @@ button{
         </div>
 
         <h1>Prestij Life</h1>
-        <p class="hero-kicker">Plise Perde Sipariş & Hesaplama Sistemi</p>
+        <p class="hero-kicker">Plise Perde Fiyat Teklifi ve Sipariş</p>
         <p class="hero-subtitle">
-            Perde ürünleriniz için ölçülerinizi girin, fiyatınızı hesaplayın ve WhatsApp üzerinden kolayca sipariş oluşturun.
+            Cam balkon ve pimapen ölçülerinizi girin, güncel fiyat teklifinizi alın ve siparişinizi kolayca oluşturun.
         </p>
 
         <div class="hero-badges">
@@ -2029,7 +2075,7 @@ button{
     </div>
 
     <div class="card control-card">
-        <h2>Sipariş Bilgileri</h2>
+        <h2>Ölçü ve Ürün Bilgileri</h2>
 
         <label class="field" for="camCount">
             <span>Kaç Farklı Ölçü Gireceksiniz?</span>
@@ -2037,7 +2083,7 @@ button{
         </label>
 
         <p class="hint">
-            Kaç farklı ölçü girecekseniz buradan seçiniz. Sistem seçtiğiniz sayı kadar ölçü alanını otomatik açar.
+            Kaç farklı ölçü girecekseniz seçin; her ölçü için ayrı alan otomatik hazırlanır.
         </p>
 
         <div class="selection-box">
@@ -2128,7 +2174,7 @@ button{
                 Kasa Kataloğunu Gör
             </button>
             <button type="button" class="btn-light" onclick="openCustomerPriceList()">
-                Müşteri Fiyat Listesi
+                Fiyat Listesi
             </button>
             <button type="button" class="btn-light btn-reset" onclick="resetOrderForm()">
                 Bilgileri Temizle
@@ -2147,7 +2193,7 @@ button{
         <textarea id="address" placeholder="Adres"></textarea>
     </div>
 
-    <button class="btn-main" onclick="calculateAll()">Siparişi Hesapla</button>
+    <button class="btn-main" onclick="calculateAll()">Fiyat Teklifi Hazırla</button>
 
     <div class="result" id="result"></div>
 
@@ -2225,9 +2271,9 @@ button{
     <div class="price-list-card">
         <div class="price-list-head">
             <div>
-                <span class="eyebrow">Müşteri Fiyat Listesi</span>
-                <h2>m² Satış Fiyatları</h2>
-                <p>Fiyatlar 1 m² üzerinden hesaplanır. Ölçüye göre toplam tutar sistem tarafından otomatik hesaplanır.</p>
+                <span class="eyebrow">Fiyat Listesi</span>
+                <h2>Güncel m² Fiyatları</h2>
+                <p>Fiyatlar 1 m² üzerinden hesaplanır. Ölçünüze göre toplam tutar otomatik hazırlanır.</p>
             </div>
             <button type="button" class="price-list-close" onclick="closeCustomerPriceList()">×</button>
         </div>
@@ -2276,8 +2322,8 @@ button{
         </div>
 
         <div class="order-success-help">
-            <button type="button" class="btn-light" onclick="openOrderWhatsAppSupport()">WhatsApp'a Gönder</button>
-            <button type="button" class="btn-light" onclick="openLostOrderCodeWhatsApp()">Kodumu Kaybedersem?</button>
+            <button type="button" class="btn-light" onclick="openOrderWhatsAppSupport()">WhatsApp ile Bilgi Al</button>
+            <button type="button" class="btn-light" onclick="openLostOrderCodeWhatsApp()">Takip Numaramı Kaybettim</button>
         </div>
 
         <div class="copy-status" id="successCopyStatus"></div>
@@ -3268,7 +3314,7 @@ function calculateAll(){
 
         const unitPrice = getUnitPrice(productKey, tip, colors.kasaTipi);
         if(!unitPrice || unitPrice <= 0){
-            addCardError(productLabel + " için fiyat tanımı bulunamadı. Bu ürün katalogda görünebilir ama fiyat hesaplaması için admin fiyat sistemi eklenmelidir.");
+            addCardError(productLabel + " için güncel fiyat bilgisi bulunamadı. Lütfen WhatsApp üzerinden bizimle iletişime geçin.");
             card.classList.add("has-error");
             return;
         }
@@ -3465,8 +3511,8 @@ function calculateAll(){
             <div class="summary-head">
                 <div>
                     <span class="eyebrow">Sipariş Özeti</span>
-                    <h2>Teklif Bilgisi</h2>
-                    <p>Kargo dahil toplam teklifiniz hazır.</p>
+                    <h2>Fiyat Teklifi</h2>
+                    <p>Kargo dahil toplam tutarınız hazır.</p>
                 </div>
                 <span class="summary-pill">Kargo Dahil</span>
             </div>
@@ -3803,7 +3849,7 @@ function renderCatalogTabButtons(){
 
             <button type="button" class="measure-option-btn" id="allCatalogBtn">
                 <span class="measure-option-title">Tüm Kataloglar</span>
-                <span class="measure-option-small">Sistemdeki bütün aktif katalogları gösterir.</span>
+                <span class="measure-option-small">Tüm katalog görsellerini gösterir.</span>
             </button>
 
             <div id="catalogListArea" style="grid-column:1/-1;display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin-top:4px;"></div>
@@ -3838,7 +3884,7 @@ function renderCatalogTabButtons(){
     if(allBtn){
         allBtn.onclick = function(){
             document.getElementById("modalTitle").textContent = "Tüm Kataloglar";
-            renderCatalogButtons(getCatalogsToShow("all"), "Katalog bulunamadı. Lütfen admin panelinden aktif katalog ekleyin.");
+            renderCatalogButtons(getCatalogsToShow("all"), "Katalog görselleri şu anda görüntülenemiyor. Lütfen WhatsApp üzerinden bizimle iletişime geçin.");
         };
     }
 }
@@ -3853,7 +3899,7 @@ function renderCatalogButtons(catalogs, emptyMessage){
         area.innerHTML = `
             <div class="warning-box" style="grid-column:1/-1;margin:0;">
                 <b>Katalog bulunamadı.</b>
-                ${escapeHTML(emptyMessage || "Lütfen admin panelinden aktif katalog ekleyin.")}
+                ${escapeHTML(emptyMessage || "Katalog görselleri şu anda görüntülenemiyor.")}
             </div>
         `;
         return;
@@ -3877,7 +3923,7 @@ function renderCatalogButtons(catalogs, emptyMessage){
             if(src){
                 showCatalogImage(title, src);
             }else{
-                alert("Bu katalog için görsel linki bulunamadı. Admin panelinden katalog görselini tekrar yükleyin.");
+                alert("Bu katalog görseli şu anda görüntülenemiyor. Lütfen WhatsApp üzerinden bizimle iletişime geçin.");
             }
         };
 
@@ -4287,14 +4333,14 @@ window.addEventListener("keydown", function(event){
     function toolbarHtml(mode, key, hasSelectedMatches){
         const label = selectedProductLabel(key);
         if(key){
-            return `<div class="catalog-toolbar"><div class="catalog-toolbar-left"><div class="catalog-badge">Seçili Ürün: ${htmlEscape(label)}</div><div class="catalog-toolbar-title">${mode === "selected" ? "Seçilen ürünün kataloğu açıldı" : "Tüm kataloglar gösteriliyor"}</div><div class="catalog-toolbar-desc">${mode === "selected" && hasSelectedMatches ? "Ürün seçtiğiniz için doğrudan bu ürüne ait katalog açıldı. İsterseniz tüm kataloglara da bakabilirsiniz." : "Tüm aktif kataloglar listeleniyor. Bir katalog kartına tıklayarak görüntüleyebilirsiniz."}</div></div><div class="catalog-toolbar-actions">${mode === "selected" && hasSelectedMatches ? `<button type="button" class="catalog-switch-btn" onclick="window.renderPrestijCatalogMode('all')">Tüm kataloglara bak</button>` : `<button type="button" class="catalog-switch-btn" onclick="window.renderPrestijCatalogMode('selected')">Seçili ürüne dön</button>`}</div></div>`;
+            return `<div class="catalog-toolbar"><div class="catalog-toolbar-left"><div class="catalog-badge">Seçili Ürün: ${htmlEscape(label)}</div><div class="catalog-toolbar-title">${mode === "selected" ? "Ürün kataloğu" : "Tüm kataloglar"}</div><div class="catalog-toolbar-desc">${mode === "selected" && hasSelectedMatches ? "Seçtiğiniz ürüne ait katalog gösteriliyor. İsterseniz tüm kataloglara da bakabilirsiniz." : "Katalog kartına tıklayarak görseli büyütebilirsiniz."}</div></div><div class="catalog-toolbar-actions">${mode === "selected" && hasSelectedMatches ? `<button type="button" class="catalog-switch-btn" onclick="window.renderPrestijCatalogMode('all')">Tüm kataloglara bak</button>` : `<button type="button" class="catalog-switch-btn" onclick="window.renderPrestijCatalogMode('selected')">Seçili ürüne dön</button>`}</div></div>`;
         }
-        return `<div class="catalog-toolbar"><div class="catalog-toolbar-left"><div class="catalog-badge">Ürün Seçilmedi</div><div class="catalog-toolbar-title">Tüm kataloglar listeleniyor</div><div class="catalog-toolbar-desc">Henüz ürün seçmediğiniz için bütün aktif kataloglar gösteriliyor. Görmek istediğiniz kataloğa tıklayın.</div></div></div>`;
+        return `<div class="catalog-toolbar"><div class="catalog-toolbar-left"><div class="catalog-badge">Kataloglar</div><div class="catalog-toolbar-title">Tüm kataloglar</div><div class="catalog-toolbar-desc">Görmek istediğiniz kataloğa tıklayın.</div></div></div>`;
     }
 
     function cardsHtml(list){
         if(!list.length){
-            return `<div class="catalog-empty">Bu ürün için aktif katalog bulunamadı. Admin panelinden katalog ekleyebilir veya tüm kataloglara bakabilirsiniz.</div>`;
+            return `<div class="catalog-empty">Bu ürün için katalog görseli şu anda görüntülenemiyor. Tüm kataloglara bakabilir veya WhatsApp üzerinden destek alabilirsiniz.</div>`;
         }
         return `<div class="catalog-list">${list.map(function(catalog, index){
             const id = catalogId(catalog, index);
