@@ -1455,6 +1455,71 @@ body.same-product .product-and-color-area{
 }
 </style>
 
+
+<style>
+/* TOPLU SİSTEM SEÇİMİ + SLİM KASA NOTU */
+.system-mode-box{
+    margin-top:14px;
+    background:var(--panel-bg);
+    border:1px solid var(--border);
+    border-radius:18px;
+    padding:14px;
+}
+.system-mode-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(170px,1fr));
+    gap:10px;
+}
+.system-mode-option{
+    border:1px solid var(--input-border);
+    border-radius:15px;
+    background:var(--card-bg);
+    padding:12px;
+    cursor:pointer;
+    display:flex;
+    gap:9px;
+    align-items:flex-start;
+}
+.system-mode-option input{
+    width:auto;
+    margin-top:3px;
+}
+.system-mode-option strong{
+    display:block;
+    font-size:13.5px;
+}
+.system-mode-option small{
+    display:block;
+    color:var(--muted);
+    font-size:12px;
+    line-height:1.35;
+    margin-top:3px;
+}
+.slim-note{
+    margin:8px 0 12px;
+    padding:11px 12px;
+    border-radius:14px;
+    background:var(--note-bg);
+    border:1px solid var(--warning-border);
+    color:var(--warning-text);
+    font-size:13px;
+    line-height:1.45;
+    font-weight:700;
+}
+.slim-price-note{
+    color:var(--muted);
+    font-size:12px;
+    line-height:1.4;
+    margin-top:6px;
+}
+body.system-bulk .cam-card .field-system-tip{
+    opacity:.72;
+}
+body.system-bulk .cam-card .field-system-tip select{
+    pointer-events:none;
+}
+</style>
+
 </head>
 
 <body>
@@ -1522,12 +1587,32 @@ body.same-product .product-and-color-area{
                 </label>
             </div>
 
+            <div class="system-mode-box">
+                <div class="selection-title">Sistem Seçimi</div>
+                <div class="system-mode-grid">
+                    <label class="system-mode-option">
+                        <input type="radio" name="systemMode" value="all_askili" onchange="setSystemMode('all_askili')">
+                        <span><strong>Hepsi Askılı</strong><small>Tüm ölçüler Askılı sistem hesaplanır.</small></span>
+                    </label>
+                    <label class="system-mode-option">
+                        <input type="radio" name="systemMode" value="all_vidali" onchange="setSystemMode('all_vidali')">
+                        <span><strong>Hepsi Vidalı</strong><small>Tüm ölçüler Vidalı sistem hesaplanır.</small></span>
+                    </label>
+                    <label class="system-mode-option">
+                        <input type="radio" name="systemMode" value="individual" checked onchange="setSystemMode('individual')">
+                        <span><strong>Her Ölçü Ayrı</strong><small>Farklı camlarda farklı sistem seçebilirsiniz.</small></span>
+                    </label>
+                </div>
+                <p class="slim-price-note">Pimapen / PVC seçilen ölçüler otomatik Vidalı olarak hesaplanır.</p>
+            </div>
+
             <div class="global-selection show" id="globalSelection">
                 <p class="section-title">Ürün Seçimi</p>
                 <div class="product-grid globalProductSecim"></div>
 
                 <div id="globalColorArea" style="display:none;">
                     <p class="section-title">Kasa Tipi</p>
+                    <div class="slim-note">Sürgülü pimapen camlarda ve ısıcam / çift cam cam balkonlarda uygun kullanım için <b>Slim Kasa</b> tercih edilmelidir. Slim Kasa seçilirse m² fiyatına +300 TL eklenir.</div>
                     <div class="color-grid globalKasaTipiSecim"></div>
 
                     <p class="section-title">Kasa Rengi</p>
@@ -1613,8 +1698,7 @@ body.same-product .product-and-color-area{
         </div>
 
         <div class="tracking-support-actions">
-            <button type="button" class="btn-light" onclick="openLostOrderCodeWhatsApp()">Sipariş Kodumu Kaybettim</button>
-            <a class="btn-main" href="https://wa.me/905053559532" target="_blank" style="margin-top:0">WhatsApp Destek</a>
+            <button type="button" class="btn-main" onclick="openOrderSupportWhatsApp()">Sipariş Destek</button>
         </div>
 
         <div class="tracking-result" id="orderStatusResult"></div>
@@ -1785,6 +1869,7 @@ let lastCalculatedOrderData = null;
 let orderSubmitInProgress = false;
 let selectionMode = "same";
 let globalProductType = "";
+let systemMode = "individual";
 
 async function init(){
     initTheme();
@@ -1854,6 +1939,7 @@ function validatePrices(prices){
         blackout:"Blackout",
         ciftli:"Çiftli Sistem",
         tul_perde:"Tül Perde",
+        slim_fark:"Slim Kasa Farkı",
         kargo:"Kargo"
     };
 
@@ -2343,7 +2429,7 @@ function createCamCard(index){
                         <input type="text" inputmode="numeric" class="acilir" placeholder="Yoksa boş bırakın">
                     </label>
 
-                    <label class="field">
+                    <label class="field field-system-tip">
                         <span>Sistem</span>
                         <select class="tip">
                             <option value="askili">Askılı</option>
@@ -2354,6 +2440,7 @@ function createCamCard(index){
 
                 <div class="product-and-color-area">
                     <p class="section-title">Kasa Tipi</p>
+                    <div class="slim-note">Sürgülü pimapen camlarda ve ısıcam / çift cam cam balkonlarda uygun kullanım için <b>Slim Kasa</b> tercih edilmelidir. Slim Kasa seçilirse m² fiyatına +300 TL eklenir.</div>
                     <div class="color-grid kasaTipiSecim"></div>
 
                     <p class="section-title">Kasa Rengi</p>
@@ -2454,11 +2541,36 @@ function updateTipOptions(card){
     if(uygulama === "pimapen"){
         tip.value = "vidali";
         tip.disabled = true;
+    }else if(systemMode === "all_askili"){
+        tip.value = "askili";
+        tip.disabled = true;
+    }else if(systemMode === "all_vidali"){
+        tip.value = "vidali";
+        tip.disabled = true;
     }else{
         tip.disabled = false;
     }
 
     queueSaveState();
+}
+
+function setSystemMode(mode){
+    systemMode = ["all_askili","all_vidali","individual"].includes(mode) ? mode : "individual";
+    document.querySelectorAll('input[name="systemMode"]').forEach(function(input){
+        input.checked = input.value === systemMode;
+    });
+    document.body.classList.toggle("system-bulk", systemMode !== "individual");
+    document.querySelectorAll(".cam-card").forEach(function(card){
+        updateTipOptions(card);
+    });
+    queueSaveState();
+}
+
+function getEffectiveTip(card, uygulama){
+    if(uygulama === "pimapen") return "vidali";
+    if(systemMode === "all_askili") return "askili";
+    if(systemMode === "all_vidali") return "vidali";
+    return card.querySelector(".tip").value;
 }
 
 function getItemProduct(card){
@@ -2479,14 +2591,23 @@ function getTipText(tip){
     return tip || "";
 }
 
-function getUnitPrice(productKey, tip){
+function getUnitPrice(productKey, tip, kasaTipi){
+    let base = 0;
     if(productKey === "klasik"){
-        return tip === "vidali" ? currentPrices.klasik_vidali : currentPrices.klasik_askili;
+        base = tip === "vidali" ? currentPrices.klasik_vidali : currentPrices.klasik_askili;
+    }else if(productKey === "blackout"){
+        base = currentPrices.blackout;
+    }else if(productKey === "ciftli"){
+        base = currentPrices.ciftli;
+    }else if(productKey === "tul_perde"){
+        base = currentPrices.tul_perde;
     }
-    if(productKey === "blackout") return currentPrices.blackout;
-    if(productKey === "ciftli") return currentPrices.ciftli;
-    if(productKey === "tul_perde") return currentPrices.tul_perde;
-    return 0;
+
+    if(String(kasaTipi || "").toLowerCase().includes("slim")){
+        base += Number(currentPrices.slim_fark || 0);
+    }
+
+    return base;
 }
 
 function parseInputNumber(value){
@@ -2614,8 +2735,7 @@ function calculateAll(){
             acilir = parseInputNumber(acilirRaw);
         }
 
-        let tip = card.querySelector(".tip").value;
-        if(uygulama === "pimapen") tip = "vidali";
+        let tip = getEffectiveTip(card, uygulama);
 
         const colors = getItemColors(card, productKey);
 
@@ -2644,7 +2764,7 @@ function calculateAll(){
             return;
         }
 
-        const unitPrice = getUnitPrice(productKey, tip);
+        const unitPrice = getUnitPrice(productKey, tip, colors.kasaTipi);
         if(!unitPrice || unitPrice <= 0){
             addCardError(productLabel + " için fiyat tanımı bulunamadı. Bu ürün katalogda görünebilir ama fiyat hesaplaması için admin fiyat sistemi eklenmelidir.");
             card.classList.add("has-error");
@@ -3462,6 +3582,7 @@ function saveState(){
     const state = {
         camCount: currentCamCount,
         selectionMode,
+        systemMode,
         global: collectGlobalData(),
         cards: collectCardData(),
         customer:{
@@ -3499,6 +3620,7 @@ function restoreState(){
         const state = JSON.parse(raw);
 
         setSelectionMode(state.selectionMode || "same");
+        setSystemMode(state.systemMode || "individual");
         applyGlobalData(state.global || {});
 
         const count = Number(state.camCount) || 1;
@@ -4077,6 +4199,29 @@ function openTrackingWhatsAppSupport(){
         "Merhaba Prestij Life, sipariş durumum hakkında bilgi almak istiyorum.",
         code ? "Sipariş Takip No: " + code : ""
     ].filter(Boolean).join("\\n");
+    window.open("https://wa.me/905053559532?text=" + encodeURIComponent(message), "_blank");
+}
+
+
+function openOrderSupportWhatsApp(){
+    const input = document.getElementById("orderStatusCode");
+    const code = input ? input.value.trim().toUpperCase() : "";
+    const name = document.getElementById("name") ? document.getElementById("name").value.trim() : "";
+    const phone = document.getElementById("phone") ? document.getElementById("phone").value.trim() : "";
+
+    const message = code
+        ? [
+            "Merhaba Prestij Life, siparişim hakkında destek almak istiyorum.",
+            "Sipariş Takip No: " + code
+          ].join("\\n")
+        : [
+            "Merhaba Prestij Life, siparişim hakkında destek almak istiyorum.",
+            "Sipariş kodumu bilmiyorum.",
+            name ? "Ad Soyad: " + name : "",
+            phone ? "Telefon: " + phone : "",
+            "Bilgilerimle siparişimi bulabilir misiniz?"
+          ].filter(Boolean).join("\\n");
+
     window.open("https://wa.me/905053559532?text=" + encodeURIComponent(message), "_blank");
 }
 
