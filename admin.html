@@ -544,7 +544,7 @@ async function apiPost(payload, timeoutMs = 30000){
 }
 async function login(){hideMessages(["loginError"]);const p=passwordInput.value;if(!p)return showMessage("loginError","Lütfen şifrenizi girin.");loginBtn.disabled=true;loginBtn.textContent="Kontrol ediliyor...";try{const d=await apiPost({action:"login",password:p});if(!d.success)throw new Error(d.message||"Giriş yapılamadı.");sessionStorage.setItem(ADMIN_SESSION_KEY,"true");showAdminPanel()}catch(e){showMessage("loginError",e.message||"Giriş yapılamadı.")}finally{loginBtn.disabled=false;loginBtn.textContent="Giriş Yap"}}
 function logout(){sessionStorage.removeItem(ADMIN_SESSION_KEY);adminPanel.style.display="none";loginScreen.style.display="block"}
-function showAdminPanel(){loginScreen.style.display="none";adminPanel.style.display="block";loadPrices(false);loadSellerPrices(false);loadCatalogData();loadOrders();loadSlips();loadAccounting()}
+function showAdminPanel(){loginScreen.style.display="none";adminPanel.style.display="block";loadPrices(false);loadSellerPrices(false);loadCatalogData();loadOrders();loadSlips();if(typeof plfStartReliableNotifications==="function")plfStartReliableNotifications()}
 function openSection(s,card){document.querySelectorAll(".module-card").forEach(x=>x.classList.remove("active"));card.classList.add("active");document.querySelectorAll(".panel-section").forEach(x=>x.classList.remove("active"));document.getElementById("section-"+s).classList.add("active");if(s==="siparisler")loadOrders();if(s==="imalat")loadSlips();if(s==="muhasebe")loadAccounting();if(s==="yonetim"){loadSellerPrices(false);loadCatalogData()}if(s==="ayarlar"){loadPrices(false);loadSellerPrices(false)}}
 function toggleBox(id){document.getElementById(id).classList.toggle("hidden")}
 async function loadPrices(force = false){
@@ -2061,6 +2061,349 @@ async function plfOpenRelatedSlips(orderCode){
     if(showGlobalToast) showGlobalToast("Fişler açılırken sorun oluştu. İmalat Fişleri bölümünden tekrar listeleyin.","error");
   }
 }
+
+/* BİLDİRİM KESİN SİSTEM V3
+   - Eski bildirim kodlarından bağımsız çalışır.
+   - Admin açılır açılmaz ve her 15 saniyede siparişleri kontrol eder.
+   - Yeni PL/site siparişleri okunmadı bildirime düşer.
+   - Okunanı silince aynı sipariş 15 gün tekrar gelmez.
+   - Muhasebe uyarısını sayfa açılışında tetiklemez.
+*/
+(function(){
+  var NOTIFICATION_KEY = "prestijLifeAdminNotifications_v3";
+  var READ_KEY = "prestijLifeAdminNotificationsRead_v3";
+  var DELETED_KEY = "prestijLifeAdminNotificationsDeleted_v3";
+  var DAYS = 15;
+  var POLL_MS = 15000;
+
+  function nowIso(){ return new Date().toISOString(); }
+  function cutoffTime(){ return Date.now() - (DAYS * 24 * 60 * 60 * 1000); }
+  function parseTime(value){
+    var t = new Date(value || 0).getTime();
+    return isNaN(t) ? 0 : t;
+  }
+  function loadJSON(key, fallback){
+    try{
+      var value = JSON.parse(localStorage.getItem(key) || JSON.stringify(fallback));
+      return value === null || value === undefined ? fallback : value;
+    }catch(e){
+      localStorage.removeItem(key);
+      return fallback;
+    }
+  }
+  function cleanMap(key){
+    var map = loadJSON(key, {});
+    if(!map || typeof map !== "object" || Array.isArray(map)) map = {};
+    Object.keys(map).forEach(function(code){
+      if(parseTime(map[code]) < cutoffTime()) delete map[code];
+    });
+    localStorage.setItem(key, JSON.stringify(map));
+    return map;
+  }
+  function cleanNotifications(){
+    var arr = loadJSON(NOTIFICATION_KEY, []);
+    if(!Array.isArray(arr)) arr = [];
+    arr = arr.filter(function(n){
+      return n && n.code && parseTime(n.createdAt || n.tarih) >= cutoffTime();
+    });
+    localStorage.setItem(NOTIFICATION_KEY, JSON.stringify(arr));
+    return arr;
+  }
+  function saveNotifications(arr){
+    arr = (arr || []).filter(function(n){
+      return n && n.code && parseTime(n.createdAt || n.tarih) >= cutoffTime();
+    });
+    localStorage.setItem(NOTIFICATION_KEY, JSON.stringify(arr));
+  }
+  function markRead(code){
+    code = String(code || "").trim();
+    if(!code) return;
+    var map = cleanMap(READ_KEY);
+    map[code] = nowIso();
+    localStorage.setItem(READ_KEY, JSON.stringify(map));
+  }
+  function markDeleted(code){
+    code = String(code || "").trim();
+    if(!code) return;
+    var map = cleanMap(DELETED_KEY);
+    map[code] = nowIso();
+    localStorage.setItem(DELETED_KEY, JSON.stringify(map));
+  }
+  function isSiteOrder(order){
+    var code = String(order.siparis_kodu || order.orderCode || "").trim().toUpperCase();
+    var source = String(order.kaynak || "").trim().toLowerCase();
+    if(source === "site") return true;
+    if(code.indexOf("PL-") === 0) return true;
+    if(!source && code.indexOf("MN-") !== 0) return true;
+    return false;
+  }
+  function safeEsc(v){
+    if(typeof esc === "function") return esc(v);
+    return String(v ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
+  }
+  function safeAttr(v){
+    if(typeof attr === "function") return attr(v);
+    return safeEsc(v).replace(/`/g,"&#096;");
+  }
+  function fmtDate(value){
+    if(typeof formatDate === "function") return formatDate(value || "");
+    if(!value) return "";
+    var d = new Date(value);
+    return isNaN(d.getTime()) ? safeEsc(String(value).slice(0,16)) : d.toLocaleString("tr-TR");
+  }
+  function ensureStyle(){
+    if(document.getElementById("plf-notification-v3-style")) return;
+    var style = document.createElement("style");
+    style.id = "plf-notification-v3-style";
+    style.textContent = `
+      .notification-shell{position:relative}
+      .notification-btn{position:relative!important;width:auto!important;min-width:126px!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:8px!important}
+      .notification-badge{min-width:20px;height:20px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;padding:0 6px;background:var(--danger);color:#fff;font-size:11px;font-weight:900;line-height:1}
+      .notification-badge.empty{background:var(--soft);color:var(--muted)}
+      .notification-panel{position:absolute;top:calc(100% + 10px);right:0;width:min(400px,92vw);max-height:520px;overflow:hidden;background:var(--card);border:1px solid var(--border);border-radius:20px;box-shadow:0 22px 60px rgba(0,0,0,.24);z-index:99998;display:none}
+      .notification-panel.active{display:block}
+      .notification-head{padding:14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px;background:linear-gradient(145deg,var(--panel),var(--card))}
+      .notification-head strong{font-size:15px}.notification-head span{display:block;font-size:11px;color:var(--muted);font-weight:800;margin-top:2px}
+      .notification-actions{display:flex;gap:6px;padding:10px 12px;border-bottom:1px solid var(--border);background:var(--panel)}
+      .notification-actions button{width:auto!important;padding:8px 10px!important;font-size:12px!important;border-radius:11px!important;margin:0!important}
+      .notification-list{max-height:380px;overflow:auto;-webkit-overflow-scrolling:touch;padding:8px}
+      .notification-item{border:1px solid var(--border);border-radius:15px;padding:11px 12px;margin-bottom:8px;background:var(--card);cursor:pointer;transition:.18s ease}
+      .notification-item:hover{border-color:var(--accent);transform:translateY(-1px)}
+      .notification-item.unread{border-color:rgba(139,106,69,.50);background:linear-gradient(145deg,var(--soft),var(--card))}
+      .notification-top{display:flex;justify-content:space-between;gap:8px;align-items:flex-start;margin-bottom:5px}
+      .notification-code{font-size:12px;font-weight:950;color:var(--accent);white-space:nowrap}
+      .notification-status{font-size:10px;font-weight:950;padding:4px 7px;border-radius:999px;background:var(--soft);color:var(--accent);white-space:nowrap}
+      .notification-customer{font-size:14px;font-weight:900;margin-bottom:4px;line-height:1.25}
+      .notification-meta{font-size:11.5px;color:var(--muted);font-weight:700;line-height:1.45}
+      .notification-empty{padding:22px 14px;text-align:center;color:var(--muted);font-size:13px;line-height:1.5}
+      @media(max-width:900px){.notification-shell{width:100%}.notification-btn{width:100%!important}.notification-panel{position:fixed;left:10px;right:10px;top:82px;width:auto;max-height:calc(100vh - 110px)}.notification-list{max-height:calc(100vh - 230px)}}
+      @media(max-width:480px){.notification-actions{display:grid;grid-template-columns:1fr}.notification-actions button{width:100%!important}}
+    `;
+    document.head.appendChild(style);
+  }
+
+  window.plfEnsureNotificationPanel = function(){
+    ensureStyle();
+    var header = document.querySelector(".header-actions");
+    if(!header) return;
+    var oldShell = document.getElementById("notificationShell");
+    if(oldShell) return;
+
+    var shell = document.createElement("div");
+    shell.className = "notification-shell";
+    shell.id = "notificationShell";
+    shell.innerHTML =
+      '<button class="btn-light notification-btn" type="button" onclick="plfToggleNotifications()">🔔 Bildirimler <span class="notification-badge empty" id="notificationBadge">0</span></button>' +
+      '<div class="notification-panel" id="notificationPanel">' +
+        '<div class="notification-head"><div><strong>Yeni Sipariş Bildirimleri</strong><span>Son 15 gün saklanır</span></div><button class="help-btn" type="button" onclick="plfToggleNotifications()">×</button></div>' +
+        '<div class="notification-actions">' +
+          '<button class="btn-light" type="button" onclick="plfMarkAllNotificationsRead()">Tümünü Okundu Yap</button>' +
+          '<button class="btn-light" type="button" onclick="plfClearReadNotifications()">Okunanları Sil</button>' +
+          '<button class="btn-light" type="button" onclick="plfCheckNewOrders(false)">Yenile</button>' +
+        '</div>' +
+        '<div class="notification-list" id="notificationList"></div>' +
+      '</div>';
+
+    header.insertBefore(shell, header.firstChild);
+    plfRenderNotifications();
+  };
+
+  window.plfRenderNotifications = function(){
+    var list = document.getElementById("notificationList");
+    var badge = document.getElementById("notificationBadge");
+    if(!list || !badge) return;
+
+    var readMap = cleanMap(READ_KEY);
+    var notifications = cleanNotifications().sort(function(a,b){
+      return parseTime(b.tarih || b.createdAt) - parseTime(a.tarih || a.createdAt);
+    });
+
+    notifications.forEach(function(n){ n.read = !!readMap[String(n.code)]; });
+    saveNotifications(notifications);
+
+    var unread = notifications.filter(function(n){ return !n.read; }).length;
+    badge.textContent = String(unread);
+    badge.classList.toggle("empty", unread === 0);
+
+    if(!notifications.length){
+      list.innerHTML = '<div class="notification-empty">Son 15 gün içinde bildirilecek yeni sipariş yok.</div>';
+      return;
+    }
+
+    list.innerHTML = notifications.map(function(n){
+      var readClass = n.read ? "" : " unread";
+      return '<div class="notification-item'+readClass+'" data-code="'+safeAttr(n.code)+'">' +
+        '<div class="notification-top"><span class="notification-code">'+safeEsc(n.code)+'</span><span class="notification-status">'+(n.read ? "Okundu" : "Yeni")+'</span></div>' +
+        '<div class="notification-customer">'+safeEsc(n.customer || "Müşteri")+'</div>' +
+        '<div class="notification-meta">'+safeEsc(n.phone || "")+'<br>'+fmtDate(n.tarih || n.createdAt)+'</div>' +
+      '</div>';
+    }).join("");
+  };
+
+  window.plfSyncOrderNotifications = function(orders, silent){
+    plfEnsureNotificationPanel();
+
+    var notifications = cleanNotifications();
+    var readMap = cleanMap(READ_KEY);
+    var deletedMap = cleanMap(DELETED_KEY);
+    var byCode = {};
+    var added = 0;
+
+    notifications.forEach(function(n){ byCode[String(n.code)] = n; });
+
+    (orders || []).forEach(function(order){
+      if(!isSiteOrder(order)) return;
+      var code = String(order.siparis_kodu || order.orderCode || "").trim();
+      if(!code || deletedMap[code]) return;
+
+      var orderTime = parseTime(order.tarih) || Date.now();
+      if(orderTime < cutoffTime()) return;
+
+      if(!byCode[code]){
+        byCode[code] = {
+          code: code,
+          customer: order.musteri_ad || "",
+          phone: order.telefon || "",
+          tarih: order.tarih || nowIso(),
+          createdAt: order.tarih || nowIso(),
+          read: !!readMap[code]
+        };
+        notifications.push(byCode[code]);
+        if(!readMap[code]) added++;
+      }else{
+        byCode[code].customer = order.musteri_ad || byCode[code].customer || "";
+        byCode[code].phone = order.telefon || byCode[code].phone || "";
+        byCode[code].tarih = order.tarih || byCode[code].tarih || nowIso();
+        byCode[code].createdAt = byCode[code].createdAt || order.tarih || nowIso();
+        byCode[code].read = !!readMap[code];
+      }
+    });
+
+    saveNotifications(notifications);
+    plfRenderNotifications();
+
+    if(added && !silent && typeof showGlobalToast === "function"){
+      showGlobalToast(added + " yeni sipariş bildirimi var.", "success", 3500);
+    }
+    return { added: added, total: notifications.length };
+  };
+
+  window.plfCheckNewOrders = async function(silent){
+    try{
+      plfEnsureNotificationPanel();
+      var start = new Date(Date.now() - (DAYS * 24 * 60 * 60 * 1000));
+      var data = await apiPost({
+        action:"listOrders",
+        apiKey:ADMIN_API_KEY,
+        dateStart:start.toISOString().slice(0,10)
+      },30000);
+
+      if(data && data.success){
+        return plfSyncOrderNotifications(data.orders || [], !!silent);
+      }
+    }catch(error){
+      if(!silent && typeof showGlobalToast === "function"){
+        showGlobalToast("Bildirim kontrolü yapılamadı: " + (error.message || error), "warning", 3500);
+      }
+    }
+    return { added:0, total:cleanNotifications().length };
+  };
+
+  window.plfToggleNotifications = function(){
+    plfEnsureNotificationPanel();
+    var panel = document.getElementById("notificationPanel");
+    if(panel) panel.classList.toggle("active");
+    setTimeout(function(){ plfCheckNewOrders(true); },80);
+  };
+
+  window.plfOpenNotificationOrder = function(code){
+    code = String(code || "").trim();
+    if(code) markRead(code);
+    plfRenderNotifications();
+
+    var panel = document.getElementById("notificationPanel");
+    if(panel) panel.classList.remove("active");
+
+    if(typeof openSection === "function"){
+      var card = Array.from(document.querySelectorAll(".compact-admin-menu .module-card")).find(function(c){
+        return String(c.textContent || "").indexOf("Siparişler") !== -1;
+      });
+      if(card) openSection("siparisler", card);
+    }
+
+    setTimeout(function(){
+      if(typeof loadOrderDetail === "function") loadOrderDetail(code);
+      var area = document.getElementById("orderDetailArea");
+      if(area) area.scrollIntoView({behavior:"smooth", block:"start"});
+    },350);
+  };
+
+  window.plfMarkAllNotificationsRead = function(){
+    var arr = cleanNotifications();
+    arr.forEach(function(n){ markRead(n.code); n.read = true; });
+    saveNotifications(arr);
+    plfRenderNotifications();
+    if(typeof showGlobalToast === "function") showGlobalToast("Bildirimler okundu yapıldı.","success",2200);
+  };
+
+  window.plfClearReadNotifications = function(){
+    var readMap = cleanMap(READ_KEY);
+    var arr = cleanNotifications();
+    var kept = [];
+    var deleted = 0;
+
+    arr.forEach(function(n){
+      if(readMap[String(n.code)] || n.read){
+        markDeleted(n.code);
+        deleted++;
+      }else{
+        kept.push(n);
+      }
+    });
+
+    saveNotifications(kept);
+    plfRenderNotifications();
+    if(typeof showGlobalToast === "function"){
+      showGlobalToast(deleted ? "Okunan bildirimler silindi. Tekrar görünmeyecek." : "Silinecek okunmuş bildirim yok.","success",2600);
+    }
+  };
+
+  window.plfStartReliableNotifications = function(){
+    plfEnsureNotificationPanel();
+    plfCheckNewOrders(false);
+    if(window.__plfNotificationV3Interval) clearInterval(window.__plfNotificationV3Interval);
+    window.__plfNotificationV3Interval = setInterval(function(){
+      if(!document.hidden && sessionStorage.getItem(ADMIN_SESSION_KEY)==="true") plfCheckNewOrders(true);
+    }, POLL_MS);
+  };
+
+  document.removeEventListener("click", window.__plfNotificationV3Click || function(){});
+  window.__plfNotificationV3Click = function(e){
+    var item = e.target && e.target.closest ? e.target.closest(".notification-item[data-code]") : null;
+    if(item){
+      plfOpenNotificationOrder(item.getAttribute("data-code"));
+      return;
+    }
+    var panel = document.getElementById("notificationPanel");
+    var shell = document.getElementById("notificationShell");
+    if(panel && shell && panel.classList.contains("active") && !shell.contains(e.target)){
+      panel.classList.remove("active");
+    }
+  };
+  document.addEventListener("click", window.__plfNotificationV3Click);
+
+  document.addEventListener("visibilitychange", function(){
+    if(!document.hidden && sessionStorage.getItem(ADMIN_SESSION_KEY)==="true") plfCheckNewOrders(false);
+  });
+  window.addEventListener("focus", function(){
+    if(sessionStorage.getItem(ADMIN_SESSION_KEY)==="true") plfCheckNewOrders(true);
+  });
+
+  if(sessionStorage.getItem(ADMIN_SESSION_KEY)==="true"){
+    setTimeout(plfStartReliableNotifications, 300);
+  }
+})();
+
 passwordInput.addEventListener("keydown",e=>{if(e.key==="Enter")login()});
 initAdmin();
 /* SON SADELEŞTİRME: MOBİL AKIŞ + BASİT MUHASEBE + SİPARİŞ SATICI DÜZENLEME */
@@ -5066,6 +5409,366 @@ function renderOrderDetail(o,details){
       setTimeout(startNotificationV2, 700);
     }
   }
+})();
+
+
+
+/* BİLDİRİM KESİN SİSTEM V3
+   - Eski bildirim kodlarından bağımsız çalışır.
+   - Admin açılır açılmaz ve her 15 saniyede siparişleri kontrol eder.
+   - Yeni PL/site siparişleri okunmadı bildirime düşer.
+   - Okunanı silince aynı sipariş 15 gün tekrar gelmez.
+   - Muhasebe uyarısını sayfa açılışında tetiklemez.
+*/
+(function(){
+  var NOTIFICATION_KEY = "prestijLifeAdminNotifications_v3";
+  var READ_KEY = "prestijLifeAdminNotificationsRead_v3";
+  var DELETED_KEY = "prestijLifeAdminNotificationsDeleted_v3";
+  var DAYS = 15;
+  var POLL_MS = 15000;
+
+  function nowIso(){ return new Date().toISOString(); }
+  function cutoffTime(){ return Date.now() - (DAYS * 24 * 60 * 60 * 1000); }
+  function parseTime(value){
+    var t = new Date(value || 0).getTime();
+    return isNaN(t) ? 0 : t;
+  }
+  function loadJSON(key, fallback){
+    try{
+      var value = JSON.parse(localStorage.getItem(key) || JSON.stringify(fallback));
+      return value === null || value === undefined ? fallback : value;
+    }catch(e){
+      localStorage.removeItem(key);
+      return fallback;
+    }
+  }
+  function cleanMap(key){
+    var map = loadJSON(key, {});
+    if(!map || typeof map !== "object" || Array.isArray(map)) map = {};
+    Object.keys(map).forEach(function(code){
+      if(parseTime(map[code]) < cutoffTime()) delete map[code];
+    });
+    localStorage.setItem(key, JSON.stringify(map));
+    return map;
+  }
+  function cleanNotifications(){
+    var arr = loadJSON(NOTIFICATION_KEY, []);
+    if(!Array.isArray(arr)) arr = [];
+    arr = arr.filter(function(n){
+      return n && n.code && parseTime(n.createdAt || n.tarih) >= cutoffTime();
+    });
+    localStorage.setItem(NOTIFICATION_KEY, JSON.stringify(arr));
+    return arr;
+  }
+  function saveNotifications(arr){
+    arr = (arr || []).filter(function(n){
+      return n && n.code && parseTime(n.createdAt || n.tarih) >= cutoffTime();
+    });
+    localStorage.setItem(NOTIFICATION_KEY, JSON.stringify(arr));
+  }
+  function markRead(code){
+    code = String(code || "").trim();
+    if(!code) return;
+    var map = cleanMap(READ_KEY);
+    map[code] = nowIso();
+    localStorage.setItem(READ_KEY, JSON.stringify(map));
+  }
+  function markDeleted(code){
+    code = String(code || "").trim();
+    if(!code) return;
+    var map = cleanMap(DELETED_KEY);
+    map[code] = nowIso();
+    localStorage.setItem(DELETED_KEY, JSON.stringify(map));
+  }
+  function isSiteOrder(order){
+    var code = String(order.siparis_kodu || order.orderCode || "").trim().toUpperCase();
+    var source = String(order.kaynak || "").trim().toLowerCase();
+    if(source === "site") return true;
+    if(code.indexOf("PL-") === 0) return true;
+    if(!source && code.indexOf("MN-") !== 0) return true;
+    return false;
+  }
+  function safeEsc(v){
+    if(typeof esc === "function") return esc(v);
+    return String(v ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
+  }
+  function safeAttr(v){
+    if(typeof attr === "function") return attr(v);
+    return safeEsc(v).replace(/`/g,"&#096;");
+  }
+  function fmtDate(value){
+    if(typeof formatDate === "function") return formatDate(value || "");
+    if(!value) return "";
+    var d = new Date(value);
+    return isNaN(d.getTime()) ? safeEsc(String(value).slice(0,16)) : d.toLocaleString("tr-TR");
+  }
+  function ensureStyle(){
+    if(document.getElementById("plf-notification-v3-style")) return;
+    var style = document.createElement("style");
+    style.id = "plf-notification-v3-style";
+    style.textContent = `
+      .notification-shell{position:relative}
+      .notification-btn{position:relative!important;width:auto!important;min-width:126px!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:8px!important}
+      .notification-badge{min-width:20px;height:20px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;padding:0 6px;background:var(--danger);color:#fff;font-size:11px;font-weight:900;line-height:1}
+      .notification-badge.empty{background:var(--soft);color:var(--muted)}
+      .notification-panel{position:absolute;top:calc(100% + 10px);right:0;width:min(400px,92vw);max-height:520px;overflow:hidden;background:var(--card);border:1px solid var(--border);border-radius:20px;box-shadow:0 22px 60px rgba(0,0,0,.24);z-index:99998;display:none}
+      .notification-panel.active{display:block}
+      .notification-head{padding:14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px;background:linear-gradient(145deg,var(--panel),var(--card))}
+      .notification-head strong{font-size:15px}.notification-head span{display:block;font-size:11px;color:var(--muted);font-weight:800;margin-top:2px}
+      .notification-actions{display:flex;gap:6px;padding:10px 12px;border-bottom:1px solid var(--border);background:var(--panel)}
+      .notification-actions button{width:auto!important;padding:8px 10px!important;font-size:12px!important;border-radius:11px!important;margin:0!important}
+      .notification-list{max-height:380px;overflow:auto;-webkit-overflow-scrolling:touch;padding:8px}
+      .notification-item{border:1px solid var(--border);border-radius:15px;padding:11px 12px;margin-bottom:8px;background:var(--card);cursor:pointer;transition:.18s ease}
+      .notification-item:hover{border-color:var(--accent);transform:translateY(-1px)}
+      .notification-item.unread{border-color:rgba(139,106,69,.50);background:linear-gradient(145deg,var(--soft),var(--card))}
+      .notification-top{display:flex;justify-content:space-between;gap:8px;align-items:flex-start;margin-bottom:5px}
+      .notification-code{font-size:12px;font-weight:950;color:var(--accent);white-space:nowrap}
+      .notification-status{font-size:10px;font-weight:950;padding:4px 7px;border-radius:999px;background:var(--soft);color:var(--accent);white-space:nowrap}
+      .notification-customer{font-size:14px;font-weight:900;margin-bottom:4px;line-height:1.25}
+      .notification-meta{font-size:11.5px;color:var(--muted);font-weight:700;line-height:1.45}
+      .notification-empty{padding:22px 14px;text-align:center;color:var(--muted);font-size:13px;line-height:1.5}
+      @media(max-width:900px){.notification-shell{width:100%}.notification-btn{width:100%!important}.notification-panel{position:fixed;left:10px;right:10px;top:82px;width:auto;max-height:calc(100vh - 110px)}.notification-list{max-height:calc(100vh - 230px)}}
+      @media(max-width:480px){.notification-actions{display:grid;grid-template-columns:1fr}.notification-actions button{width:100%!important}}
+    `;
+    document.head.appendChild(style);
+  }
+
+  window.plfEnsureNotificationPanel = function(){
+    ensureStyle();
+    var header = document.querySelector(".header-actions");
+    if(!header) return;
+    var oldShell = document.getElementById("notificationShell");
+    if(oldShell) return;
+
+    var shell = document.createElement("div");
+    shell.className = "notification-shell";
+    shell.id = "notificationShell";
+    shell.innerHTML =
+      '<button class="btn-light notification-btn" type="button" onclick="plfToggleNotifications()">🔔 Bildirimler <span class="notification-badge empty" id="notificationBadge">0</span></button>' +
+      '<div class="notification-panel" id="notificationPanel">' +
+        '<div class="notification-head"><div><strong>Yeni Sipariş Bildirimleri</strong><span>Son 15 gün saklanır</span></div><button class="help-btn" type="button" onclick="plfToggleNotifications()">×</button></div>' +
+        '<div class="notification-actions">' +
+          '<button class="btn-light" type="button" onclick="plfMarkAllNotificationsRead()">Tümünü Okundu Yap</button>' +
+          '<button class="btn-light" type="button" onclick="plfClearReadNotifications()">Okunanları Sil</button>' +
+          '<button class="btn-light" type="button" onclick="plfCheckNewOrders(false)">Yenile</button>' +
+        '</div>' +
+        '<div class="notification-list" id="notificationList"></div>' +
+      '</div>';
+
+    header.insertBefore(shell, header.firstChild);
+    plfRenderNotifications();
+  };
+
+  window.plfRenderNotifications = function(){
+    var list = document.getElementById("notificationList");
+    var badge = document.getElementById("notificationBadge");
+    if(!list || !badge) return;
+
+    var readMap = cleanMap(READ_KEY);
+    var notifications = cleanNotifications().sort(function(a,b){
+      return parseTime(b.tarih || b.createdAt) - parseTime(a.tarih || a.createdAt);
+    });
+
+    notifications.forEach(function(n){ n.read = !!readMap[String(n.code)]; });
+    saveNotifications(notifications);
+
+    var unread = notifications.filter(function(n){ return !n.read; }).length;
+    badge.textContent = String(unread);
+    badge.classList.toggle("empty", unread === 0);
+
+    if(!notifications.length){
+      list.innerHTML = '<div class="notification-empty">Son 15 gün içinde bildirilecek yeni sipariş yok.</div>';
+      return;
+    }
+
+    list.innerHTML = notifications.map(function(n){
+      var readClass = n.read ? "" : " unread";
+      return '<div class="notification-item'+readClass+'" data-code="'+safeAttr(n.code)+'">' +
+        '<div class="notification-top"><span class="notification-code">'+safeEsc(n.code)+'</span><span class="notification-status">'+(n.read ? "Okundu" : "Yeni")+'</span></div>' +
+        '<div class="notification-customer">'+safeEsc(n.customer || "Müşteri")+'</div>' +
+        '<div class="notification-meta">'+safeEsc(n.phone || "")+'<br>'+fmtDate(n.tarih || n.createdAt)+'</div>' +
+      '</div>';
+    }).join("");
+  };
+
+  window.plfSyncOrderNotifications = function(orders, silent){
+    plfEnsureNotificationPanel();
+
+    var notifications = cleanNotifications();
+    var readMap = cleanMap(READ_KEY);
+    var deletedMap = cleanMap(DELETED_KEY);
+    var byCode = {};
+    var added = 0;
+
+    notifications.forEach(function(n){ byCode[String(n.code)] = n; });
+
+    (orders || []).forEach(function(order){
+      if(!isSiteOrder(order)) return;
+      var code = String(order.siparis_kodu || order.orderCode || "").trim();
+      if(!code || deletedMap[code]) return;
+
+      var orderTime = parseTime(order.tarih) || Date.now();
+      if(orderTime < cutoffTime()) return;
+
+      if(!byCode[code]){
+        byCode[code] = {
+          code: code,
+          customer: order.musteri_ad || "",
+          phone: order.telefon || "",
+          tarih: order.tarih || nowIso(),
+          createdAt: order.tarih || nowIso(),
+          read: !!readMap[code]
+        };
+        notifications.push(byCode[code]);
+        if(!readMap[code]) added++;
+      }else{
+        byCode[code].customer = order.musteri_ad || byCode[code].customer || "";
+        byCode[code].phone = order.telefon || byCode[code].phone || "";
+        byCode[code].tarih = order.tarih || byCode[code].tarih || nowIso();
+        byCode[code].createdAt = byCode[code].createdAt || order.tarih || nowIso();
+        byCode[code].read = !!readMap[code];
+      }
+    });
+
+    saveNotifications(notifications);
+    plfRenderNotifications();
+
+    if(added && !silent && typeof showGlobalToast === "function"){
+      showGlobalToast(added + " yeni sipariş bildirimi var.", "success", 3500);
+    }
+    return { added: added, total: notifications.length };
+  };
+
+  window.plfCheckNewOrders = async function(silent){
+    try{
+      plfEnsureNotificationPanel();
+      var start = new Date(Date.now() - (DAYS * 24 * 60 * 60 * 1000));
+      var data = await apiPost({
+        action:"listOrders",
+        apiKey:ADMIN_API_KEY,
+        dateStart:start.toISOString().slice(0,10)
+      },30000);
+
+      if(data && data.success){
+        return plfSyncOrderNotifications(data.orders || [], !!silent);
+      }
+    }catch(error){
+      if(!silent && typeof showGlobalToast === "function"){
+        showGlobalToast("Bildirim kontrolü yapılamadı: " + (error.message || error), "warning", 3500);
+      }
+    }
+    return { added:0, total:cleanNotifications().length };
+  };
+
+  window.plfToggleNotifications = function(){
+    plfEnsureNotificationPanel();
+    var panel = document.getElementById("notificationPanel");
+    if(panel) panel.classList.toggle("active");
+    setTimeout(function(){ plfCheckNewOrders(true); },80);
+  };
+
+  window.plfOpenNotificationOrder = function(code){
+    code = String(code || "").trim();
+    if(code) markRead(code);
+    plfRenderNotifications();
+
+    var panel = document.getElementById("notificationPanel");
+    if(panel) panel.classList.remove("active");
+
+    if(typeof openSection === "function"){
+      var card = Array.from(document.querySelectorAll(".compact-admin-menu .module-card")).find(function(c){
+        return String(c.textContent || "").indexOf("Siparişler") !== -1;
+      });
+      if(card) openSection("siparisler", card);
+    }
+
+    setTimeout(function(){
+      if(typeof loadOrderDetail === "function") loadOrderDetail(code);
+      var area = document.getElementById("orderDetailArea");
+      if(area) area.scrollIntoView({behavior:"smooth", block:"start"});
+    },350);
+  };
+
+  window.plfMarkAllNotificationsRead = function(){
+    var arr = cleanNotifications();
+    arr.forEach(function(n){ markRead(n.code); n.read = true; });
+    saveNotifications(arr);
+    plfRenderNotifications();
+    if(typeof showGlobalToast === "function") showGlobalToast("Bildirimler okundu yapıldı.","success",2200);
+  };
+
+  window.plfClearReadNotifications = function(){
+    var readMap = cleanMap(READ_KEY);
+    var arr = cleanNotifications();
+    var kept = [];
+    var deleted = 0;
+
+    arr.forEach(function(n){
+      if(readMap[String(n.code)] || n.read){
+        markDeleted(n.code);
+        deleted++;
+      }else{
+        kept.push(n);
+      }
+    });
+
+    saveNotifications(kept);
+    plfRenderNotifications();
+    if(typeof showGlobalToast === "function"){
+      showGlobalToast(deleted ? "Okunan bildirimler silindi. Tekrar görünmeyecek." : "Silinecek okunmuş bildirim yok.","success",2600);
+    }
+  };
+
+  window.plfStartReliableNotifications = function(){
+    plfEnsureNotificationPanel();
+    plfCheckNewOrders(false);
+    if(window.__plfNotificationV3Interval) clearInterval(window.__plfNotificationV3Interval);
+    window.__plfNotificationV3Interval = setInterval(function(){
+      if(!document.hidden && sessionStorage.getItem(ADMIN_SESSION_KEY)==="true") plfCheckNewOrders(true);
+    }, POLL_MS);
+  };
+
+  document.removeEventListener("click", window.__plfNotificationV3Click || function(){});
+  window.__plfNotificationV3Click = function(e){
+    var item = e.target && e.target.closest ? e.target.closest(".notification-item[data-code]") : null;
+    if(item){
+      plfOpenNotificationOrder(item.getAttribute("data-code"));
+      return;
+    }
+    var panel = document.getElementById("notificationPanel");
+    var shell = document.getElementById("notificationShell");
+    if(panel && shell && panel.classList.contains("active") && !shell.contains(e.target)){
+      panel.classList.remove("active");
+    }
+  };
+  document.addEventListener("click", window.__plfNotificationV3Click);
+
+  document.addEventListener("visibilitychange", function(){
+    if(!document.hidden && sessionStorage.getItem(ADMIN_SESSION_KEY)==="true") plfCheckNewOrders(false);
+  });
+  window.addEventListener("focus", function(){
+    if(sessionStorage.getItem(ADMIN_SESSION_KEY)==="true") plfCheckNewOrders(true);
+  });
+
+  if(sessionStorage.getItem(ADMIN_SESSION_KEY)==="true"){
+    setTimeout(plfStartReliableNotifications, 300);
+  }
+})();
+
+
+
+/* SAYFA AÇILIŞINDA MUHASEBE UYARISI GÖRÜNMESİN */
+(function(){
+  if(window.__plfSuppressPassiveAccountingWarnings) return;
+  window.__plfSuppressPassiveAccountingWarnings = true;
+  var oldShowMessage = window.showMessage;
+  window.showMessage = function(id,msg){
+    if(String(id || "") === "accWarning"){
+      var section = document.getElementById("section-muhasebe");
+      if(!section || !section.classList.contains("active")) return;
+    }
+    return oldShowMessage ? oldShowMessage(id,msg) : undefined;
+  };
 })();
 
 </script>
