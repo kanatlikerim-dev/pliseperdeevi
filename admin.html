@@ -3789,73 +3789,141 @@ window.plfOpenNotificationOrder = async function(code){
 };
 
 
-/* BİLDİRİM PANELİ ANLIK KONTROL DÜZELTMESİ
-   Sorun: Yeni siparişler bazen "Siparişleri Listele" denmeden bildirim paneline düşmüyordu.
+/* BİLDİRİM KESİN DÜZELTME - SİPARİŞLERİ LİSTELEMEDEN YENİ SİPARİŞ GELSİN
+   Sorun: Yeni site siparişi, Siparişleri Listele butonuna basmadan bildirime düşmeyebiliyordu.
    Çözüm:
-   - Admin açılır açılmaz bildirim kontrolü yapılır.
-   - Bildirim paneli açılınca tekrar güncel siparişler çekilir.
-   - İlk yüklemede son 15 gün içindeki site siparişleri de bildirim listesine eklenir.
-   - Yeni gelen siparişler okunmadı olarak işaretlenir.
+   - Admin açılır açılmaz siparişleri Apps Script'ten çeker.
+   - Her 20 saniyede bir son 15 gün site siparişlerini kontrol eder.
+   - Bildirim paneli açılınca anında tekrar kontrol eder.
+   - Kaynak alanı "site" olmasa bile PL- ile başlayan siparişleri site siparişi kabul eder.
+   - Okunup silinen sipariş kodu 15 gün tekrar bildirim olarak gelmez.
 */
 (function(){
-  if(window.__plfNotificationImmediateFix) return;
-  window.__plfNotificationImmediateFix = true;
+  if(window.__plfFinalReliableNotificationFix) return;
+  window.__plfFinalReliableNotificationFix = true;
 
   var NOTIFICATION_KEY = "prestijLifeAdminNotifications_v1";
-  var NOTIFICATION_LAST_CHECK_KEY = "prestijLifeAdminNotificationsLastCheck_v1";
-  var NOTIFICATION_DAYS = 15;
-  var FAST_POLL_MS = 15000;
-  var NORMAL_POLL_MS = 60000;
+  var DELETED_KEY = "prestijLifeAdminNotificationsDeleted_v1";
+  var DAYS = 15;
+  var POLL_MS = 20000;
 
-  function nowIso(){ return new Date().toISOString(); }
-  function cutoffTime(){ return Date.now() - (NOTIFICATION_DAYS * 24 * 60 * 60 * 1000); }
+  function nowIso(){
+    return new Date().toISOString();
+  }
+
+  function cutoffTime(){
+    return Date.now() - (DAYS * 24 * 60 * 60 * 1000);
+  }
+
   function parseTime(value){
     var t = new Date(value || 0).getTime();
     return isNaN(t) ? 0 : t;
   }
 
-  function loadNotificationsSafe(){
+  function loadArr(key, fallback){
     try{
-      var arr = JSON.parse(localStorage.getItem(NOTIFICATION_KEY) || "[]");
-      if(!Array.isArray(arr)) arr = [];
-      arr = arr.filter(function(n){ return parseTime(n.createdAt || n.tarih) >= cutoffTime(); });
-      localStorage.setItem(NOTIFICATION_KEY, JSON.stringify(arr));
-      return arr;
+      var value = JSON.parse(localStorage.getItem(key) || JSON.stringify(fallback));
+      return value;
     }catch(e){
-      localStorage.removeItem(NOTIFICATION_KEY);
-      return [];
+      localStorage.removeItem(key);
+      return fallback;
     }
   }
 
-  function saveNotificationsSafe(arr){
-    arr = (arr || []).filter(function(n){ return parseTime(n.createdAt || n.tarih) >= cutoffTime(); });
+  function loadNotificationsFinal(){
+    var arr = loadArr(NOTIFICATION_KEY, []);
+    if(!Array.isArray(arr)) arr = [];
+    arr = arr.filter(function(n){
+      return parseTime(n.createdAt || n.tarih) >= cutoffTime();
+    });
+    localStorage.setItem(NOTIFICATION_KEY, JSON.stringify(arr));
+    return arr;
+  }
+
+  function saveNotificationsFinal(arr){
+    arr = (arr || []).filter(function(n){
+      return parseTime(n.createdAt || n.tarih) >= cutoffTime();
+    });
     localStorage.setItem(NOTIFICATION_KEY, JSON.stringify(arr));
   }
 
-  function normalizeSource(v){
-    return String(v || "").toLowerCase().trim();
+  function loadDeletedFinal(){
+    var map = loadArr(DELETED_KEY, {});
+    if(!map || typeof map !== "object" || Array.isArray(map)) map = {};
+    Object.keys(map).forEach(function(code){
+      if(parseTime(map[code]) < cutoffTime()) delete map[code];
+    });
+    localStorage.setItem(DELETED_KEY, JSON.stringify(map));
+    return map;
   }
+
+  function saveDeletedFinal(map){
+    map = map || {};
+    Object.keys(map).forEach(function(code){
+      if(parseTime(map[code]) < cutoffTime()) delete map[code];
+    });
+    localStorage.setItem(DELETED_KEY, JSON.stringify(map));
+  }
+
+  function isSiteOrder(o){
+    var code = String(o.siparis_kodu || o.orderCode || "").trim().toUpperCase();
+    var source = String(o.kaynak || "").trim().toLowerCase();
+    if(source === "site") return true;
+    if(code.indexOf("PL-") === 0) return true;
+    if(!source && code.indexOf("MN-") !== 0) return true;
+    return false;
+  }
+
+  window.plfClearReadNotifications = function(){
+    var arr = loadNotificationsFinal();
+    var deleted = loadDeletedFinal();
+    var readCodes = [];
+
+    arr.forEach(function(n){
+      if(n && n.read && n.code){
+        readCodes.push(String(n.code));
+        deleted[String(n.code)] = nowIso();
+      }
+    });
+
+    saveDeletedFinal(deleted);
+    saveNotificationsFinal(arr.filter(function(n){ return !n.read; }));
+
+    if(typeof plfRenderNotifications === "function") plfRenderNotifications();
+
+    if(typeof showGlobalToast === "function"){
+      showGlobalToast(
+        readCodes.length ? "Okunan bildirimler silindi. Tekrar görünmeyecek." : "Silinecek okunmuş bildirim yok.",
+        "success",
+        2600
+      );
+    }
+  };
 
   window.plfSyncOrderNotifications = function(orders, silent){
     if(typeof plfEnsureNotificationPanel === "function") plfEnsureNotificationPanel();
 
-    var arr = loadNotificationsSafe();
-    var map = {};
-    arr.forEach(function(n){ map[String(n.code)] = n; });
-
+    var arr = loadNotificationsFinal();
+    var deleted = loadDeletedFinal();
+    var existing = {};
     var added = 0;
 
+    arr.forEach(function(n){
+      if(n && n.code) existing[String(n.code)] = n;
+    });
+
     (orders || []).forEach(function(o){
-      var source = normalizeSource(o.kaynak);
-      if(source && source !== "site") return;
+      if(!isSiteOrder(o)) return;
 
       var code = String(o.siparis_kodu || o.orderCode || "").trim();
       if(!code) return;
 
+      if(deleted[code]) return;
+
       var orderTime = parseTime(o.tarih) || Date.now();
       if(orderTime < cutoffTime()) return;
 
-      if(!map[code]){
+      if(!existing[code]){
         var item = {
           code: code,
           customer: o.musteri_ad || "",
@@ -3865,55 +3933,58 @@ window.plfOpenNotificationOrder = async function(code){
           read: false
         };
         arr.push(item);
-        map[code] = item;
+        existing[code] = item;
         added++;
       }else{
-        map[code].customer = o.musteri_ad || map[code].customer || "";
-        map[code].phone = o.telefon || map[code].phone || "";
-        map[code].tarih = o.tarih || map[code].tarih || nowIso();
+        existing[code].customer = o.musteri_ad || existing[code].customer || "";
+        existing[code].phone = o.telefon || existing[code].phone || "";
+        existing[code].tarih = o.tarih || existing[code].tarih || nowIso();
       }
     });
 
-    localStorage.setItem(NOTIFICATION_LAST_CHECK_KEY, nowIso());
-    saveNotificationsSafe(arr);
+    saveNotificationsFinal(arr);
 
     if(typeof plfRenderNotifications === "function") plfRenderNotifications();
 
     if(added && !silent && typeof showGlobalToast === "function"){
       showGlobalToast(added + " yeni sipariş bildirimi var.", "success", 3500);
     }
+
+    return { added: added, total: arr.length };
   };
 
   window.plfCheckNewOrders = async function(silent){
     try{
       if(typeof plfEnsureNotificationPanel === "function") plfEnsureNotificationPanel();
 
-      var start = new Date(Date.now() - (NOTIFICATION_DAYS * 24 * 60 * 60 * 1000));
+      var start = new Date(Date.now() - (DAYS * 24 * 60 * 60 * 1000));
       var startText = start.toISOString().slice(0,10);
 
-      var d = await apiPost({
+      var data = await apiPost({
         action: "listOrders",
         apiKey: ADMIN_API_KEY,
         dateStart: startText
       }, 30000);
 
-      if(d && d.success){
-        var siteOrders = (d.orders || []).filter(function(o){
-          return !o.kaynak || normalizeSource(o.kaynak) === "site";
-        });
-        plfSyncOrderNotifications(siteOrders, !!silent);
+      if(data && data.success){
+        return plfSyncOrderNotifications(data.orders || [], !!silent);
       }
-    }catch(e){
+
       if(!silent && typeof showGlobalToast === "function"){
-        showGlobalToast("Bildirimler kontrol edilemedi: " + (e.message || e), "warning", 3000);
+        showGlobalToast("Bildirim kontrolü yapılamadı: " + ((data && data.message) || "Sunucu cevabı alınamadı."), "warning", 3500);
+      }
+    }catch(error){
+      if(!silent && typeof showGlobalToast === "function"){
+        showGlobalToast("Bildirim kontrolü yapılamadı: " + (error.message || error), "warning", 3500);
       }
     }
+    return { added:0, total:loadNotificationsFinal().length };
   };
 
-  var oldToggleNotifications = window.plfToggleNotifications;
+  var oldToggle = window.plfToggleNotifications;
   window.plfToggleNotifications = function(){
-    if(typeof oldToggleNotifications === "function"){
-      oldToggleNotifications();
+    if(typeof oldToggle === "function"){
+      oldToggle();
     }else{
       var panel = document.getElementById("notificationPanel");
       if(panel) panel.classList.toggle("active");
@@ -3921,31 +3992,20 @@ window.plfOpenNotificationOrder = async function(code){
     setTimeout(function(){ plfCheckNewOrders(true); }, 80);
   };
 
-  function startImmediateNotificationChecks(){
+  function startReliableNotifications(){
     if(typeof plfEnsureNotificationPanel === "function") plfEnsureNotificationPanel();
 
-    // Admin açıldığında beklemeden kontrol et.
     plfCheckNewOrders(false);
 
-    // İlk dakikada daha sık kontrol et.
-    if(!window.__plfFastNotificationInterval){
-      var fastCount = 0;
-      window.__plfFastNotificationInterval = setInterval(function(){
-        fastCount++;
-        plfCheckNewOrders(true);
-        if(fastCount >= 4){
-          clearInterval(window.__plfFastNotificationInterval);
-          window.__plfFastNotificationInterval = null;
-        }
-      }, FAST_POLL_MS);
+    if(window.__plfReliableNotificationInterval){
+      clearInterval(window.__plfReliableNotificationInterval);
     }
 
-    // Normal aralıkla kontrol et.
-    if(!window.__plfNotificationIntervalFixed){
-      window.__plfNotificationIntervalFixed = setInterval(function(){
-        plfCheckNewOrders(false);
-      }, NORMAL_POLL_MS);
-    }
+    window.__plfReliableNotificationInterval = setInterval(function(){
+      if(!document.hidden){
+        plfCheckNewOrders(true);
+      }
+    }, POLL_MS);
   }
 
   var oldShowAdminPanel = window.showAdminPanel;
@@ -3953,14 +4013,14 @@ window.plfOpenNotificationOrder = async function(code){
     var result;
     if(typeof oldShowAdminPanel === "function"){
       result = oldShowAdminPanel.apply(this, arguments);
+    }else{
+      if(window.loginScreen) loginScreen.style.display = "none";
+      if(window.adminPanel) adminPanel.style.display = "block";
     }
-    setTimeout(startImmediateNotificationChecks, 600);
+
+    setTimeout(startReliableNotifications, 900);
     return result;
   };
-
-  if(sessionStorage.getItem(ADMIN_SESSION_KEY) === "true"){
-    setTimeout(startImmediateNotificationChecks, 1000);
-  }
 
   document.addEventListener("visibilitychange", function(){
     if(!document.hidden && sessionStorage.getItem(ADMIN_SESSION_KEY) === "true"){
@@ -3973,158 +4033,18 @@ window.plfOpenNotificationOrder = async function(code){
       plfCheckNewOrders(true);
     }
   });
-})();
 
-
-/* BİLDİRİM SİLİNEN OKUNDU TEKRAR GELMESİN DÜZELTMESİ
-   Sorun: Okunan bildirim silinince, sipariş hâlâ son 15 gün içinde olduğu için tekrar bildirimlere düşüyordu.
-   Çözüm:
-   - Okunanları Sil butonu, silinen sipariş kodlarını ayrıca 15 gün boyunca arşivler.
-   - Aynı sipariş kodu 15 gün dolmadan tekrar bildirim olarak eklenmez.
-   - 15 günü geçen silme kayıtları otomatik temizlenir.
-*/
-(function(){
-  if(window.__plfNotificationDeletedFix) return;
-  window.__plfNotificationDeletedFix = true;
-
-  var NOTIFICATION_KEY = "prestijLifeAdminNotifications_v1";
-  var DELETED_KEY = "prestijLifeAdminNotificationsDeleted_v1";
-  var NOTIFICATION_DAYS = 15;
-
-  function cutoffTime(){
-    return Date.now() - (NOTIFICATION_DAYS * 24 * 60 * 60 * 1000);
-  }
-
-  function parseTime(value){
-    var t = new Date(value || 0).getTime();
-    return isNaN(t) ? 0 : t;
-  }
-
-  function loadNotificationArray(){
-    try{
-      var arr = JSON.parse(localStorage.getItem(NOTIFICATION_KEY) || "[]");
-      return Array.isArray(arr) ? arr : [];
-    }catch(e){
-      return [];
-    }
-  }
-
-  function saveNotificationArray(arr){
-    arr = (arr || []).filter(function(n){
-      return parseTime(n.createdAt || n.tarih) >= cutoffTime();
-    });
-    localStorage.setItem(NOTIFICATION_KEY, JSON.stringify(arr));
-  }
-
-  function loadDeletedMap(){
-    try{
-      var map = JSON.parse(localStorage.getItem(DELETED_KEY) || "{}");
-      if(!map || typeof map !== "object" || Array.isArray(map)) map = {};
-      Object.keys(map).forEach(function(code){
-        if(parseTime(map[code]) < cutoffTime()) delete map[code];
-      });
-      localStorage.setItem(DELETED_KEY, JSON.stringify(map));
-      return map;
-    }catch(e){
-      localStorage.removeItem(DELETED_KEY);
-      return {};
-    }
-  }
-
-  function saveDeletedMap(map){
-    map = map || {};
-    Object.keys(map).forEach(function(code){
-      if(parseTime(map[code]) < cutoffTime()) delete map[code];
-    });
-    localStorage.setItem(DELETED_KEY, JSON.stringify(map));
-  }
-
-  window.plfIsNotificationDeleted = function(code){
-    if(!code) return false;
-    var map = loadDeletedMap();
-    return !!map[String(code)];
-  };
-
-  window.plfArchiveDeletedNotificationCodes = function(codes){
-    var map = loadDeletedMap();
-    (codes || []).forEach(function(code){
-      code = String(code || "").trim();
-      if(code) map[code] = new Date().toISOString();
-    });
-    saveDeletedMap(map);
-  };
-
-  var oldClearReadNotifications = window.plfClearReadNotifications;
-  window.plfClearReadNotifications = function(){
-    var arr = loadNotificationArray();
-    var readCodes = arr.filter(function(n){ return !!n.read; }).map(function(n){ return n.code; });
-
-    if(readCodes.length){
-      plfArchiveDeletedNotificationCodes(readCodes);
-    }
-
-    arr = arr.filter(function(n){ return !n.read; });
-    saveNotificationArray(arr);
-
-    if(typeof plfRenderNotifications === "function") plfRenderNotifications();
-    if(typeof showGlobalToast === "function"){
-      showGlobalToast(readCodes.length ? "Okunan bildirimler silindi. Tekrar görünmeyecek." : "Silinecek okunmuş bildirim yok.", "success", 2600);
-    }
-
-    if(typeof oldClearReadNotifications === "function"){
-      // Eski fonksiyon tekrar çalışmasın; onun yerine burada tamamen işlem yaptık.
-      return;
-    }
-  };
-
-  var oldSyncOrderNotifications = window.plfSyncOrderNotifications;
-  window.plfSyncOrderNotifications = function(orders, silent){
-    var deletedMap = loadDeletedMap();
-
-    var filteredOrders = (orders || []).filter(function(o){
-      var code = String(o.siparis_kodu || o.orderCode || "").trim();
-      return !code || !deletedMap[code];
-    });
-
-    if(typeof oldSyncOrderNotifications === "function"){
-      return oldSyncOrderNotifications(filteredOrders, silent);
-    }
-
-    // Eski sync fonksiyonu yoksa güvenli temel davranış.
-    var arr = loadNotificationArray();
-    var map = {};
-    arr.forEach(function(n){ map[String(n.code)] = n; });
-
-    var added = 0;
-    filteredOrders.forEach(function(o){
-      var source = String(o.kaynak || "").toLowerCase().trim();
-      if(source && source !== "site") return;
-
-      var code = String(o.siparis_kodu || o.orderCode || "").trim();
-      if(!code || deletedMap[code]) return;
-
-      var orderTime = parseTime(o.tarih) || Date.now();
-      if(orderTime < cutoffTime()) return;
-
-      if(!map[code]){
-        arr.push({
-          code: code,
-          customer: o.musteri_ad || "",
-          phone: o.telefon || "",
-          tarih: o.tarih || new Date().toISOString(),
-          createdAt: o.tarih || new Date().toISOString(),
-          read: false
-        });
-        added++;
+  if(document.readyState === "loading"){
+    document.addEventListener("DOMContentLoaded", function(){
+      if(sessionStorage.getItem(ADMIN_SESSION_KEY) === "true"){
+        setTimeout(startReliableNotifications, 900);
       }
     });
-
-    saveNotificationArray(arr);
-    if(typeof plfRenderNotifications === "function") plfRenderNotifications();
-    if(added && !silent && typeof showGlobalToast === "function"){
-      showGlobalToast(added + " yeni sipariş bildirimi var.", "success", 3500);
+  }else{
+    if(sessionStorage.getItem(ADMIN_SESSION_KEY) === "true"){
+      setTimeout(startReliableNotifications, 900);
     }
-  };
+  }
 })();
 
 </script>
