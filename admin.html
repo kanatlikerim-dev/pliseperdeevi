@@ -3975,6 +3975,158 @@ window.plfOpenNotificationOrder = async function(code){
   });
 })();
 
+
+/* BİLDİRİM SİLİNEN OKUNDU TEKRAR GELMESİN DÜZELTMESİ
+   Sorun: Okunan bildirim silinince, sipariş hâlâ son 15 gün içinde olduğu için tekrar bildirimlere düşüyordu.
+   Çözüm:
+   - Okunanları Sil butonu, silinen sipariş kodlarını ayrıca 15 gün boyunca arşivler.
+   - Aynı sipariş kodu 15 gün dolmadan tekrar bildirim olarak eklenmez.
+   - 15 günü geçen silme kayıtları otomatik temizlenir.
+*/
+(function(){
+  if(window.__plfNotificationDeletedFix) return;
+  window.__plfNotificationDeletedFix = true;
+
+  var NOTIFICATION_KEY = "prestijLifeAdminNotifications_v1";
+  var DELETED_KEY = "prestijLifeAdminNotificationsDeleted_v1";
+  var NOTIFICATION_DAYS = 15;
+
+  function cutoffTime(){
+    return Date.now() - (NOTIFICATION_DAYS * 24 * 60 * 60 * 1000);
+  }
+
+  function parseTime(value){
+    var t = new Date(value || 0).getTime();
+    return isNaN(t) ? 0 : t;
+  }
+
+  function loadNotificationArray(){
+    try{
+      var arr = JSON.parse(localStorage.getItem(NOTIFICATION_KEY) || "[]");
+      return Array.isArray(arr) ? arr : [];
+    }catch(e){
+      return [];
+    }
+  }
+
+  function saveNotificationArray(arr){
+    arr = (arr || []).filter(function(n){
+      return parseTime(n.createdAt || n.tarih) >= cutoffTime();
+    });
+    localStorage.setItem(NOTIFICATION_KEY, JSON.stringify(arr));
+  }
+
+  function loadDeletedMap(){
+    try{
+      var map = JSON.parse(localStorage.getItem(DELETED_KEY) || "{}");
+      if(!map || typeof map !== "object" || Array.isArray(map)) map = {};
+      Object.keys(map).forEach(function(code){
+        if(parseTime(map[code]) < cutoffTime()) delete map[code];
+      });
+      localStorage.setItem(DELETED_KEY, JSON.stringify(map));
+      return map;
+    }catch(e){
+      localStorage.removeItem(DELETED_KEY);
+      return {};
+    }
+  }
+
+  function saveDeletedMap(map){
+    map = map || {};
+    Object.keys(map).forEach(function(code){
+      if(parseTime(map[code]) < cutoffTime()) delete map[code];
+    });
+    localStorage.setItem(DELETED_KEY, JSON.stringify(map));
+  }
+
+  window.plfIsNotificationDeleted = function(code){
+    if(!code) return false;
+    var map = loadDeletedMap();
+    return !!map[String(code)];
+  };
+
+  window.plfArchiveDeletedNotificationCodes = function(codes){
+    var map = loadDeletedMap();
+    (codes || []).forEach(function(code){
+      code = String(code || "").trim();
+      if(code) map[code] = new Date().toISOString();
+    });
+    saveDeletedMap(map);
+  };
+
+  var oldClearReadNotifications = window.plfClearReadNotifications;
+  window.plfClearReadNotifications = function(){
+    var arr = loadNotificationArray();
+    var readCodes = arr.filter(function(n){ return !!n.read; }).map(function(n){ return n.code; });
+
+    if(readCodes.length){
+      plfArchiveDeletedNotificationCodes(readCodes);
+    }
+
+    arr = arr.filter(function(n){ return !n.read; });
+    saveNotificationArray(arr);
+
+    if(typeof plfRenderNotifications === "function") plfRenderNotifications();
+    if(typeof showGlobalToast === "function"){
+      showGlobalToast(readCodes.length ? "Okunan bildirimler silindi. Tekrar görünmeyecek." : "Silinecek okunmuş bildirim yok.", "success", 2600);
+    }
+
+    if(typeof oldClearReadNotifications === "function"){
+      // Eski fonksiyon tekrar çalışmasın; onun yerine burada tamamen işlem yaptık.
+      return;
+    }
+  };
+
+  var oldSyncOrderNotifications = window.plfSyncOrderNotifications;
+  window.plfSyncOrderNotifications = function(orders, silent){
+    var deletedMap = loadDeletedMap();
+
+    var filteredOrders = (orders || []).filter(function(o){
+      var code = String(o.siparis_kodu || o.orderCode || "").trim();
+      return !code || !deletedMap[code];
+    });
+
+    if(typeof oldSyncOrderNotifications === "function"){
+      return oldSyncOrderNotifications(filteredOrders, silent);
+    }
+
+    // Eski sync fonksiyonu yoksa güvenli temel davranış.
+    var arr = loadNotificationArray();
+    var map = {};
+    arr.forEach(function(n){ map[String(n.code)] = n; });
+
+    var added = 0;
+    filteredOrders.forEach(function(o){
+      var source = String(o.kaynak || "").toLowerCase().trim();
+      if(source && source !== "site") return;
+
+      var code = String(o.siparis_kodu || o.orderCode || "").trim();
+      if(!code || deletedMap[code]) return;
+
+      var orderTime = parseTime(o.tarih) || Date.now();
+      if(orderTime < cutoffTime()) return;
+
+      if(!map[code]){
+        arr.push({
+          code: code,
+          customer: o.musteri_ad || "",
+          phone: o.telefon || "",
+          tarih: o.tarih || new Date().toISOString(),
+          createdAt: o.tarih || new Date().toISOString(),
+          read: false
+        });
+        added++;
+      }
+    });
+
+    saveNotificationArray(arr);
+    if(typeof plfRenderNotifications === "function") plfRenderNotifications();
+    if(added && !silent && typeof showGlobalToast === "function"){
+      showGlobalToast(added + " yeni sipariş bildirimi var.", "success", 3500);
+    }
+  };
+})();
+
 </script>
 </body>
 </html>
