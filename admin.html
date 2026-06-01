@@ -4776,6 +4776,298 @@ function renderOrderDetail(o,details){
     '</div>';
 }
 
+
+
+/* BİLDİRİM OKUNDU/SİLİNDİ KESİN DÜZELTME V2
+   Yeni sipariş oluşturulunca bildirim kesin okunmadı düşer.
+   Okundu ve silindi bilgisi ayrı tutulur; eski read:true kayıtları yeni bildirimi gizleyemez.
+*/
+(function(){
+  if(window.__plfNotificationReadStateV2) return;
+  window.__plfNotificationReadStateV2 = true;
+
+  var NOTIFICATION_KEY = "prestijLifeAdminNotifications_v1";
+  var READ_KEY = "prestijLifeAdminNotificationsRead_v2";
+  var DELETED_KEY = "prestijLifeAdminNotificationsDeleted_v1";
+  var DAYS = 15;
+  var POLL_MS = 15000;
+
+  function nowIso(){ return new Date().toISOString(); }
+  function cutoffTime(){ return Date.now() - (DAYS * 24 * 60 * 60 * 1000); }
+  function parseTime(value){
+    var t = new Date(value || 0).getTime();
+    return isNaN(t) ? 0 : t;
+  }
+  function loadJSON(key, fallback){
+    try{
+      var value = JSON.parse(localStorage.getItem(key) || JSON.stringify(fallback));
+      return value === null || value === undefined ? fallback : value;
+    }catch(e){
+      localStorage.removeItem(key);
+      return fallback;
+    }
+  }
+  function cleanMap(key){
+    var map = loadJSON(key, {});
+    if(!map || typeof map !== "object" || Array.isArray(map)) map = {};
+    Object.keys(map).forEach(function(code){
+      if(parseTime(map[code]) < cutoffTime()) delete map[code];
+    });
+    localStorage.setItem(key, JSON.stringify(map));
+    return map;
+  }
+  function cleanNotifications(){
+    var arr = loadJSON(NOTIFICATION_KEY, []);
+    if(!Array.isArray(arr)) arr = [];
+    arr = arr.filter(function(n){
+      return n && n.code && parseTime(n.createdAt || n.tarih) >= cutoffTime();
+    });
+    localStorage.setItem(NOTIFICATION_KEY, JSON.stringify(arr));
+    return arr;
+  }
+  function saveNotifications(arr){
+    arr = (arr || []).filter(function(n){
+      return n && n.code && parseTime(n.createdAt || n.tarih) >= cutoffTime();
+    });
+    localStorage.setItem(NOTIFICATION_KEY, JSON.stringify(arr));
+  }
+  function markRead(code){
+    code = String(code || "").trim();
+    if(!code) return;
+    var map = cleanMap(READ_KEY);
+    map[code] = nowIso();
+    localStorage.setItem(READ_KEY, JSON.stringify(map));
+  }
+  function markDeleted(code){
+    code = String(code || "").trim();
+    if(!code) return;
+    var map = cleanMap(DELETED_KEY);
+    map[code] = nowIso();
+    localStorage.setItem(DELETED_KEY, JSON.stringify(map));
+  }
+  function isSiteOrder(order){
+    var code = String(order.siparis_kodu || order.orderCode || "").trim().toUpperCase();
+    var source = String(order.kaynak || "").trim().toLowerCase();
+    if(source === "site") return true;
+    if(code.indexOf("PL-") === 0) return true;
+    if(!source && code.indexOf("MN-") !== 0) return true;
+    return false;
+  }
+
+  window.plfSyncOrderNotifications = function(orders, silent){
+    if(typeof plfEnsureNotificationPanel === "function") plfEnsureNotificationPanel();
+
+    var notifications = cleanNotifications();
+    var readMap = cleanMap(READ_KEY);
+    var deletedMap = cleanMap(DELETED_KEY);
+    var byCode = {};
+    var added = 0;
+
+    notifications.forEach(function(n){
+      byCode[String(n.code)] = n;
+    });
+
+    (orders || []).forEach(function(order){
+      if(!isSiteOrder(order)) return;
+
+      var code = String(order.siparis_kodu || order.orderCode || "").trim();
+      if(!code) return;
+      if(deletedMap[code]) return;
+
+      var orderTime = parseTime(order.tarih) || Date.now();
+      if(orderTime < cutoffTime()) return;
+
+      if(!byCode[code]){
+        byCode[code] = {
+          code: code,
+          customer: order.musteri_ad || "",
+          phone: order.telefon || "",
+          tarih: order.tarih || nowIso(),
+          createdAt: order.tarih || nowIso(),
+          read: !!readMap[code]
+        };
+        notifications.push(byCode[code]);
+        if(!readMap[code]) added++;
+      }else{
+        byCode[code].customer = order.musteri_ad || byCode[code].customer || "";
+        byCode[code].phone = order.telefon || byCode[code].phone || "";
+        byCode[code].tarih = order.tarih || byCode[code].tarih || nowIso();
+        byCode[code].createdAt = byCode[code].createdAt || order.tarih || nowIso();
+        byCode[code].read = !!readMap[code];
+      }
+    });
+
+    notifications.forEach(function(n){
+      n.read = !!readMap[String(n.code)];
+    });
+
+    saveNotifications(notifications);
+    if(typeof plfRenderNotifications === "function") plfRenderNotifications();
+
+    if(added && !silent && typeof showGlobalToast === "function"){
+      showGlobalToast(added + " yeni sipariş bildirimi var.", "success", 3500);
+    }
+
+    return { added: added, total: notifications.length };
+  };
+
+  window.plfCheckNewOrders = async function(silent){
+    try{
+      if(typeof plfEnsureNotificationPanel === "function") plfEnsureNotificationPanel();
+
+      var start = new Date(Date.now() - (DAYS * 24 * 60 * 60 * 1000));
+      var startText = start.toISOString().slice(0,10);
+
+      var data = await apiPost({
+        action: "listOrders",
+        apiKey: ADMIN_API_KEY,
+        dateStart: startText
+      }, 30000);
+
+      if(data && data.success){
+        return plfSyncOrderNotifications(data.orders || [], !!silent);
+      }
+
+      if(!silent && typeof showGlobalToast === "function"){
+        showGlobalToast("Bildirim kontrolü yapılamadı: " + ((data && data.message) || "Sunucu cevabı alınamadı."), "warning", 3500);
+      }
+    }catch(error){
+      if(!silent && typeof showGlobalToast === "function"){
+        showGlobalToast("Bildirim kontrolü yapılamadı: " + (error.message || error), "warning", 3500);
+      }
+    }
+    return { added:0, total:cleanNotifications().length };
+  };
+
+  var oldOpenNotificationOrder = window.plfOpenNotificationOrder;
+  window.plfOpenNotificationOrder = function(code){
+    code = String(code || "").trim();
+    if(code) markRead(code);
+
+    var arr = cleanNotifications();
+    arr.forEach(function(n){
+      if(String(n.code) === code) n.read = true;
+    });
+    saveNotifications(arr);
+    if(typeof plfRenderNotifications === "function") plfRenderNotifications();
+
+    if(typeof oldOpenNotificationOrder === "function"){
+      return oldOpenNotificationOrder(code);
+    }
+
+    if(typeof openSection === "function"){
+      var card = Array.from(document.querySelectorAll(".compact-admin-menu .module-card")).find(function(c){
+        return String(c.textContent || "").indexOf("Siparişler") !== -1;
+      });
+      if(card) openSection("siparisler", card);
+    }
+    setTimeout(function(){
+      if(typeof loadOrderDetail === "function") loadOrderDetail(code);
+    }, 300);
+  };
+
+  window.plfMarkAllNotificationsRead = function(){
+    var arr = cleanNotifications();
+    arr.forEach(function(n){
+      markRead(n.code);
+      n.read = true;
+    });
+    saveNotifications(arr);
+    if(typeof plfRenderNotifications === "function") plfRenderNotifications();
+    if(typeof showGlobalToast === "function") showGlobalToast("Bildirimler okundu yapıldı.", "success", 2200);
+  };
+
+  window.plfClearReadNotifications = function(){
+    var readMap = cleanMap(READ_KEY);
+    var arr = cleanNotifications();
+    var kept = [];
+    var deletedCount = 0;
+
+    arr.forEach(function(n){
+      var code = String(n.code || "");
+      var isRead = !!readMap[code] || !!n.read;
+      if(isRead){
+        markDeleted(code);
+        deletedCount++;
+      }else{
+        kept.push(n);
+      }
+    });
+
+    saveNotifications(kept);
+    if(typeof plfRenderNotifications === "function") plfRenderNotifications();
+
+    if(typeof showGlobalToast === "function"){
+      showGlobalToast(
+        deletedCount ? "Okunan bildirimler silindi. Tekrar görünmeyecek." : "Silinecek okunmuş bildirim yok.",
+        "success",
+        2600
+      );
+    }
+  };
+
+  var oldToggleNotifications = window.plfToggleNotifications;
+  window.plfToggleNotifications = function(){
+    if(typeof oldToggleNotifications === "function"){
+      oldToggleNotifications();
+    }else{
+      var panel = document.getElementById("notificationPanel");
+      if(panel) panel.classList.toggle("active");
+    }
+    setTimeout(function(){ plfCheckNewOrders(true); }, 80);
+  };
+
+  function startNotificationV2(){
+    if(typeof plfEnsureNotificationPanel === "function") plfEnsureNotificationPanel();
+    plfCheckNewOrders(false);
+
+    if(window.__plfNotificationV2Interval){
+      clearInterval(window.__plfNotificationV2Interval);
+    }
+    window.__plfNotificationV2Interval = setInterval(function(){
+      if(!document.hidden) plfCheckNewOrders(true);
+    }, POLL_MS);
+  }
+
+  var oldShowAdminPanel = window.showAdminPanel;
+  window.showAdminPanel = function(){
+    var result;
+    if(typeof oldShowAdminPanel === "function"){
+      result = oldShowAdminPanel.apply(this, arguments);
+    }else{
+      if(window.loginScreen) loginScreen.style.display = "none";
+      if(window.adminPanel) adminPanel.style.display = "block";
+    }
+
+    setTimeout(startNotificationV2, 700);
+    return result;
+  };
+
+  document.addEventListener("visibilitychange", function(){
+    if(!document.hidden && sessionStorage.getItem(ADMIN_SESSION_KEY) === "true"){
+      plfCheckNewOrders(false);
+    }
+  });
+
+  window.addEventListener("focus", function(){
+    if(sessionStorage.getItem(ADMIN_SESSION_KEY) === "true"){
+      plfCheckNewOrders(true);
+    }
+  });
+
+  if(document.readyState === "loading"){
+    document.addEventListener("DOMContentLoaded", function(){
+      if(sessionStorage.getItem(ADMIN_SESSION_KEY) === "true"){
+        setTimeout(startNotificationV2, 700);
+      }
+    });
+  }else{
+    if(sessionStorage.getItem(ADMIN_SESSION_KEY) === "true"){
+      setTimeout(startNotificationV2, 700);
+    }
+  }
+})();
+
 </script>
 </body>
 </html>
