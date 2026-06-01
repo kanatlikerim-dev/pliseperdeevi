@@ -1193,6 +1193,91 @@ async function downloadSlipExcel(code){
     showMessage("slipsError","Excel indirilemedi. " + e.message);
   }
 }
+/* SİPARİŞ DETAYI - BAĞLI FİŞ BİLGİSİ
+   Sipariş listesine ve giriş sistemine dokunmaz. Sadece Detay ekranında bağlı fiş bilgisini gösterir.
+*/
+async function plfGetSlipsForOrder(orderCode){
+  try{
+    var response = await apiPost({
+      action:"listSlips",
+      apiKey:ADMIN_API_KEY,
+      orderCode:orderCode
+    },16000);
+    if(!response || !response.success) return [];
+    return response.slips || [];
+  }catch(e){
+    return [];
+  }
+}
+function plfRenderOrderSlipInfo(orderCode, slips){
+  var box = orderDetailArea ? orderDetailArea.querySelector(".detail-box") : null;
+  if(!box) return;
+  var grid = box.querySelector(".detail-grid");
+  if(!grid) return;
+
+  var list = slips || [];
+  var html = "";
+
+  if(list.length){
+    var codes = list.map(function(item){ return item.fis_kodu || ""; }).filter(Boolean).join(", ");
+    html = `
+      <div class="info-tile" style="margin-bottom:12px;grid-column:1/-1">
+        <span>İmalat Fişi</span>
+        <strong>Fiş Oluşturuldu</strong>
+        <small>${esc(codes || "Bu sipariş için imalat fişi mevcut.")}</small>
+      </div>
+      <div class="actions" style="margin-bottom:12px;grid-column:1/-1">
+        <button class="btn-light" onclick="plfOpenRelatedSlips('${attr(orderCode)}')">Bağlı Fişleri Aç</button>
+      </div>
+    `;
+  }else{
+    html = `
+      <div class="info-tile" style="margin-bottom:12px;grid-column:1/-1">
+        <span>İmalat Fişi</span>
+        <strong>Henüz Fiş Yok</strong>
+        <small>Bu sipariş için henüz imalat fişi oluşturulmadı.</small>
+      </div>
+    `;
+  }
+
+  grid.insertAdjacentHTML("afterend", html);
+}
+function plfOpenRelatedSlips(orderCode){
+  document.querySelectorAll(".module-card").forEach(function(card){ card.classList.remove("active"); });
+  var cards = Array.from(document.querySelectorAll(".module-card"));
+  var imalatCard = cards.find(function(card){
+    return String(card.textContent || "").indexOf("İmalat") !== -1;
+  });
+  if(imalatCard) imalatCard.classList.add("active");
+
+  document.querySelectorAll(".panel-section").forEach(function(section){ section.classList.remove("active"); });
+  var imalatSection = document.getElementById("section-imalat");
+  if(imalatSection) imalatSection.classList.add("active");
+
+  if(document.getElementById("slipOrderCode")) slipOrderCode.value = orderCode;
+  if(typeof loadSlips === "function") loadSlips();
+  if(imalatSection) imalatSection.scrollIntoView({behavior:"smooth",block:"start"});
+}
+async function loadOrderDetail(code){
+  orderDetailArea.innerHTML='<div class="placeholder">Sipariş detayı açılıyor...</div>';
+  try{
+    var orderData = await apiPost({
+      action:"getOrder",
+      apiKey:ADMIN_API_KEY,
+      siparis_kodu:code
+    },16000);
+    if(!orderData.success) throw new Error(orderData.message || "Sipariş detayı alınamadı.");
+
+    renderOrderDetail(orderData.order, orderData.details || []);
+
+    var slips = await plfGetSlipsForOrder(code);
+    plfRenderOrderSlipInfo(code, slips);
+  }catch(e){
+    orderDetailArea.innerHTML="";
+    showMessage("ordersError", e.message || "Sipariş detayı alınamadı.");
+  }
+}
+
 passwordInput.addEventListener("keydown",e=>{if(e.key==="Enter")login()});
 initAdmin();
 </script>
