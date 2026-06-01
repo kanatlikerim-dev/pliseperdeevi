@@ -2031,6 +2031,188 @@ function renderOrderDetail(o,details){
       '<div class="table-wrap mobile-stack-table"><table><thead><tr><th>Sıra</th><th>Ürün</th><th>Kasa</th><th>Sistem</th><th>Ölçü</th><th>Adet</th><th>m²</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
     '</div>';
 }
+
+/* SON DÜZENLEME - MİNİMAL SİPARİŞ DETAYI + FİŞ/EXCEL SATICI SENKRONU */
+(function(){
+  if(window.__plfFinalMinimalAdminPatch) return;
+  window.__plfFinalMinimalAdminPatch = true;
+
+  var style = document.createElement("style");
+  style.id = "prestij-admin-final-minimal-detail-style";
+  style.textContent = `
+    .admin-card{padding:22px!important}
+    .panel-section{padding:18px!important;border-radius:22px!important}
+    .box,.settings-card{padding:16px!important;border-radius:18px!important}
+    .module-card{padding:14px 16px!important;border-radius:18px!important}
+    .module-card strong{font-size:15px!important}
+    .module-card p{font-size:12px!important;line-height:1.35!important}
+    .compact-admin-menu{gap:10px!important;margin-bottom:14px!important}
+
+    .detail-box{padding:14px!important;border-radius:18px!important;margin-top:12px!important}
+    .detail-clean-title{margin-bottom:10px!important;align-items:center!important}
+    .detail-clean-title h3{font-size:18px!important;margin:0!important;line-height:1.15!important}
+    .detail-clean-title .subtitle{display:none!important}
+
+    .detail-grid{grid-template-columns:repeat(6,minmax(0,1fr))!important;gap:8px!important;margin-bottom:8px!important}
+    .detail-box .info-tile{padding:9px 10px!important;border-radius:13px!important;min-height:auto!important}
+    .detail-box .info-tile span{font-size:9.5px!important;margin-bottom:4px!important;letter-spacing:.02em!important}
+    .detail-box .info-tile strong{font-size:14px!important;line-height:1.15!important;word-break:break-word!important}
+    .detail-box > .info-tile[style]{margin-bottom:8px!important}
+
+    .detail-box .form-grid{display:grid!important;grid-template-columns:220px 200px 92px!important;gap:10px!important;align-items:end!important;margin:6px 0 10px!important;max-width:532px!important}
+    .detail-box .form-grid .field{margin:0!important;min-width:0!important}
+    .detail-box .form-grid .field span{font-size:11px!important;margin-bottom:5px!important}
+    .detail-box .form-grid select{height:40px!important;min-height:40px!important;padding:8px 11px!important;font-size:14px!important;border-radius:12px!important}
+    .detail-box .form-grid .field.wide{grid-column:auto!important}
+    .detail-box .form-grid .field.wide span{display:none!important}
+    .detail-box .form-grid .field.wide button{width:92px!important;height:40px!important;min-height:40px!important;margin-top:0!important;padding:0 12px!important;font-size:14px!important;border-radius:12px!important}
+
+    .detail-clean-actions{display:grid!important;grid-template-columns:170px 150px 150px!important;gap:10px!important;margin:8px 0 10px!important}
+    .detail-clean-actions button{height:40px!important;min-height:40px!important;margin-top:0!important;padding:0 12px!important;font-size:14px!important;border-radius:12px!important}
+
+    .detail-section-label{font-size:15px!important;margin:8px 0 7px!important}
+    .summary-cards,.simple-account-summary{gap:8px!important}
+    .summary-card,.simple-account-card{padding:11px 12px!important;border-radius:14px!important}
+    .summary-card strong,.simple-account-card strong{font-size:17px!important}
+    th,td{padding:9px 10px!important}
+
+    @media(max-width:1150px){
+      .detail-grid{grid-template-columns:repeat(3,1fr)!important}
+    }
+    @media(max-width:900px){
+      .admin-card{padding:12px!important}
+      .panel-section{padding:12px!important}
+      .box,.settings-card,.detail-box{padding:12px!important}
+      .detail-grid{grid-template-columns:1fr 1fr!important;gap:7px!important}
+      .detail-box .form-grid{grid-template-columns:1fr!important;max-width:100%!important;gap:8px!important}
+      .detail-box .form-grid .field.wide button{width:100%!important}
+      .detail-clean-actions{grid-template-columns:1fr!important;gap:8px!important}
+    }
+    @media(max-width:520px){
+      .detail-grid{grid-template-columns:1fr!important}
+    }
+  `;
+  document.head.appendChild(style);
+})();
+
+async function plfSyncExistingSlipsSeller(orderCode, sellerName){
+  try{
+    var listResponse = await apiPost({
+      action:"listSlips",
+      apiKey:ADMIN_API_KEY,
+      orderCode:orderCode
+    },45000);
+
+    if(!listResponse || !listResponse.success) return {success:false, message:(listResponse && listResponse.message) || "Fiş listesi alınamadı."};
+
+    var slips = listResponse.slips || [];
+    if(!slips.length) return {success:true, count:0};
+
+    for(var i=0; i<slips.length; i++){
+      var slipCode = slips[i].fis_kodu || "";
+      if(!slipCode) continue;
+
+      var detailResponse = await apiPost({
+        action:"getSlip",
+        apiKey:ADMIN_API_KEY,
+        fis_kodu:slipCode
+      },30000);
+
+      if(!detailResponse || !detailResponse.success) continue;
+
+      var slip = detailResponse.slip || {};
+      var details = detailResponse.details || [];
+
+      await apiPost({
+        action:"updateSlip",
+        apiKey:ADMIN_API_KEY,
+        fis_kodu:slipCode,
+        header:{
+          siparis_kodu: slip.siparis_kodu || orderCode,
+          musteri_ad: slip.musteri_ad || "",
+          satici_adi: sellerName || "Merkez / Site",
+          urun_adi: slip.urun_adi || "",
+          kasa_cesidi: slip.kasa_cesidi || "",
+          montaj_tipi: slip.montaj_tipi || "",
+          not: slip.not || ""
+        },
+        details: details
+      },45000);
+    }
+
+    return {success:true, count:slips.length};
+  }catch(error){
+    return {success:false, message:error.message || String(error)};
+  }
+}
+
+async function saveOrderDetailChanges(orderCode){
+  try{
+    var statusSelect = document.getElementById("detailOrderStatus");
+    var sellerSelect = document.getElementById("detailOrderSeller");
+    var selectedSellerName = "Merkez / Site";
+    var sellerWasSaved = false;
+
+    if(typeof showGlobalToast === "function") showGlobalToast("Kaydediliyor...","loading",9000);
+
+    if(sellerSelect){
+      var selected = sellerSelect.options[sellerSelect.selectedIndex];
+      var sellerId = sellerSelect.value || "";
+      selectedSellerName = sellerId ? (selected.getAttribute("data-name") || selected.textContent || "") : "Merkez / Site";
+
+      var sellerResponse = await apiPost({
+        action:"updateOrderSeller",
+        apiKey:ADMIN_API_KEY,
+        siparis_kodu:orderCode,
+        satici_id:sellerId,
+        satici_adi:selectedSellerName,
+        kaynak:sellerId ? "manuel" : "site"
+      },30000);
+
+      if(!sellerResponse || !sellerResponse.success){
+        throw new Error((sellerResponse && sellerResponse.message) || "Satıcı bilgisi kaydedilemedi.");
+      }
+
+      sellerWasSaved = true;
+    }
+
+    if(statusSelect){
+      var statusResponse = await apiPost({
+        action:"updateOrderStatus",
+        apiKey:ADMIN_API_KEY,
+        siparis_kodu:orderCode,
+        status:statusSelect.value
+      },30000);
+
+      if(!statusResponse || !statusResponse.success){
+        throw new Error((statusResponse && statusResponse.message) || "Sipariş durumu kaydedilemedi.");
+      }
+    }
+
+    var slipSync = {success:true, count:0};
+    if(sellerWasSaved){
+      slipSync = await plfSyncExistingSlipsSeller(orderCode, selectedSellerName);
+    }
+
+    if(typeof loadOrders === "function") loadOrders();
+    if(typeof loadAccounting === "function") loadAccounting();
+    if(typeof loadOrderDetail === "function") loadOrderDetail(orderCode);
+
+    if(typeof showGlobalToast === "function"){
+      if(slipSync && slipSync.success && slipSync.count){
+        showGlobalToast("Kaydedildi. Mevcut fişler de güncellendi.","success",2800);
+      }else if(slipSync && slipSync.success){
+        showGlobalToast("Kaydedildi.","success",2800);
+      }else{
+        showGlobalToast("Sipariş kaydedildi. Fiş güncellemesi kontrol edilmeli.","warning",4200);
+      }
+    }
+  }catch(e){
+    if(typeof showGlobalToast === "function") showGlobalToast("Kaydedilemedi: " + (e.message || e),"error",4500);
+    else showMessage("ordersError","Kaydedilemedi: " + (e.message || e));
+  }
+}
+
 </script>
 </body>
 </html>
