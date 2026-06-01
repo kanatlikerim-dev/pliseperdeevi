@@ -1520,6 +1520,152 @@ body.system-bulk .cam-card .field-system-tip select{
 }
 </style>
 
+
+<style>
+/* SİSTEM SEÇİMİ KÜÇÜLTME + MÜŞTERİ FİYAT LİSTESİ */
+.system-mode-box{
+    padding:10px 12px!important;
+    margin-top:10px!important;
+    border-radius:15px!important;
+}
+.system-mode-box .selection-title{
+    margin-bottom:7px!important;
+    font-size:13.5px!important;
+}
+.system-mode-grid{
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+    gap:7px!important;
+}
+.system-mode-option{
+    padding:8px 9px!important;
+    border-radius:12px!important;
+    gap:7px!important;
+    min-height:auto!important;
+}
+.system-mode-option input{
+    margin-top:2px!important;
+    transform:scale(.92);
+}
+.system-mode-option strong{
+    font-size:12.5px!important;
+    line-height:1.15!important;
+}
+.system-mode-option small{
+    font-size:10.8px!important;
+    line-height:1.25!important;
+    margin-top:2px!important;
+}
+.system-mode-box .slim-price-note{
+    font-size:11.5px!important;
+    margin-top:6px!important;
+    line-height:1.3!important;
+}
+
+.price-list-modal{
+    position:fixed;
+    inset:0;
+    z-index:99998;
+    display:none;
+    align-items:center;
+    justify-content:center;
+    background:var(--modal-bg);
+    padding:16px;
+}
+.price-list-modal.show{
+    display:flex;
+}
+.price-list-card{
+    width:min(560px,100%);
+    max-height:90vh;
+    overflow:auto;
+    background:var(--card-bg);
+    color:var(--text);
+    border:1px solid var(--border);
+    border-radius:26px;
+    box-shadow:0 28px 80px rgba(0,0,0,.35);
+    padding:20px;
+}
+.price-list-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:12px;
+    margin-bottom:14px;
+}
+.price-list-head h2{
+    margin:0;
+    font-family:"Cormorant Garamond", serif;
+    font-size:31px;
+    line-height:1;
+}
+.price-list-head p{
+    color:var(--muted);
+    font-size:13px;
+    line-height:1.45;
+    margin:7px 0 0;
+}
+.price-list-close{
+    width:36px;
+    height:36px;
+    border-radius:50%;
+    padding:0;
+    background:var(--soft-bg);
+    color:var(--text);
+    border:1px solid var(--border);
+}
+.price-list-table{
+    display:grid;
+    gap:8px;
+}
+.price-list-row{
+    display:flex;
+    justify-content:space-between;
+    gap:12px;
+    align-items:center;
+    padding:11px 12px;
+    border:1px solid var(--border);
+    border-radius:15px;
+    background:var(--panel-bg);
+}
+.price-list-row strong{
+    font-size:14px;
+}
+.price-list-row span{
+    color:var(--accent);
+    font-size:15px;
+    font-weight:950;
+    white-space:nowrap;
+}
+.price-list-note{
+    margin-top:12px;
+    padding:12px;
+    border-radius:15px;
+    background:var(--note-bg);
+    border:1px solid var(--warning-border);
+    color:var(--warning-text);
+    font-size:12.5px;
+    line-height:1.45;
+    font-weight:700;
+}
+.price-list-actions{
+    margin-top:14px;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+}
+@media(max-width:700px){
+    .system-mode-grid{
+        grid-template-columns:1fr!important;
+    }
+    .system-mode-option{
+        padding:8px 10px!important;
+    }
+    .price-list-actions{
+        grid-template-columns:1fr;
+    }
+}
+</style>
+
 </head>
 
 <body>
@@ -1612,7 +1758,7 @@ body.system-bulk .cam-card .field-system-tip select{
 
                 <div id="globalColorArea" style="display:none;">
                     <p class="section-title">Kasa Tipi</p>
-                    <div class="slim-note">Sürgülü pimapen camlarda ve ısıcam / çift cam cam balkonlarda uygun kullanım için <b>Slim Kasa</b> tercih edilmelidir.</div>
+                    <div class="slim-note">Sürgülü pimapen camlarda ve ısıcam / çift cam cam balkonlarda uygun kullanım için <b>Slim Kasa</b> tercih edilmelidir. Slim Kasa seçilirse m² fiyatına +300 TL eklenir.</div>
                     <div class="color-grid globalKasaTipiSecim"></div>
 
                     <p class="section-title">Kasa Rengi</p>
@@ -1652,6 +1798,9 @@ body.system-bulk .cam-card .field-system-tip select{
             </button>
             <button type="button" class="btn-light" onclick="openCaseCatalogMenu()">
                 Kasa Kataloğunu Gör
+            </button>
+            <button type="button" class="btn-light" onclick="openCustomerPriceList()">
+                Müşteri Fiyat Listesi
             </button>
             <button type="button" class="btn-light btn-reset" onclick="resetOrderForm()">
                 Bilgileri Temizle
@@ -1742,6 +1891,31 @@ body.system-bulk .cam-card .field-system-tip select{
     </div>
 </main>
 
+
+
+<div class="price-list-modal" id="customerPriceListModal" onclick="priceListOutsideClose(event)">
+    <div class="price-list-card">
+        <div class="price-list-head">
+            <div>
+                <span class="eyebrow">Müşteri Fiyat Listesi</span>
+                <h2>m² Satış Fiyatları</h2>
+                <p>Fiyatlar 1 m² üzerinden hesaplanır. Ölçüye göre toplam tutar sistem tarafından otomatik hesaplanır.</p>
+            </div>
+            <button type="button" class="price-list-close" onclick="closeCustomerPriceList()">×</button>
+        </div>
+
+        <div class="price-list-table" id="customerPriceListRows"></div>
+
+        <div class="price-list-note">
+            <b>Not:</b> 1 m² altındaki ölçüler fiyatlandırmada 1 m² olarak hesaplanır. Slim Kasa seçilirse ilgili ürün fiyatına m² başına Slim Kasa farkı eklenir.
+        </div>
+
+        <div class="price-list-actions">
+            <button type="button" class="btn-main" onclick="closeCustomerPriceList()">Tamam</button>
+            <button type="button" class="btn-light" onclick="openOrderSupportWhatsApp()">Fiyat İçin Destek Al</button>
+        </div>
+    </div>
+</div>
 
 <div class="order-success-overlay" id="orderSuccessOverlay" onclick="orderSuccessOutsideClose(event)">
     <div class="order-success-modal">
@@ -2440,7 +2614,7 @@ function createCamCard(index){
 
                 <div class="product-and-color-area">
                     <p class="section-title">Kasa Tipi</p>
-                    <div class="slim-note">Sürgülü pimapen camlarda ve ısıcam / çift cam cam balkonlarda uygun kullanım için <b>Slim Kasa</b> tercih edilmelidir.</div>
+                    <div class="slim-note">Sürgülü pimapen camlarda ve ısıcam / çift cam cam balkonlarda uygun kullanım için <b>Slim Kasa</b> tercih edilmelidir. Slim Kasa seçilirse m² fiyatına +300 TL eklenir.</div>
                     <div class="color-grid kasaTipiSecim"></div>
 
                     <p class="section-title">Kasa Rengi</p>
@@ -4223,6 +4397,69 @@ function openOrderSupportWhatsApp(){
           ].filter(Boolean).join("\\n");
 
     window.open("https://wa.me/905053559532?text=" + encodeURIComponent(message), "_blank");
+}
+
+
+/* MÜŞTERİ FİYAT LİSTESİ */
+function priceListPrice(value){
+    const n = Number(value || 0);
+    if(!n || n <= 0) return "-";
+    return Math.round(n).toLocaleString("tr-TR") + " TL / m²";
+}
+
+function renderCustomerPriceList(){
+    const box = document.getElementById("customerPriceListRows");
+    if(!box) return;
+
+    if(!priceReady || !currentPrices){
+        box.innerHTML = `<div class="warning-box"><b>Fiyat bilgisi alınamadı.</b> Lütfen sayfayı yenileyin veya WhatsApp üzerinden iletişime geçin.</div>`;
+        return;
+    }
+
+    const slim = Number(currentPrices.slim_fark || 0);
+    const rows = [
+        ["Klasik Seri Plise Askılı", currentPrices.klasik_askili],
+        ["Klasik Seri Plise Vidalı", currentPrices.klasik_vidali],
+        ["%80 Karartma", currentPrices.blackout],
+        ["Çiftli Sistem", currentPrices.ciftli],
+        ["Tül Perde", currentPrices.tul_perde],
+        ["Slim Kasa Farkı", slim],
+        ["Kargo", currentPrices.kargo]
+    ];
+
+    box.innerHTML = rows.map(function(row){
+        return `<div class="price-list-row"><strong>${escapeHTML(row[0])}</strong><span>${priceListPrice(row[1])}</span></div>`;
+    }).join("");
+
+    if(slim > 0){
+        box.innerHTML += `
+            <div class="price-list-row">
+                <strong>%80 Karartma + Slim Kasa</strong>
+                <span>${priceListPrice(Number(currentPrices.blackout || 0) + slim)}</span>
+            </div>
+            <div class="price-list-row">
+                <strong>Çiftli Sistem + Slim Kasa</strong>
+                <span>${priceListPrice(Number(currentPrices.ciftli || 0) + slim)}</span>
+            </div>
+        `;
+    }
+}
+
+function openCustomerPriceList(){
+    renderCustomerPriceList();
+    const modal = document.getElementById("customerPriceListModal");
+    if(modal) modal.classList.add("show");
+}
+
+function closeCustomerPriceList(){
+    const modal = document.getElementById("customerPriceListModal");
+    if(modal) modal.classList.remove("show");
+}
+
+function priceListOutsideClose(event){
+    if(event.target && event.target.id === "customerPriceListModal"){
+        closeCustomerPriceList();
+    }
 }
 
 init();
