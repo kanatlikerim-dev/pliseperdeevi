@@ -3718,6 +3718,76 @@ async function saveManualOrder(){
   }
 })();
 
+
+/* BİLDİRİM TIKLAYINCA SİPARİŞ DETAYINI KESİN AÇMA DÜZELTMESİ
+   Bildirimdeki sipariş koduna tıklanınca:
+   1) Bildirim okundu yapılır
+   2) Siparişler sekmesi açılır
+   3) Filtreler temizlenir
+   4) Sipariş listesi yenilenir
+   5) İlgili sipariş detayı ekrana açılır ve oraya kaydırılır
+*/
+window.plfOpenNotificationOrder = async function(code){
+  code = String(code || "").trim();
+  if(!code) return;
+
+  try{
+    var arr = [];
+    try{ arr = JSON.parse(localStorage.getItem("prestijLifeAdminNotifications_v1") || "[]"); }catch(e){ arr = []; }
+    if(Array.isArray(arr)){
+      arr.forEach(function(n){
+        if(String(n.code) === code) n.read = true;
+      });
+      localStorage.setItem("prestijLifeAdminNotifications_v1", JSON.stringify(arr));
+    }
+    if(typeof plfRenderNotifications === "function") plfRenderNotifications();
+
+    var panel = document.getElementById("notificationPanel");
+    if(panel) panel.classList.remove("active");
+
+    var siparisCard = Array.from(document.querySelectorAll(".compact-admin-menu .module-card")).find(function(card){
+      return String(card.textContent || "").indexOf("Siparişler") !== -1;
+    });
+
+    if(siparisCard && typeof openSection === "function"){
+      openSection("siparisler", siparisCard);
+    }else{
+      document.querySelectorAll(".panel-section").forEach(function(section){ section.classList.remove("active"); });
+      var siparisSection = document.getElementById("section-siparisler");
+      if(siparisSection) siparisSection.classList.add("active");
+    }
+
+    if(window.orderDateStart) orderDateStart.value = "";
+    if(window.orderDateEnd) orderDateEnd.value = "";
+    if(window.orderSourceFilter) orderSourceFilter.value = "";
+    if(window.orderSellerFilter) orderSellerFilter.value = "";
+    if(window.orderStatusFilter) orderStatusFilter.value = "";
+
+    if(typeof showGlobalToast === "function") showGlobalToast("Sipariş açılıyor: " + code, "loading", 6000);
+
+    if(typeof loadOrders === "function"){
+      await loadOrders();
+    }
+
+    if(typeof loadOrderDetail === "function"){
+      await loadOrderDetail(code);
+    }
+
+    var area = document.getElementById("orderDetailArea");
+    if(area){
+      area.scrollIntoView({behavior:"smooth", block:"start"});
+    }
+
+    if(typeof showGlobalToast === "function") showGlobalToast("Sipariş detayı açıldı: " + code, "success", 2500);
+  }catch(error){
+    if(typeof showGlobalToast === "function"){
+      showGlobalToast("Sipariş detayı açılamadı: " + (error.message || error), "error", 4500);
+    }else{
+      alert("Sipariş detayı açılamadı: " + (error.message || error));
+    }
+  }
+};
+
 </script>
 </body>
 </html>
