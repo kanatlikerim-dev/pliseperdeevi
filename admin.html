@@ -331,6 +331,62 @@ body.dark{--bg:#151618;--bg2:#202328;--card:#1e2023;--panel:#25282d;--text:#f2f0
 }
 </style>
 
+
+<style>
+/* SİPARİŞ DÜZENLEME + MUHASEBE FAZLA SATIŞ */
+.order-edit-panel{
+  margin:12px 0;
+  border:1px solid var(--border);
+  background:var(--panel);
+  border-radius:18px;
+  padding:13px;
+}
+.order-edit-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:10px;
+  margin-bottom:10px;
+}
+.order-edit-head h4{
+  margin:0;
+  font-size:15px;
+}
+.order-edit-head p{
+  margin:3px 0 0;
+  color:var(--muted);
+  font-size:12px;
+  line-height:1.35;
+  font-weight:700;
+}
+.order-edit-grid{
+  display:grid;
+  grid-template-columns:1fr 150px 150px;
+  gap:10px;
+}
+.order-edit-grid .address-field{
+  grid-column:1 / -1;
+}
+.account-extra-profit{
+  border-color:rgba(139,106,69,.34)!important;
+  background:linear-gradient(145deg,var(--soft),var(--card))!important;
+}
+.account-extra-badge{
+  display:inline-flex;
+  padding:3px 7px;
+  border-radius:999px;
+  background:var(--soft);
+  color:var(--accent);
+  font-size:10.5px;
+  font-weight:950;
+  margin-top:4px;
+}
+@media(max-width:900px){
+  .order-edit-grid{grid-template-columns:1fr}
+  .order-edit-grid .address-field{grid-column:auto}
+}
+</style>
+
 </head>
 <body>
 <div class="container">
@@ -6010,6 +6066,266 @@ document.addEventListener("click", function(e){
   var deleteBtn = e.target && e.target.closest ? e.target.closest("[data-delete-order-code]") : null;
   if(deleteBtn) return deleteOrder(deleteBtn.getAttribute("data-delete-order-code"));
 });
+
+
+
+/* SİPARİŞ DETAYI SADELEŞTİRME + MUHASEBEYE FAZLA SATIŞ TAŞIMA */
+function plfOrderFormulaTotal(o){
+  var formula = Number(o.formul_toplam_tutar || 0);
+  if(formula > 0) return formula;
+  var current = Number(o.musteri_toplam_tutar || 0);
+  var adj = Number(o.satis_duzeltme_tutari || 0);
+  if(current > 0 && adj > 0) return current - adj;
+  return current;
+}
+
+function plfOrderAdjustment(o){
+  var formula = plfOrderFormulaTotal(o);
+  var current = Number(o.musteri_toplam_tutar || 0);
+  return Math.max(0, Math.round((current - formula + Number.EPSILON) * 100) / 100);
+}
+
+function plfParseMoneyInput(value){
+  var cleaned = String(value || "").replace(/\./g,"").replace(",",".").replace(/[^\d.]/g,"");
+  return Number(cleaned || 0);
+}
+
+async function saveOrderDetailChanges(orderCode){
+  try{
+    var statusSelect = document.getElementById("detailOrderStatus");
+    var sellerSelect = document.getElementById("detailOrderSeller");
+
+    var editName = document.getElementById("editOrderCustomer");
+    var editPhone = document.getElementById("editOrderPhone");
+    var editAddress = document.getElementById("editOrderAddress");
+    var editSale = document.getElementById("editOrderSaleTotal");
+
+    if(typeof showGlobalToast === "function") showGlobalToast("Kaydediliyor...","loading",9000);
+
+    if(editName || editPhone || editAddress || editSale){
+      var editPayload = {
+        action:"updateOrderEdit",
+        apiKey:ADMIN_API_KEY,
+        siparis_kodu:orderCode
+      };
+      if(editName) editPayload.musteri_ad = editName.value;
+      if(editPhone) editPayload.telefon = editPhone.value;
+      if(editAddress) editPayload.adres = editAddress.value;
+      if(editSale) editPayload.musteri_toplam_tutar = plfParseMoneyInput(editSale.value);
+
+      var editResponse = await apiPost(editPayload,22000);
+      if(!editResponse || !editResponse.success){
+        throw new Error((editResponse && editResponse.message) || "Sipariş bilgileri kaydedilemedi.");
+      }
+    }
+
+    if(sellerSelect){
+      var selected = sellerSelect.options[sellerSelect.selectedIndex];
+      var sellerId = sellerSelect.value || "";
+      var sellerName = sellerId ? (selected.getAttribute("data-name") || selected.textContent || "") : "Merkez / Site";
+      var sellerResponse = await apiPost({
+        action:"updateOrderSeller",
+        apiKey:ADMIN_API_KEY,
+        siparis_kodu:orderCode,
+        satici_id:sellerId,
+        satici_adi:sellerName,
+        kaynak:sellerId ? "manual" : "site"
+      },22000);
+      if(!sellerResponse || !sellerResponse.success){
+        throw new Error((sellerResponse && sellerResponse.message) || "Satıcı bilgisi kaydedilemedi.");
+      }
+    }
+
+    if(statusSelect){
+      var statusResponse = await apiPost({
+        action:"updateOrderStatus",
+        apiKey:ADMIN_API_KEY,
+        siparis_kodu:orderCode,
+        status:statusSelect.value
+      },16000);
+      if(!statusResponse || !statusResponse.success){
+        throw new Error((statusResponse && statusResponse.message) || "Sipariş durumu kaydedilemedi.");
+      }
+    }
+
+    if(typeof showGlobalToast === "function") showGlobalToast("Kaydedildi.","success",2800);
+    if(typeof loadOrders === "function") loadOrders();
+    if(typeof loadAccounting === "function") loadAccounting();
+    if(typeof loadOrderDetail === "function") loadOrderDetail(orderCode);
+  }catch(e){
+    if(typeof showGlobalToast === "function") showGlobalToast("Kaydedilemedi: " + (e.message || e),"error",4500);
+    else showMessage("ordersError","Kaydedilemedi: " + (e.message || e));
+  }
+}
+
+function renderOrderDetail(o,details){
+  details = details || [];
+  var detailM2Total = details.reduce(function(total,item){ return total + orderDetailM2(item); }, 0);
+  var displayTotalM2 = detailM2Total > 0 ? detailM2Total : Number(o.toplam_gercek_m2 || 0);
+  var statusOptions = ORDER_STATUSES.map(function(s){
+    return '<option value="'+attr(s)+'" '+(String(o.durum || "Yeni") === s ? "selected" : "")+'>'+esc(s)+'</option>';
+  }).join("");
+  var sourceText = o.kaynak === "site" ? "Merkez / Site" : esc(o.satici_adi || "Manuel");
+  var formulaTotal = plfOrderFormulaTotal(o);
+  var saleTotal = Number(o.musteri_toplam_tutar || formulaTotal);
+  var adjustment = plfOrderAdjustment(o);
+
+  var tableRows = details.map(function(x){
+    return '<tr>'+
+      '<td>'+esc(x.satir_no)+'</td>'+
+      '<td><strong>'+esc(x.urun)+'</strong><small>'+esc(plfDetailFabricText(x))+'</small></td>'+
+      '<td>'+esc(x.kasa_rengi_raw || x.kasa_rengi || "-")+'</td>'+
+      '<td>'+esc(x.montaj_tipi)+'</td>'+
+      '<td>'+esc(x.gercek_en)+' × '+esc(x.gercek_boy)+'</td>'+
+      '<td>'+esc(x.adet)+'</td>'+
+      '<td>'+num(orderDetailM2(x))+' m²</td>'+
+    '</tr>';
+  }).join("");
+
+  var measureCards = details.map(function(x,idx){
+    var fabric = plfDetailFabricText(x);
+    return '<div class="order-measure-card">'+
+      '<div class="order-measure-card-top"><strong>'+(idx+1)+'. Ölçü · '+esc(x.urun)+'</strong><span class="tag">'+esc(x.adet)+' adet</span></div>'+
+      '<span>Ölçü: '+esc(x.gercek_en)+' × '+esc(x.gercek_boy)+' cm<br>'+
+      'Sistem: '+esc(x.montaj_tipi || "-")+'<br>'+
+      'Kasa: '+esc(x.kasa_rengi_raw || x.kasa_rengi || "-")+
+      (fabric ? '<br>Kumaş: '+esc(fabric) : '')+
+      '<br>m²: '+num(orderDetailM2(x))+' m²</span>'+
+    '</div>';
+  }).join("");
+
+  orderDetailArea.innerHTML =
+    '<div class="detail-box order-detail-pro">'+
+      '<div class="order-detail-hero">'+
+        '<div class="order-detail-hero-top">'+
+          '<div>'+
+            '<span class="eyebrow">Sipariş Detayı</span>'+
+            '<h3 style="margin:0">'+esc(o.siparis_kodu)+'</h3>'+
+            '<button type="button" class="order-code-copy" data-copy-order-code="'+attr(o.siparis_kodu)+'">📋 Sipariş kodunu kopyala</button>'+
+          '</div>'+
+          '<span class="order-detail-status">'+esc(o.durum || "Yeni")+'</span>'+
+        '</div>'+
+        plfAdminStatusFlow(o.durum || "Yeni")+
+      '</div>'+
+
+      '<div class="order-detail-body">'+
+        '<div class="order-detail-info-grid">'+
+          '<div class="order-detail-info-card"><span>Müşteri</span><strong>'+esc(o.musteri_ad)+'</strong><small>'+esc(o.telefon)+'</small></div>'+
+          '<div class="order-detail-info-card"><span>Kaynak / Satıcı</span><strong>'+sourceText+'</strong><small>'+esc(o.kaynak === "site" ? "Site siparişi" : "Manuel/satıcı siparişi")+'</small></div>'+
+          '<div class="order-detail-info-card"><span>Sipariş Tarihi</span><strong>'+formatDate(o.tarih)+'</strong></div>'+
+          '<div class="order-detail-info-card"><span>Toplam m²</span><strong>'+num(displayTotalM2)+' m²</strong><small>Gerçek ölçü m²</small></div>'+
+          '<div class="order-detail-info-card"><span>Olması Gereken Fiyat</span><strong>'+tl(formulaTotal)+'</strong><small>Formülün hesapladığı tutar</small></div>'+
+          '<div class="order-detail-info-card"><span>Satılan Fiyat</span><strong>'+tl(saleTotal)+'</strong><small>'+(adjustment > 0 ? 'Muhasebede fazla satış olarak görünür' : 'Formül fiyatı ile aynı')+'</small></div>'+
+        '</div>'+
+
+        '<div class="order-edit-panel">'+
+          '<div class="order-edit-head"><div><h4>Siparişi Düzenle</h4><p>Yanlış girilen müşteri bilgisi, adres veya satılan fiyatı buradan düzeltebilirsiniz.</p></div><span class="tag">Düzenleme</span></div>'+
+          '<div class="order-edit-grid">'+
+            '<label class="field"><span>Müşteri Adı</span><input id="editOrderCustomer" value="'+attr(o.musteri_ad || '')+'"></label>'+
+            '<label class="field"><span>Telefon</span><input id="editOrderPhone" value="'+attr(o.telefon || '')+'"></label>'+
+            '<label class="field"><span>Satılan Fiyat</span><input id="editOrderSaleTotal" type="number" min="'+attr(formulaTotal)+'" value="'+attr(saleTotal)+'"></label>'+
+            '<label class="field address-field"><span>Adres</span><textarea id="editOrderAddress">'+esc(o.adres || '')+'</textarea></label>'+
+          '</div>'+
+        '</div>'+
+
+        '<div class="form-grid order-detail-control-panel">'+
+          '<label class="field"><span>Satıcı / Kaynak</span><select id="detailOrderSeller">'+plfSellerSelectOptions(o)+'</select></label>'+
+          '<label class="field"><span>Sipariş Durumu</span><select id="detailOrderStatus">'+statusOptions+'</select></label>'+
+          '<label class="field"><span>&nbsp;</span><button class="btn-main" data-save-order-code="'+attr(o.siparis_kodu)+'">Kaydet</button></label>'+
+        '</div>'+
+
+        '<div class="order-detail-actions-pro">'+
+          '<button class="btn-main" data-create-slip-code="'+attr(o.siparis_kodu)+'">İmalat Fişi Oluştur</button>'+
+          '<button class="btn-light" data-open-slips-code="'+attr(o.siparis_kodu)+'">Fişlere Git</button>'+
+          '<button class="btn-danger" data-delete-order-code="'+attr(o.siparis_kodu)+'">Siparişi Sil</button>'+
+        '</div>'+
+
+        '<div class="order-detail-section-title">Ölçüler ve Ürün Detayları</div>'+
+        '<div class="table-wrap"><table><thead><tr><th>Sıra</th><th>Ürün / Kumaş</th><th>Kasa</th><th>Sistem</th><th>Ölçü</th><th>Adet</th><th>m²</th></tr></thead><tbody>'+tableRows+'</tbody></table></div>'+
+        '<div class="order-measure-cards">'+measureCards+'</div>'+
+      '</div>'+
+    '</div>';
+}
+
+function renderAccounting(rows, summary){
+  rows = rows || [];
+  summary = summary || {};
+  lastAccountingRows = rows;
+
+  const sellerMap = {};
+  rows.forEach(function(r){
+    const name = r.satici_adi || "Satıcı";
+    if(!sellerMap[name]){
+      sellerMap[name] = { count:0, m2:0, sale:0, formula:0, extra:0, seller:0, prestij:0, open:0, closed:0 };
+    }
+    sellerMap[name].count++;
+    sellerMap[name].m2 += plfNumRaw(r.toplam_gercek_m2);
+    sellerMap[name].sale += plfNumRaw(r.satis_tutari);
+    sellerMap[name].formula += plfNumRaw(r.formul_tutari);
+    sellerMap[name].extra += plfNumRaw(r.satis_duzeltme_tutari);
+    sellerMap[name].seller += plfNumRaw(r.satici_tutari);
+    sellerMap[name].prestij += plfNumRaw(r.fark_tutar);
+    if(plfAccountStatusText(r.hesap_durumu) === "kapandı") sellerMap[name].closed += plfNumRaw(r.satici_tutari);
+    else sellerMap[name].open += plfNumRaw(r.satici_tutari);
+  });
+
+  const sellerCards = Object.keys(sellerMap).sort().map(function(name){
+    const s = sellerMap[name];
+    return `<div class="account-seller-card">
+      <h4>${esc(name)}</h4>
+      <div class="account-seller-row"><span>Sipariş</span><strong>${s.count}</strong></div>
+      <div class="account-seller-row"><span>Gerçek m²</span><strong>${num(s.m2)} m²</strong></div>
+      <div class="account-seller-row"><span>Olması Gereken Fiyat</span><strong>${tl(s.formula || s.sale)}</strong></div>
+      <div class="account-seller-row account-extra-profit"><span>Fazla Satış Kârı</span><strong>${tl(s.extra)}</strong></div>
+      <div class="account-seller-row"><span>Satılan Fiyat</span><strong>${tl(s.sale)}</strong></div>
+      <div class="account-seller-row"><span>Prestij Life Kazancı</span><strong>${tl(s.prestij)}</strong></div>
+      <div class="account-seller-row"><span>Satıcı Hakedişi</span><strong>${tl(s.seller)}</strong></div>
+      <div class="account-seller-row"><span>Açık Hakediş</span><strong>${tl(s.open)}</strong></div>
+    </div>`;
+  }).join("");
+
+  const totalExtra = plfNumRaw(summary.toplam_satis_duzeltme) || rows.reduce(function(t,r){ return t + plfNumRaw(r.satis_duzeltme_tutari); },0);
+
+  accSummaryCards.innerHTML = `
+    <div class="account-pro-summary">
+      <div class="account-pro-card"><span>Sipariş Sayısı</span><strong>${summary.siparis_sayisi || 0}</strong><small>Filtreye uyan kayıt</small></div>
+      <div class="account-pro-card"><span>Gerçek m²</span><strong>${num(summary.toplam_gercek_m2)} m²</strong><small>Yuvarlama değil gerçek ölçü</small></div>
+      <div class="account-pro-card"><span>Satılan Fiyat</span><strong>${tl(summary.toplam_satis_tutari)}</strong><small>Satıcının müşteriden aldığı toplam</small></div>
+      <div class="account-pro-card account-extra-profit"><span>Fazla Satış Kârı</span><strong>${tl(totalExtra)}</strong><small>Formül üstü satış; satıcı hakedişine eklenir</small></div>
+      <div class="account-pro-card primary"><span>Prestij Life Kazancı</span><strong>${tl(summary.toplam_fark)}</strong><small>Firmaya kalan tutar</small></div>
+      <div class="account-pro-card"><span>Satıcı Hakedişi</span><strong>${tl(summary.toplam_satici_tutari)}</strong><small>Satıcıya ödenecek tutar</small></div>
+      <div class="account-pro-card"><span>Açık Hakediş</span><strong>${tl(summary.acik_satici_tutari)}</strong><small>${summary.acik_siparis || 0} açık sipariş</small></div>
+      <div class="account-pro-card"><span>Kapanan Hakediş</span><strong>${tl(summary.kapanan_satici_tutari)}</strong><small>${summary.kapanan_siparis || 0} kapanan sipariş</small></div>
+    </div>
+    ${sellerCards ? `<div class="report-pro-title"><h3>Satıcı Bazlı Özet</h3><span class="tag">${Object.keys(sellerMap).length} satıcı</span></div><div class="account-seller-grid">${sellerCards}</div>` : ""}
+  `;
+
+  accTableBody.innerHTML = "";
+  if(!rows.length){
+    accTableWrap.style.display = "none";
+    return showMessage("accWarning", "Bu seçimlere uygun muhasebe kaydı bulunamadı.");
+  }
+
+  rows.forEach(function(r){
+    const tr = document.createElement("tr");
+    const formula = plfNumRaw(r.formul_tutari) || plfNumRaw(r.satis_tutari);
+    const extra = plfNumRaw(r.satis_duzeltme_tutari);
+    tr.innerHTML = `<td><input type="checkbox" class="acc-check" value="${attr(r.siparis_kodu)}"></td>
+      <td><strong>${esc(r.siparis_kodu)}</strong></td>
+      <td>${formatDate(r.tarih)}</td>
+      <td>${esc(r.satici_adi)}</td>
+      <td><strong>${esc(r.musteri_ad)}</strong><small>${esc(r.telefon)}</small></td>
+      <td><span class="tag">${esc(r.bolge_kodu)}</span><small>${esc(r.fiyat_bolgesi)}</small></td>
+      <td>${num(r.toplam_gercek_m2)} m²</td>
+      <td>${tl(formula)}<small>Olması gereken</small></td>
+      <td>${tl(r.satis_tutari)}<small>Satılan fiyat</small>${extra ? `<span class="account-extra-badge">+${tl(extra)} fazla satış</span>` : ""}</td>
+      <td>${tl(r.fark_tutar)}<small>Prestij Life kazancı</small></td>
+      <td>${tl(r.satici_tutari)}<small>Satıcı hakedişi</small></td>
+      <td><span class="tag">${esc(r.hesap_durumu)}</span><small>${formatDate(r.hesap_kapanis_tarihi || "")}</small></td>`;
+    accTableBody.appendChild(tr);
+  });
+  accTableWrap.style.display = "block";
+}
 
 </script>
 </body>
