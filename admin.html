@@ -39,14 +39,12 @@ body.dark{--bg:#151618;--bg2:#202328;--card:#1e2023;--panel:#25282d;--text:#f2f0
     </div>
   </div>
 
-  <div class="admin-grid">
-    <div class="module-card active" onclick="openSection('siparisler',this)"><strong>Siparişler</strong><p>Siparişleri görüntüleyin, yeni sipariş ekleyin.</p></div>
-    <div class="module-card" onclick="openSection('imalat',this)"><strong>İmalat Fişleri</strong><p>İmalat fişlerini hazırlayın ve indirin.</p></div>
-    <div class="module-card" onclick="openSection('muhasebe',this)"><strong>Muhasebe</strong><p>Satıcı hesaplarını takip edin.</p></div>
-    <div class="module-card" onclick="openSection('raporlar',this)"><strong>Raporlar</strong><p>Satış, m² ve imalat özetlerini görün.</p></div>
-    <div class="module-card" onclick="openSection('yonetim',this)"><strong>Yönetim</strong><p>Satıcı, ürün, kumaş ve katalogları yönetin.</p></div>
-    <div class="module-card" onclick="openSection('yedekleme',this)"><strong>Yedekleme</strong><p>Verileri Excel veya JSON olarak indirin.</p></div>
-    <div class="module-card" onclick="openSection('ayarlar',this)"><strong>Ayarlar</strong><p>Fiyatları ve panel ayarlarını yönetin.</p></div>
+  <div class="admin-grid compact-admin-menu">
+    <div class="module-card active" onclick="openSection('siparisler',this)"><strong>Siparişler</strong><p>Gelen siparişleri görün, detay açın ve fiş oluşturun.</p></div>
+    <div class="module-card" onclick="openSection('imalat',this)"><strong>İmalat Fişleri</strong><p>Fişleri kontrol edin, Excel/PDF/Yazdır işlemlerini yapın.</p></div>
+    <div class="module-card" onclick="openSection('ayarlar',this)"><strong>Fiyatlar</strong><p>Müşteri fiyatları ve satıcı m² fiyatlarını yönetin.</p></div>
+    <div class="module-card" onclick="openSection('raporlar',this)"><strong>Raporlar</strong><p>Tarih aralığına göre satış ve m² özetlerini görün.</p></div>
+    <div class="module-card" onclick="openSection('gelismis',this)"><strong>Gelişmiş</strong><p>Yönetim, yedekleme, muhasebe, şifre ve katalog işlemleri.</p></div>
   </div>
 
   <div class="panel-section active" id="section-siparisler">
@@ -63,7 +61,7 @@ body.dark{--bg:#151618;--bg2:#202328;--card:#1e2023;--panel:#25282d;--text:#f2f0
       </div>
       <div class="actions"><button class="btn-main" onclick="loadOrders()">Siparişleri Listele</button><button class="btn-light" onclick="clearOrderFilters()">Filtreleri Temizle</button><button class="btn-light" onclick="toggleBox('manualOrderBox')">Manuel Sipariş Ekle</button></div>
       <div class="message error" id="ordersError"></div><div class="message success" id="ordersSuccess"></div><div class="message warning" id="ordersWarning"></div>
-      <div class="table-wrap" id="ordersTableWrap" style="display:none"><table><thead><tr><th>Sipariş Kodu</th><th>Tarih</th><th>Kaynak</th><th>Satıcı</th><th>Müşteri</th><th>m²</th><th>Müşteri Tutarı</th><th>Satıcı Hesabı</th><th>Durum</th><th>İşlem</th></tr></thead><tbody id="ordersTableBody"></tbody></table></div>
+      <div class="table-wrap" id="ordersTableWrap" style="display:none"><table><thead><tr><th>Sipariş</th><th>Tarih</th><th>Müşteri</th><th>Telefon</th><th>Kaynak / Satıcı</th><th>m²</th><th>Tutar</th><th>Durum</th><th>İşlem</th></tr></thead><tbody id="ordersTableBody"></tbody></table></div>
       <div id="orderDetailArea"></div>
     </div>
     <div class="box hidden" id="manualOrderBox">
@@ -152,6 +150,18 @@ body.dark{--bg:#151618;--bg2:#202328;--card:#1e2023;--panel:#25282d;--text:#f2f0
       <div class="message error" id="catalogError"></div><div class="message success" id="catalogSuccess"></div>
       <div class="table-wrap"><table><thead><tr><th>ID</th><th>Ürün</th><th>Görsel</th><th>Dosya</th><th>Durum</th><th>Not</th><th>İşlem</th></tr></thead><tbody id="catalogsTableBody"></tbody></table></div>
     </div>
+  </div>
+
+  <div class="panel-section" id="section-gelismis">
+    <div class="section-title"><h2>Gelişmiş İşlemler</h2><button class="help-btn" onclick="showHelp('gelismis')">?</button></div>
+    <p class="subtitle">Günlük kullanım dışındaki yönetim, muhasebe, yedekleme ve panel ayarları burada toplandı. Hiçbir özellik silinmedi; sadece ana ekran sadeleştirildi.</p>
+    <div class="admin-grid">
+      <div class="module-card" onclick="openAdvancedSection('yonetim')"><strong>Yönetim</strong><p>Satıcı, ürün, kumaş ve katalog kayıtlarını düzenleyin.</p></div>
+      <div class="module-card" onclick="openAdvancedSection('muhasebe')"><strong>Muhasebe</strong><p>Satıcı hesaplarını ve açık/kapanan hesapları takip edin.</p></div>
+      <div class="module-card" onclick="openAdvancedSection('yedekleme')"><strong>Yedekleme</strong><p>Excel veya JSON yedeği indirin.</p></div>
+      <div class="module-card" onclick="openAdvancedSection('ayarlar')"><strong>Şifre / Görünüm</strong><p>Şifre değiştirme, koyu mod ve satıcı fiyat ayarlarına ulaşın.</p></div>
+    </div>
+    <div class="placeholder">Günlük iş akışı için genelde Siparişler ve İmalat Fişleri yeterlidir. Katalog, ürün, satıcı ve yedekleme gibi işlemler gerektiğinde bu bölümden açılabilir.</div>
   </div>
 
   <div class="panel-section" id="section-yedekleme"><div class="section-title"><h2>Yedekleme</h2><button class="help-btn" onclick="showHelp('yedekleme')">?</button></div><p class="subtitle">Sipariş, fiş, satıcı ve katalog verilerini bilgisayarınıza indirebilirsiniz.</p><div class="box"><h3>Verileri Dışa Aktar</h3><div class="actions"><button class="btn-main" onclick="downloadBackupExcel()">Excel Yedeği İndir</button><button class="btn-light" onclick="downloadBackupJson()">JSON Yedeği İndir</button></div><div class="message error" id="backupError"></div><div class="message success" id="backupSuccess"></div><div class="message warning" id="backupWarning"></div><div class="placeholder">Excel yedeği kolay inceleme içindir. JSON yedeği tüm verileri daha düzenli saklar.</div></div></div>
